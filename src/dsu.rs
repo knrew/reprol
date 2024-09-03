@@ -1,56 +1,53 @@
-mod dsu {
-    pub struct DSU {
-        parents: Vec<usize>,
-        sizes: Vec<usize>,
+pub struct DSU {
+    parents: Vec<usize>,
+    sizes: Vec<usize>,
+}
+
+impl DSU {
+    pub fn new(n: usize) -> Self {
+        Self {
+            parents: (0..n).collect(),
+            sizes: vec![1; n],
+        }
     }
 
-    impl DSU {
-        pub fn new(n: usize) -> Self {
-            Self {
-                parents: (0..n).collect(),
-                sizes: vec![1; n],
+    /// xのrootのindexを返す
+    pub fn find(&mut self, x: usize) -> usize {
+        if self.parents[x] != x {
+            self.parents[x] = self.find(self.parents[x]);
+        }
+        self.parents[x]
+    }
+
+    /// xが属するグループとyが属するグループを統合する
+    pub fn merge(&mut self, x: usize, y: usize) {
+        let x = self.find(x);
+        let y = self.find(y);
+
+        if x != y {
+            if self.sizes[x] < self.sizes[y] {
+                self.sizes.swap(x, y);
             }
+            self.sizes[x] += self.sizes[y];
+            self.parents[y] = x;
         }
+    }
 
-        /// xのrootのindexを返す
-        pub fn find(&mut self, x: usize) -> usize {
-            if self.parents[x] != x {
-                self.parents[x] = self.find(self.parents[x]);
-            }
-            self.parents[x]
-        }
+    /// xとyが同じグループに属すか
+    pub fn connected(&mut self, x: usize, y: usize) -> bool {
+        self.find(x) == self.find(y)
+    }
 
-        /// xが属するグループとyが属するグループを統合する
-        pub fn merge(&mut self, x: usize, y: usize) {
-            let x = self.find(x);
-            let y = self.find(y);
-
-            if x != y {
-                if self.sizes[x] < self.sizes[y] {
-                    self.sizes.swap(x, y);
-                }
-                self.sizes[x] += self.sizes[y];
-                self.parents[y] = x;
-            }
-        }
-
-        /// xとyが同じグループに属すか
-        pub fn connected(&mut self, x: usize, y: usize) -> bool {
-            self.find(x) == self.find(y)
-        }
-
-        /// xが属するグループの要素数
-        pub fn size(&mut self, x: usize) -> usize {
-            let y = self.find(x);
-            self.sizes[y]
-        }
+    /// xが属するグループの要素数
+    pub fn size(&mut self, x: usize) -> usize {
+        let y = self.find(x);
+        self.sizes[y]
     }
 }
 
 #[cfg(test)]
 mod tests {
-
-    use super::dsu::*;
+    use crate::dsu::DSU;
 
     #[test]
     fn test_dsu() {
