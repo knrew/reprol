@@ -2,7 +2,6 @@ pub mod bfs;
 pub mod bisect;
 pub mod dijkstra;
 pub mod dsu;
-pub mod graph;
 pub mod integer;
 pub mod math;
 pub mod number_theory;
