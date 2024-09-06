@@ -1,6 +1,6 @@
-use crate::integer::Unsigned;
+use crate::integer::Integer;
 
-pub fn is_prime<T: Unsigned>(n: T) -> bool {
+pub fn is_prime<T: Integer>(n: T) -> bool {
     if n <= T::ONE {
         return false;
     }
@@ -17,7 +17,7 @@ pub fn is_prime<T: Unsigned>(n: T) -> bool {
 }
 
 /// NOTE: 出力はソートされていないので必要ならソートすること
-pub fn enumerate_divisors<T: Unsigned>(n: T) -> Vec<T> {
+pub fn enumerate_divisors<T: Integer>(n: T) -> Vec<T> {
     let mut divisors = vec![];
 
     let mut i = T::ONE;
@@ -34,7 +34,7 @@ pub fn enumerate_divisors<T: Unsigned>(n: T) -> Vec<T> {
     divisors
 }
 
-pub fn prime_factorize<T: Unsigned>(n: T) -> Vec<(T, usize)> {
+pub fn prime_factorize<T: Integer>(n: T) -> Vec<(T, usize)> {
     let mut n = n;
 
     let mut factors = vec![];
