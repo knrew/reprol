@@ -1,9 +1,9 @@
-pub struct DSU {
+pub struct Dsu {
     parents: Vec<usize>,
     sizes: Vec<usize>,
 }
 
-impl DSU {
+impl Dsu {
     pub fn new(n: usize) -> Self {
         Self {
             parents: (0..n).collect(),
@@ -47,11 +47,11 @@ impl DSU {
 
 #[cfg(test)]
 mod tests {
-    use crate::dsu::DSU;
+    use crate::dsu::Dsu;
 
     #[test]
     fn test_dsu() {
-        let mut d = DSU::new(4);
+        let mut d = Dsu::new(4);
         d.merge(0, 1);
         assert!(d.connected(0, 1));
         d.merge(1, 2);

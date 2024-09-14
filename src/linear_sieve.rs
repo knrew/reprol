@@ -36,11 +36,10 @@ impl LinearSieve {
     }
 
     pub fn factorize<T: Integer>(&self, x: T) -> Vec<(T, usize)> {
-        let x = x.as_usize();
+        let mut x = x.as_usize();
 
         let mut factors = vec![];
 
-        let mut x = x;
         while x > 1 {
             let p = self.lpf[x];
             let mut ex = 0;

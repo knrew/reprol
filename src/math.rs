@@ -1,5 +1,10 @@
 use crate::integer::Integer;
 
+/// x/yをする 小数点以下切り上げ
+pub fn ceil_div<T: Integer>(x: T, y: T) -> T {
+    (x + y - T::ONE) / y
+}
+
 pub fn gcd<T: Integer>(m: T, n: T) -> T {
     if n == T::ZERO {
         abs(m)
@@ -12,11 +17,38 @@ pub fn lcm<T: Integer>(m: T, n: T) -> T {
     abs(m) / gcd(m, n) * abs(n)
 }
 
+#[inline]
 fn abs<T: Integer>(n: T) -> T {
     if n < T::ZERO {
         T::ZERO - n
     } else {
         n
+    }
+}
+
+/// a^b
+pub fn pow<T: Integer>(a: T, b: T) -> T {
+    if b == T::ZERO {
+        return T::ONE;
+    }
+    let tmp = pow(a, b / T::TWO);
+    if b % T::TWO == T::ZERO {
+        tmp * tmp
+    } else {
+        a * tmp * tmp
+    }
+}
+
+/// a^b mod p
+pub fn powmod<T: Integer>(a: T, b: T, p: T) -> T {
+    if b == T::ZERO {
+        return T::ONE;
+    }
+    let tmp = powmod(a, b / T::TWO, p);
+    if b % T::TWO == T::ZERO {
+        tmp * tmp % p
+    } else {
+        tmp * tmp % p * a % p
     }
 }
 

@@ -1,16 +1,12 @@
-use std::{
-    fmt::Debug,
-    ops::{
-        Add, AddAssign, BitAnd, BitOr, Div, DivAssign, Mul, MulAssign, Rem, RemAssign, Shl, Shr,
-        Sub, SubAssign,
-    },
+use std::ops::{
+    Add, AddAssign, BitAnd, BitOr, Div, DivAssign, Mul, MulAssign, Rem, RemAssign, Shl, Shr, Sub,
+    SubAssign,
 };
 
 pub trait Integer:
     Sized
     + Copy
-    + PartialOrd
-    + Debug
+    + Ord
     + Add<Output = Self>
     + AddAssign
     + Sub<Output = Self>
@@ -25,7 +21,6 @@ pub trait Integer:
     + Shl<usize, Output = Self>
     + BitAnd<Output = Self>
     + BitOr<Output = Self>
-    + Ord
 {
     const ZERO: Self;
     const ONE: Self;
@@ -47,7 +42,7 @@ macro_rules! impl_integer {
                 fn as_usize(&self) -> usize {
                     *self as usize
                 }
-                fn from_usize(x:usize) -> Self {
+                fn from_usize(x: usize) -> Self {
                     x as $ty
                 }
             }
