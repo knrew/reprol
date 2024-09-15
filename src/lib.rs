@@ -6,4 +6,5 @@ pub mod integer;
 pub mod linear_sieve;
 pub mod math;
 pub mod number_theory;
+pub mod segment_tree;
 pub mod warshall_floyd;
