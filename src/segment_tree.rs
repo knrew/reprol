@@ -1,8 +1,4 @@
-use std::ops::{
-    Bound,
-    // Index, IndexMut,
-    RangeBounds,
-};
+use std::ops::{Bound, RangeBounds};
 
 pub trait Monoid {
     type Value;
@@ -16,6 +12,7 @@ where
 {
     len: usize,
     offset: usize,
+    log: u32,
     nodes: Vec<M::Value>,
     monoid: M,
 }
@@ -27,168 +24,150 @@ where
 {
     pub fn new(len: usize, monoid: M) -> Self {
         let offset = len.next_power_of_two();
+        let log = offset.trailing_zeros();
+        let nodes = vec![monoid.identity(); 2 * offset];
         Self {
             len,
             offset,
-            nodes: vec![monoid.identity(); 2 * offset],
+            log,
+            nodes,
             monoid,
         }
     }
 
-    /// x番目の要素をvalueにする
-    fn update(&mut self, index: usize, value: M::Value) {
-        let mut x = index + self.offset;
-        self.nodes[x] = value;
-        while x > 0 {
-            x /= 2;
-            self.nodes[x] = self.monoid.op(&self.nodes[2 * x], &self.nodes[2 * x + 1]);
-        }
+    fn update(&mut self, k: usize) {
+        self.nodes[k] = self.monoid.op(&self.nodes[k * 2], &self.nodes[k * 2 + 1]);
     }
 
     pub fn set(&mut self, index: usize, value: M::Value) {
-        self.update(index, value)
+        let index = index + self.offset;
+        self.nodes[index] = value;
+        for i in 1..=self.log {
+            self.update(index >> i)
+        }
     }
 
-    pub fn get(&self, index: usize) -> &M::Value {
-        &self.nodes[index + self.offset]
-    }
-
-    /// 区間の総積を計算する
     pub fn product<R: RangeBounds<usize>>(&self, range: R) -> M::Value {
-        let mut value_left = self.monoid.identity();
-        let mut value_right = self.monoid.identity();
-
-        let mut start = match range.start_bound() {
+        let mut l = match range.start_bound() {
             Bound::Unbounded => 0,
             Bound::Included(&x) => x,
             Bound::Excluded(&x) => x + 1,
         } + self.offset;
 
-        let mut end = match range.end_bound() {
+        let mut r = match range.end_bound() {
             Bound::Unbounded => self.len,
             Bound::Included(&x) => x + 1,
             Bound::Excluded(&x) => x,
         } + self.offset;
 
-        while start < end {
-            if start % 2 == 1 {
-                value_left = self.monoid.op(&value_left, &self.nodes[start]);
-                start += 1;
-            }
+        let mut vl = self.monoid.identity();
+        let mut vr = self.monoid.identity();
 
-            if end % 2 == 1 {
-                end -= 1;
-                value_right = self.monoid.op(&self.nodes[end], &value_right);
+        while l < r {
+            if l % 2 == 1 {
+                vl = self.monoid.op(&vl, &self.nodes[l]);
+                l += 1;
             }
-
-            start /= 2;
-            end /= 2;
+            if r % 2 == 1 {
+                r -= 1;
+                vr = self.monoid.op(&self.nodes[r], &vr);
+            }
+            l /= 2;
+            r /= 2;
         }
 
-        self.monoid.op(&value_left, &value_right)
+        self.monoid.op(&vl, &vr)
     }
 
-    /// 左端をstartで固定したときの最大のrを求める
-    pub fn max_right(&self, start: usize, mut f: impl FnMut(&M::Value) -> bool) -> usize {
-        let mut end = start + self.offset;
-        let mut value = self.monoid.identity();
+    pub fn max_right(&self, l: usize, mut f: impl FnMut(&M::Value) -> bool) -> usize {
+        if l == self.len {
+            return self.len;
+        }
+
+        let mut l = l + self.offset;
+        let mut sum = self.monoid.identity();
 
         loop {
-            let p = end.trailing_zeros();
-            let end_tmp = end + (1 << p);
-            if self.offset + self.len < end_tmp {
+            while l % 2 == 0 {
+                l /= 2;
+            }
+
+            if !f(&self.monoid.op(&sum, &self.nodes[l])) {
+                while l < self.offset {
+                    l *= 2;
+
+                    let tmp = self.monoid.op(&sum, &self.nodes[l]);
+                    if f(&tmp) {
+                        sum = tmp;
+                        l += 1;
+                    }
+                }
+
+                return l - self.offset;
+            }
+
+            sum = self.monoid.op(&sum, &self.nodes[l]);
+            l += 1;
+
+            if l & (!l + 1) == l {
                 break;
             }
-            let value_tmp = self.monoid.op(&value, &self.nodes[end >> p]);
-            if !f(&value_tmp) {
-                break;
-            }
-            end = end_tmp;
-            value = value_tmp;
         }
 
-        for p in (0..end.trailing_zeros()).rev() {
-            let end_tmp = end + (1 << p);
-            if self.offset + self.len < end_tmp {
-                continue;
-            }
-            let value_tmp = self.monoid.op(&value, &self.nodes[end >> p]);
-            if !f(&value_tmp) {
-                continue;
-            }
-            end = end_tmp;
-            value = value_tmp;
-        }
-
-        end - self.offset
+        return self.len;
     }
 
-    /// 右端をrで固定したときの最小のlを求める
-    pub fn min_left(&self, end: usize, mut f: impl FnMut(&M::Value) -> bool) -> usize {
-        if end == 0 {
+    pub fn min_left(&self, r: usize, mut f: impl FnMut(&M::Value) -> bool) -> usize {
+        if r == 0 {
             return 0;
         }
-
-        let mut start = end + self.offset;
-        let mut value = self.monoid.identity();
+        let mut r = r + self.offset;
+        let mut sum = self.monoid.identity();
 
         loop {
-            let p = (start | self.offset).trailing_zeros();
-            let start_tmp = start - (1 << p);
-            let value_tmp = self.monoid.op(&value, &self.nodes[start_tmp >> p]);
-            if !f(&value_tmp) {
+            r -= 1;
+            while r > 1 && r % 2 == 1 {
+                r /= 2;
+            }
+            if !f(&self.monoid.op(&self.nodes[r], &sum)) {
+                while r < self.offset {
+                    r = 2 * r + 1;
+                    let tmp = self.monoid.op(&self.nodes[r], &sum);
+                    if f(&tmp) {
+                        sum = tmp;
+                        r -= 1;
+                    }
+                }
+                return r + 1 - self.offset;
+            }
+
+            sum = self.monoid.op(&self.nodes[r], &sum);
+
+            if r & (!r + 1) == r {
                 break;
             }
-            start = start_tmp;
-            value = value_tmp;
-            if start == self.offset {
-                return 0;
-            }
         }
 
-        for p in (0..(start | self.offset).trailing_zeros()).rev() {
-            let start_tmp = start - (1 << p);
-            let value_tmp = self.monoid.op(&value, &self.nodes[start_tmp >> p]);
-            if !f(&value_tmp) {
-                continue;
-            }
-            start = start_tmp;
-            value = value_tmp;
-        }
-
-        start - self.offset
+        0
     }
 }
-
-// impl<M> Index<usize> for SegmentTree<M>
-// where
-//     M: Monoid,
-// {
-//     type Output = M::Value;
-//     fn index(&self, index: usize) -> &Self::Output {
-//         &self.nodes[index + self.offset]
-//     }
-// }
-
-// impl<M> IndexMut<usize> for SegmentTree<M>
-// where
-//     M: Monoid,
-// {
-//     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-//         &mut self.nodes[index + self.offset]
-//     }
-// }
 
 impl<M> From<(&[M::Value], M)> for SegmentTree<M>
 where
     M: Monoid,
     M::Value: Clone,
 {
-    fn from((v, m): (&[M::Value], M)) -> Self {
-        let mut res = SegmentTree::new(v.len(), m);
-        for i in 0..v.len() {
-            res.set(i, v[i].clone());
+    fn from((v, monoid): (&[M::Value], M)) -> Self {
+        let mut res = Self::new(v.len(), monoid);
+
+        for i in 0..res.len {
+            res.nodes[i + res.offset] = v[i].clone();
         }
+
+        for i in (1..res.offset).rev() {
+            res.update(i)
+        }
+
         res
     }
 }
