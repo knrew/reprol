@@ -47,6 +47,10 @@ where
         }
     }
 
+    pub fn get(&self, index: usize) -> &M::Value {
+        &self.nodes[index + self.offset]
+    }
+
     pub fn product<R: RangeBounds<usize>>(&self, range: R) -> M::Value {
         let mut l = match range.start_bound() {
             Bound::Unbounded => 0,
