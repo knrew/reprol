@@ -1,4 +1,4 @@
-use std::ops::{Bound, RangeBounds};
+use std::ops::{Bound, Range, RangeBounds};
 
 pub trait Monoid {
     type Value;
@@ -52,17 +52,8 @@ where
     }
 
     pub fn product<R: RangeBounds<usize>>(&self, range: R) -> M::Value {
-        let mut l = match range.start_bound() {
-            Bound::Unbounded => 0,
-            Bound::Included(&x) => x,
-            Bound::Excluded(&x) => x + 1,
-        } + self.offset;
-
-        let mut r = match range.end_bound() {
-            Bound::Unbounded => self.len,
-            Bound::Included(&x) => x + 1,
-            Bound::Excluded(&x) => x,
-        } + self.offset;
+        let Range { start: l, end: r } = to_open(range, self.len);
+        let (mut l, mut r) = (l + self.offset, r + self.offset);
 
         let mut vl = self.monoid.identity();
         let mut vr = self.monoid.identity();
@@ -176,6 +167,23 @@ where
     }
 }
 
+/// ranageを区間[l, r)に変換する
+fn to_open<R: RangeBounds<usize>>(range: R, n: usize) -> Range<usize> {
+    let l = match range.start_bound() {
+        Bound::Unbounded => 0,
+        Bound::Included(&x) => x,
+        Bound::Excluded(&x) => x + 1,
+    };
+
+    let r = match range.end_bound() {
+        Bound::Unbounded => n,
+        Bound::Included(&x) => x + 1,
+        Bound::Excluded(&x) => x,
+    };
+
+    l..r
+}
+
 impl<M> From<(&Vec<M::Value>, M)> for SegmentTree<M>
 where
     M: Monoid,
@@ -183,5 +191,25 @@ where
 {
     fn from((v, m): (&Vec<M::Value>, M)) -> Self {
         SegmentTree::from((v.as_slice(), m))
+    }
+}
+
+impl<M> From<&[M::Value]> for SegmentTree<M>
+where
+    M: Monoid + Default,
+    M::Value: Clone,
+{
+    fn from(v: &[M::Value]) -> Self {
+        Self::from((v, M::default()))
+    }
+}
+
+impl<M> From<&Vec<M::Value>> for SegmentTree<M>
+where
+    M: Monoid + Default,
+    M::Value: Clone,
+{
+    fn from(v: &Vec<M::Value>) -> Self {
+        Self::from((v, M::default()))
     }
 }

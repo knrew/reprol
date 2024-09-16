@@ -28,7 +28,7 @@ impl Scanner {
         return self.buffer.pop_front().unwrap();
     }
 
-    pub fn get<T>(&mut self) -> T
+    pub fn get_number<T>(&mut self) -> T
     where
         T: FromStr,
         <T as FromStr>::Err: Debug,
