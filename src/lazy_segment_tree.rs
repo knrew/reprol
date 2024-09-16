@@ -7,6 +7,8 @@ pub trait MonoidAction {
     fn op(&self, x: &Self::Value, y: &Self::Value) -> Self::Value;
     fn identity_operator(&self) -> Self::Operator;
     fn map(&self, f: &Self::Operator, x: &Self::Value) -> Self::Value;
+
+    /// gの方が後に作用する
     fn compose(&self, g: &Self::Operator, f: &Self::Operator) -> Self::Operator;
 }
 
@@ -148,17 +150,18 @@ where
         }
 
         let mut l = l + self.offset;
+        self.push(l);
         let mut sum = self.monoid.identity();
 
         loop {
-            while l & 1 == 0 {
+            while (!l & 1) != 0 {
                 l >>= 1;
             }
 
             if !f(&self.monoid.op(&sum, &self.nodes[l])) {
                 while l < self.offset {
                     self.push_lazy(l);
-                    l <<= 2;
+                    l <<= 1;
                     let tmp = self.monoid.op(&sum, &self.nodes[l]);
                     if f(&tmp) {
                         sum = tmp;
@@ -180,7 +183,7 @@ where
     }
 
     pub fn min_left(&mut self, r: usize, mut f: impl FnMut(&M::Value) -> bool) -> usize {
-        debug_assert!(f(&self.monoid.identity()));
+        // debug_assert!(f(&self.monoid.identity()));
 
         if r == 0 {
             return 0;
@@ -189,9 +192,10 @@ where
         let mut r = r + self.offset;
         self.push(r - 1);
         let mut sum = self.monoid.identity();
+
         loop {
             r -= 1;
-            while r > 1 && r & 1 != 0 {
+            while r > 1 && (r & 1 != 0) {
                 r >>= 1;
             }
             if !f(&self.monoid.op(&self.nodes[r], &sum)) {

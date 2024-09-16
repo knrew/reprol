@@ -2,8 +2,8 @@ use std::ops::{Bound, Range, RangeBounds};
 
 pub trait Monoid {
     type Value;
-    fn op(&self, x: &Self::Value, y: &Self::Value) -> Self::Value;
     fn identity(&self) -> Self::Value;
+    fn op(&self, x: &Self::Value, y: &Self::Value) -> Self::Value;
 }
 
 pub struct SegmentTree<M>
