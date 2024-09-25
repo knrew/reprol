@@ -2,6 +2,7 @@ use crate::integer::Integer;
 
 pub struct LinearSieve {
     lpf: Vec<usize>,
+    primes: Vec<usize>,
 }
 
 impl LinearSieve {
@@ -27,15 +28,31 @@ impl LinearSieve {
             }
         }
 
-        Self { lpf }
+        Self { lpf, primes }
+    }
+
+    pub fn primes_raw<T: Integer>(&self) -> &[usize] {
+        &self.primes
+    }
+
+    pub fn primes<T: Integer>(&self) -> Vec<T> {
+        self.primes.iter().map(|&p| T::from_usize(p)).collect()
     }
 
     pub fn is_prime<T: Integer>(&self, x: T) -> bool {
-        let x = x.as_usize();
-        self.lpf[x] == x
+        debug_assert!(x.as_usize() < self.lpf.len());
+        if x <= T::ONE {
+            false
+        } else {
+            let x = x.as_usize();
+            self.lpf[x] == x
+        }
     }
 
     pub fn factorize<T: Integer>(&self, x: T) -> Vec<(T, usize)> {
+        debug_assert!(x.as_usize() < self.lpf.len());
+        debug_assert!(x >= T::ZERO);
+
         let mut x = x.as_usize();
 
         let mut factors = vec![];
@@ -54,6 +71,9 @@ impl LinearSieve {
     }
 
     pub fn enumerate_divisors<T: Integer>(&self, x: T) -> Vec<T> {
+        debug_assert!(x.as_usize() < self.lpf.len());
+        debug_assert!(x >= T::ZERO);
+
         let mut divisors = vec![T::ONE];
         let factors = self.factorize(x);
 
