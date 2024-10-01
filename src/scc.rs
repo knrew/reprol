@@ -4,6 +4,7 @@ pub struct Scc {
     rev_graph: Vec<Vec<usize>>,
     components: Vec<Vec<usize>>,
     component_ids: Vec<usize>,
+    has_solved: bool,
 }
 
 impl Scc {
@@ -14,10 +15,12 @@ impl Scc {
             rev_graph: vec![vec![]; n],
             components: vec![],
             component_ids: vec![0; n],
+            has_solved: false,
         }
     }
 
     pub fn add_edge(&mut self, u: usize, v: usize) {
+        debug_assert!(!self.has_solved);
         debug_assert!(u < self.n);
         debug_assert!(v < self.n);
         self.graph[u].push(v);
@@ -25,15 +28,26 @@ impl Scc {
     }
 
     pub fn num_components(&self) -> usize {
+        debug_assert!(self.has_solved);
         self.components.len()
     }
 
     pub fn component(&self, id: usize) -> &[usize] {
+        debug_assert!(self.has_solved);
         debug_assert!(id < self.components.len());
         &self.components[id]
     }
 
+    pub fn components(&self) -> &[Vec<usize>] {
+        debug_assert!(self.has_solved);
+        &self.components
+    }
+
     pub fn solve(&mut self) {
+        debug_assert!(!self.has_solved);
+
+        self.has_solved = true;
+
         let order = {
             let mut order = vec![];
             let mut visited = vec![false; self.n];

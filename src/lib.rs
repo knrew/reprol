@@ -1,6 +1,6 @@
 pub mod bfs;
 pub mod bisect;
-pub mod cumlative_sum;
+pub mod cumulative_sum;
 pub mod dijkstra;
 pub mod dsu;
 pub mod integer;
@@ -11,4 +11,5 @@ pub mod number_theory;
 pub mod scanner;
 pub mod scc;
 pub mod segment_tree;
+pub mod topological_sort;
 pub mod warshall_floyd;

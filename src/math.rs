@@ -26,30 +26,45 @@ fn abs<T: Integer>(n: T) -> T {
     }
 }
 
-/// a^b
-pub fn pow<T: Integer>(a: T, b: T) -> T {
-    if b == T::ZERO {
+/// x^e
+pub fn pow<T: Integer>(mut x: T, mut e: T) -> T {
+    if e == T::ZERO {
         return T::ONE;
     }
-    let tmp = pow(a, b / T::TWO);
-    if b % T::TWO == T::ZERO {
-        tmp * tmp
-    } else {
-        a * tmp * tmp
+
+    let mut res = T::ONE;
+
+    while e > T::ONE {
+        if (e & T::ONE) == T::ONE {
+            res = res * x;
+        }
+        e /= T::TWO;
+        x = x * x;
     }
+    res *= x;
+
+    res
 }
 
-/// a^b mod p
-pub fn powmod<T: Integer>(a: T, b: T, p: T) -> T {
-    if b == T::ZERO {
+/// x^e mod p
+pub fn powmod<T: Integer>(x: T, mut e: T, p: T) -> T {
+    if e == T::ZERO {
         return T::ONE;
     }
-    let tmp = powmod(a, b / T::TWO, p);
-    if b % T::TWO == T::ZERO {
-        tmp * tmp % p
-    } else {
-        tmp * tmp % p * a % p
+
+    let mut res = T::ONE;
+    let mut x = x % p;
+
+    while e > T::ONE {
+        if (e & T::ONE) == T::ONE {
+            res = res * x % p;
+        }
+        e /= T::TWO;
+        x = x * x % p;
     }
+    res = res * x % p;
+
+    res
 }
 
 #[cfg(test)]

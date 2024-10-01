@@ -1,8 +1,8 @@
 use std::ops::{Add, Range, Sub};
 
-pub struct CumlativeSum1D<T>(Vec<T>);
+pub struct CumulativeSum1D<T>(Vec<T>);
 
-impl<T> CumlativeSum1D<T>
+impl<T> CumulativeSum1D<T>
 where
     T: Copy + Add<Output = T> + Sub<Output = T>,
 {
@@ -15,6 +15,14 @@ where
         Self(cum)
     }
 
+    pub fn construct(n: usize, zero: T, mut f: impl FnMut(usize) -> T) -> Self {
+        let mut cum = vec![zero; n + 1];
+        for i in 0..n {
+            cum[i + 1] = f(i) + cum[i];
+        }
+        Self(cum)
+    }
+
     /// 半区間[l, r)の和を計算する
     /// a[l]+ ... + a[r-1]
     pub fn get_sum(&self, range: Range<usize>) -> T {
@@ -22,9 +30,9 @@ where
     }
 }
 
-pub struct CumlativeSum2D<T>(Vec<Vec<T>>);
+pub struct CumulativeSum2D<T>(Vec<Vec<T>>);
 
-impl<T> CumlativeSum2D<T>
+impl<T> CumulativeSum2D<T>
 where
     T: Copy + Add<Output = T> + Sub<Output = T>,
 {
@@ -42,6 +50,18 @@ where
         Self(cum)
     }
 
+    pub fn construct(h: usize, w: usize, zero: T, mut f: impl FnMut(usize, usize) -> T) -> Self {
+        let mut cum = vec![vec![zero; w + 1]; h + 1];
+
+        for i in 0..h {
+            for j in 0..w {
+                cum[i + 1][j + 1] = f(i, j) + cum[i + 1][j] + cum[i][j + 1] - cum[i][j];
+            }
+        }
+
+        Self(cum)
+    }
+
     pub fn get_sum(&self, x_range: Range<usize>, y_range: Range<usize>) -> T {
         self.0[x_range.end][y_range.end] + self.0[x_range.start][y_range.start]
             - self.0[x_range.start][y_range.end]
@@ -49,9 +69,9 @@ where
     }
 }
 
-pub struct CumlativeSum3D<T>(Vec<Vec<Vec<T>>>);
+pub struct CumulativeSum3D<T>(Vec<Vec<Vec<T>>>);
 
-impl<T> CumlativeSum3D<T>
+impl<T> CumulativeSum3D<T>
 where
     T: Copy + Add<Output = T> + Sub<Output = T>,
 {
