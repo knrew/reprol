@@ -8,6 +8,7 @@ pub mod lazy_segment_tree;
 pub mod linear_sieve;
 pub mod math;
 pub mod number_theory;
+pub mod potentialized_dsu;
 pub mod scanner;
 pub mod scc;
 pub mod segment_tree;
