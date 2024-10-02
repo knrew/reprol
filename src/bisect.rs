@@ -26,3 +26,33 @@ impl<T: Ord> LowerBound for [T] {
         bisect(0, self.len(), |&i| unsafe { self.get_unchecked(i) } < x)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::bisect::LowerBound;
+
+    #[test]
+    fn test_lower_bound() {
+        let v = vec![1, 3, 5, 7, 9, 11, 13, 15, 17, 19];
+        let test_cases = vec![(5, 2), (6, 3), (1, 0), (19, 9), (0, 0), (20, 10)];
+        for (input, expected) in test_cases {
+            assert_eq!(v.lower_bound(&input), expected);
+        }
+
+        let v = vec![
+            2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40,
+        ];
+        let test_cases = vec![
+            (10, 4),
+            (25, 12),
+            (0, 0),
+            (40, 19),
+            (41, 20),
+            (15, 7),
+            (5, 2),
+        ];
+        for (input, expected) in test_cases {
+            assert_eq!(v.lower_bound(&input), expected);
+        }
+    }
+}

@@ -40,3 +40,17 @@ pub fn topological_sort(graph: &[Vec<usize>]) -> Option<Vec<usize>> {
         None
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_topological_sort() {
+        let g = vec![vec![1], vec![2], vec![], vec![1, 4], vec![5], vec![2]];
+        assert_eq!(topological_sort(&g), Some(vec![0, 3, 1, 4, 5, 2]));
+
+        let g = vec![vec![1], vec![2], vec![3], vec![1, 4], vec![5], vec![2]];
+        assert_eq!(topological_sort(&g), None);
+    }
+}
