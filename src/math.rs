@@ -26,22 +26,22 @@ fn abs<T: Integer>(n: T) -> T {
     }
 }
 
-/// x^e
-pub fn pow<T: Integer>(mut x: T, mut e: T) -> T {
-    if e == T::ZERO {
+/// 繰り返し二乗法による冪乗の計算
+pub fn pow<T: Integer>(mut base: T, mut exp: T) -> T {
+    if exp == T::ZERO {
         return T::ONE;
     }
 
     let mut res = T::ONE;
 
-    while e > T::ONE {
-        if (e & T::ONE) == T::ONE {
-            res = res * x;
+    while exp > T::ONE {
+        if (exp & T::ONE) == T::ONE {
+            res = res * base;
         }
-        e /= T::TWO;
-        x = x * x;
+        exp /= T::TWO;
+        base = base * base;
     }
-    res *= x;
+    res *= base;
 
     res
 }
