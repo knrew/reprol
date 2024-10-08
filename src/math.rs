@@ -46,27 +46,6 @@ pub fn pow<T: Integer>(mut x: T, mut e: T) -> T {
     res
 }
 
-/// x^e mod p
-pub fn powmod<T: Integer>(x: T, mut e: T, p: T) -> T {
-    if e == T::ZERO {
-        return T::ONE;
-    }
-
-    let mut res = T::ONE;
-    let mut x = x % p;
-
-    while e > T::ONE {
-        if (e & T::ONE) == T::ONE {
-            res = res * x % p;
-        }
-        e /= T::TWO;
-        x = x * x % p;
-    }
-    res = res * x % p;
-
-    res
-}
-
 #[cfg(test)]
 mod tests {
     use crate::math::{gcd, lcm};
