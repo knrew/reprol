@@ -24,13 +24,15 @@ impl Dsu {
         let x = self.find(x);
         let y = self.find(y);
 
-        if x != y {
-            if self.sizes[x] < self.sizes[y] {
-                self.sizes.swap(x, y);
-            }
-            self.sizes[x] += self.sizes[y];
-            self.parents[y] = x;
+        if x == y {
+            return;
         }
+
+        if self.sizes[x] < self.sizes[y] {
+            self.sizes.swap(x, y);
+        }
+        self.sizes[x] += self.sizes[y];
+        self.parents[y] = x;
     }
 
     /// xとyが同じグループに属すか

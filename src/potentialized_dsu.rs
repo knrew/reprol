@@ -31,6 +31,7 @@ where
         root
     }
 
+    /// すでに決まっている重みと矛盾があればfalseを返す
     pub fn merge(&mut self, x: usize, y: usize, w: T) -> bool {
         let mut w = w + self.weight(x) - self.weight(y);
 
@@ -54,6 +55,7 @@ where
     }
 
     pub fn diff(&mut self, x: usize, y: usize) -> T {
+        debug_assert!(self.connected(x, y));
         self.weight(y) - self.weight(x)
     }
 
