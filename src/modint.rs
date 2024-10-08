@@ -1,9 +1,10 @@
 use std::{
+    fmt::{Debug, Display},
     iter::{Product, Sum},
     ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign},
 };
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ModInt<const P: u64> {
     value: u64,
 }
@@ -157,6 +158,18 @@ impl<'a, const P: u64> Product<&'a Self> for ModInt<P> {
     }
 }
 
+impl<const P: u64> Debug for ModInt<P> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self.value)
+    }
+}
+
+impl<const P: u64> Display for ModInt<P> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.value)
+    }
+}
+
 macro_rules! impl_signed {
     ($($ty:ident),*) => {$(
         impl<const P: u64> From<$ty> for ModInt<P> {
@@ -165,7 +178,7 @@ macro_rules! impl_signed {
             }
         }
     )*};
-    }
+}
 impl_signed! { u8, u16, u32, u64, u128, usize }
 
 macro_rules! impl_unsigned {
@@ -180,7 +193,7 @@ macro_rules! impl_unsigned {
             }
         }
     )*};
-    }
+}
 impl_unsigned! { i8, i16, i32, i64, i128, isize }
 
 pub type ModInt998244353 = ModInt<998244353>;
