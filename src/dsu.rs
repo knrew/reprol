@@ -1,6 +1,7 @@
 pub struct Dsu {
     parents: Vec<usize>,
     sizes: Vec<usize>,
+    num_components: usize,
 }
 
 impl Dsu {
@@ -8,6 +9,7 @@ impl Dsu {
         Self {
             parents: (0..n).collect(),
             sizes: vec![1; n],
+            num_components: n,
         }
     }
 
@@ -28,6 +30,8 @@ impl Dsu {
             return;
         }
 
+        self.num_components -= 1;
+
         if self.sizes[x] < self.sizes[y] {
             self.sizes.swap(x, y);
         }
@@ -44,6 +48,11 @@ impl Dsu {
     pub fn size(&mut self, x: usize) -> usize {
         let y = self.find(x);
         self.sizes[y]
+    }
+
+    /// 連結成分の個数
+    pub fn num_components(&self) -> usize {
+        self.num_components
     }
 }
 
