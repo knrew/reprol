@@ -8,16 +8,12 @@ where
 {
     pub fn new(v: &[T], zero: T) -> Self {
         debug_assert!(!v.is_empty());
-        let mut cum = vec![zero; v.len() + 1];
-        for i in 0..v.len() {
-            cum[i + 1] = v[i] + cum[i];
-        }
-        Self(cum)
+        Self::construct(v.len(), zero, |i| v[i])
     }
 
-    pub fn construct(n: usize, zero: T, mut f: impl FnMut(usize) -> T) -> Self {
-        let mut cum = vec![zero; n + 1];
-        for i in 0..n {
+    pub fn construct(len: usize, zero: T, mut f: impl FnMut(usize) -> T) -> Self {
+        let mut cum = vec![zero; len + 1];
+        for i in 0..len {
             cum[i + 1] = f(i) + cum[i];
         }
         Self(cum)
@@ -38,23 +34,20 @@ where
 {
     pub fn new(v: &[Vec<T>], zero: T) -> Self {
         debug_assert!(!v.is_empty());
-
-        let mut cum = vec![vec![zero; v[0].len() + 1]; v.len() + 1];
-
-        for i in 0..v.len() {
-            for j in 0..v[i].len() {
-                cum[i + 1][j + 1] = v[i][j] + cum[i + 1][j] + cum[i][j + 1] - cum[i][j];
-            }
-        }
-
-        Self(cum)
+        debug_assert!(!v[0].is_empty());
+        Self::construct(v.len(), v[0].len(), zero, |i, j| v[i][j])
     }
 
-    pub fn construct(h: usize, w: usize, zero: T, mut f: impl FnMut(usize, usize) -> T) -> Self {
-        let mut cum = vec![vec![zero; w + 1]; h + 1];
+    pub fn construct(
+        x_len: usize,
+        y_len: usize,
+        zero: T,
+        mut f: impl FnMut(usize, usize) -> T,
+    ) -> Self {
+        let mut cum = vec![vec![zero; y_len + 1]; x_len + 1];
 
-        for i in 0..h {
-            for j in 0..w {
+        for i in 0..x_len {
+            for j in 0..y_len {
                 cum[i + 1][j + 1] = f(i, j) + cum[i + 1][j] + cum[i][j + 1] - cum[i][j];
             }
         }
@@ -77,13 +70,26 @@ where
 {
     pub fn new(v: &[Vec<Vec<T>>], zero: T) -> Self {
         debug_assert!(!v.is_empty());
+        debug_assert!(!v[0].is_empty());
+        debug_assert!(!v[0][0].is_empty());
+        Self::construct(v.len(), v[0].len(), v[0][0].len(), zero, |i, j, k| {
+            v[i][j][k]
+        })
+    }
 
-        let mut cum = vec![vec![vec![zero; v[0][0].len() + 1]; v[0].len() + 1]; v.len() + 1];
+    pub fn construct(
+        x_len: usize,
+        y_len: usize,
+        z_len: usize,
+        zero: T,
+        mut f: impl FnMut(usize, usize, usize) -> T,
+    ) -> Self {
+        let mut cum = vec![vec![vec![zero; z_len + 1]; y_len + 1]; x_len + 1];
 
-        for i in 0..v.len() {
-            for j in 0..v[i].len() {
-                for k in 0..v[i][j].len() {
-                    cum[i + 1][j + 1][k + 1] = v[i][j][k]
+        for i in 0..x_len {
+            for j in 0..y_len {
+                for k in 0..z_len {
+                    cum[i + 1][j + 1][k + 1] = f(i, j, k)
                         + cum[i][j + 1][k + 1]
                         + cum[i + 1][j][k + 1]
                         + cum[i + 1][j + 1][k]
