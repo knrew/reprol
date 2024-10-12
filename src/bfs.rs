@@ -1,50 +1,125 @@
 use std::collections::VecDeque;
 
-pub fn bfs(g: &[Vec<usize>], start: usize) -> Vec<Option<u64>> {
-    let mut distances = vec![None; g.len()];
-    let mut queue = VecDeque::new();
+/// BFSで最短経路を計算する
+pub struct Bfs {
+    /// グラフの頂点の個数
+    /// 頂点番号は0, 1, ..., len-1
+    len: usize,
 
-    queue.push_back(start);
-    distances[start] = Some(0u64);
+    /// 始点頂点
+    start: usize,
 
-    while let Some(v) = queue.pop_front() {
-        for &nv in &g[v] {
-            if distances[nv].is_none() {
-                distances[nv] = Some(distances[v].unwrap() + 1);
-                queue.push_back(nv);
-            }
-        }
-    }
+    /// costs[v]: 頂点startからvへの最短経路のコスト
+    /// startから到達不可能である場合はNone
+    costs: Vec<Option<u64>>,
 
-    distances
+    /// previous_vertices[v]: 最短経路においてvの直前に訪問する頂点
+    previous_vertices: Vec<Option<usize>>,
 }
 
-pub fn bfs2<V, E>(
-    n: usize,
-    start: V,
-    mut hash: impl FnMut(&V) -> usize,
-    mut neighbors: impl FnMut(&V) -> E,
-) -> Vec<Option<u64>>
-where
-    V: Ord,
-    E: Iterator<Item = V>,
-{
-    let mut distances = vec![None; n];
-    let mut queue = VecDeque::new();
+impl Bfs {
+    /// 隣接リストから最短経路を計算する
+    pub fn from_adjacencies(g: &[Vec<usize>], start: usize) -> Self {
+        Bfs::from_mapping(g.len(), start, |&i| g[i].iter().copied())
+    }
 
-    distances[hash(&start)] = Some(0u64);
-    queue.push_back(start);
+    /// 頂点を引数にとり隣接頂点リストのイテレータを返す関数neighborsを用いて最短経路を計算する
+    pub fn from_mapping<E>(len: usize, start: usize, mut neighbors: impl FnMut(&usize) -> E) -> Self
+    where
+        E: Iterator<Item = usize>,
+    {
+        debug_assert!(start < len);
 
-    while let Some(v) = queue.pop_front() {
-        let d = distances[hash(&v)].unwrap();
-        for nv in neighbors(&v) {
-            let nvi = hash(&nv);
-            if distances[nvi].is_none() {
-                distances[nvi] = Some(d + 1);
+        let mut costs = vec![None; len];
+        let mut previous_vertices = vec![None; len];
+
+        let mut queue = VecDeque::new();
+
+        costs[start] = Some(0u64);
+        queue.push_back(start);
+
+        while let Some(v) = queue.pop_front() {
+            for nv in neighbors(&v) {
+                if costs[nv].is_some() {
+                    continue;
+                }
+                costs[nv] = Some(costs[v].unwrap().saturating_add(1));
+                previous_vertices[nv] = Some(v);
                 queue.push_back(nv);
             }
         }
+
+        Self {
+            len,
+            start,
+            costs,
+            previous_vertices,
+        }
     }
 
-    distances
+    pub fn len(&self) -> usize {
+        self.len
+    }
+
+    pub fn start(&self) -> usize {
+        self.start
+    }
+
+    pub fn costs(&self) -> &[Option<u64>] {
+        &self.costs
+    }
+
+    pub fn cost(&self, v: usize) -> Option<u64> {
+        self.costs[v]
+    }
+
+    /// 頂点endへの最短経路を構築する
+    pub fn construct_path(&self, end: usize) -> Option<Vec<usize>> {
+        if self.costs[end].is_none() {
+            return None;
+        }
+
+        let mut res = vec![end];
+
+        while let Some(p) = self.previous_vertices[*res.last().unwrap()] {
+            res.push(p);
+        }
+
+        debug_assert!(res.last().unwrap() == &self.start);
+
+        res.reverse();
+
+        Some(res)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_bfs() {
+        let graph = vec![vec![1], vec![2], vec![3], vec![]];
+        let costs = Bfs::from_adjacencies(&graph, 0).costs().to_vec();
+        assert_eq!(costs, vec![Some(0), Some(1), Some(2), Some(3)]);
+
+        let graph = vec![vec![1], vec![2], vec![], vec![4], vec![]];
+        let costs = Bfs::from_adjacencies(&graph, 0).costs().to_vec();
+        assert_eq!(costs, vec![Some(0), Some(1), Some(2), None, None]);
+
+        let graph = vec![vec![1], vec![2], vec![0]];
+        let costs = Bfs::from_adjacencies(&graph, 0).costs().to_vec();
+        assert_eq!(costs, vec![Some(0), Some(1), Some(2)]);
+
+        let graph = vec![vec![1], vec![2], vec![3], vec![]];
+        let costs = Bfs::from_adjacencies(&graph, 2).costs().to_vec();
+        assert_eq!(costs, vec![None, None, Some(0), Some(1)]);
+
+        let graph = vec![vec![1, 2], vec![3], vec![3, 4], vec![5], vec![5], vec![]];
+        let costs = Bfs::from_adjacencies(&graph, 0).costs().to_vec();
+        assert_eq!(
+            costs,
+            vec![Some(0), Some(1), Some(1), Some(2), Some(2), Some(3)]
+        );
+    }
 }
