@@ -1,3 +1,5 @@
+/// componentsには各強連結成分がはいる
+/// componentsはトポロジカル順になっている
 pub struct Scc {
     n: usize,
     graph: Vec<Vec<usize>>,
