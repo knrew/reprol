@@ -1,10 +1,11 @@
 use std::{
     fmt::{Debug, Display},
+    hash::Hash,
     iter::{Product, Sum},
     ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
 };
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct ModInt<const P: u64> {
     value: u64,
 }
@@ -141,6 +142,12 @@ impl<const P: u64> Product for ModInt<P> {
 impl<'a, const P: u64> Product<&'a Self> for ModInt<P> {
     fn product<I: Iterator<Item = &'a Self>>(iter: I) -> Self {
         iter.copied().product()
+    }
+}
+
+impl<const P: u64> Hash for ModInt<P> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.value.hash(state)
     }
 }
 
