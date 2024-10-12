@@ -46,12 +46,14 @@ where
     }
 
     pub fn get(&mut self, index: usize) -> &M::Value {
+        debug_assert!(index < self.len);
         let index = index + self.offset;
         self.push(index);
         &self.nodes[index]
     }
 
     pub fn set(&mut self, index: usize, value: M::Value) {
+        debug_assert!(index < self.len);
         let index = index + self.offset;
         self.push(index);
         self.nodes[index] = value;

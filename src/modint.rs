@@ -1,7 +1,7 @@
 use std::{
     fmt::{Debug, Display},
     iter::{Product, Sum},
-    ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign},
+    ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
 };
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
@@ -110,14 +110,6 @@ impl<const P: u64> DivAssign for ModInt<P> {
     }
 }
 
-impl<const P: u64> Rem for ModInt<P> {
-    type Output = Self;
-    fn rem(self, rhs: Self) -> Self::Output {
-        let value = self.value % rhs.value;
-        Self { value }
-    }
-}
-
 impl<const P: u64> Neg for ModInt<P> {
     type Output = Self;
     fn neg(mut self) -> Self::Output {
@@ -125,12 +117,6 @@ impl<const P: u64> Neg for ModInt<P> {
             self.value = P - self.value
         }
         self
-    }
-}
-
-impl<const P: u64> RemAssign for ModInt<P> {
-    fn rem_assign(&mut self, rhs: Self) {
-        *self = *self % rhs;
     }
 }
 
@@ -186,7 +172,7 @@ macro_rules! impl_unsigned {
         impl<const P: u64> From<$ty> for ModInt<P> {
             fn from(value: $ty) -> Self {
                 if value < 0 {
-                    -Self::new((P as i64 - value as i64) as u64 )
+                    -Self::new((P as i64 - value as i64) as u64)
                 }else{
                     Self::new(value as u64)
                 }
