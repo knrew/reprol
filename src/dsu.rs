@@ -22,6 +22,8 @@ where
 
     /// xのrootのindexを返す
     pub fn find(&mut self, v: usize) -> usize {
+        debug_assert!(v < self.parents.len());
+
         if self.parents[v] == v {
             return v;
         }
@@ -37,6 +39,9 @@ where
     /// xが属するグループとyが属するグループを統合する
     /// すでに決まっているポテンシャルと矛盾があればfalseを返す
     pub fn merge(&mut self, u: usize, v: usize, w: T) -> bool {
+        debug_assert!(u < self.parents.len());
+        debug_assert!(v < self.parents.len());
+
         let mut w = w + self.potential(u) - self.potential(v);
 
         let mut u = self.find(u);
@@ -62,21 +67,27 @@ where
 
     /// xとyが同じグループに属すか
     pub fn connected(&mut self, u: usize, v: usize) -> bool {
+        debug_assert!(u < self.parents.len());
+        debug_assert!(v < self.parents.len());
         self.find(u) == self.find(v)
     }
 
     /// xが属するグループの要素数
     pub fn size(&mut self, v: usize) -> usize {
+        debug_assert!(v < self.parents.len());
         let v = self.find(v);
         self.sizes[v]
     }
 
     pub fn potential(&mut self, v: usize) -> T {
+        debug_assert!(v < self.parents.len());
         let _ = self.find(v);
         self.potentials[v]
     }
 
     pub fn difference_potential(&mut self, u: usize, v: usize) -> T {
+        debug_assert!(u < self.parents.len());
+        debug_assert!(v < self.parents.len());
         debug_assert!(self.connected(u, v));
         self.potential(v) - self.potential(u)
     }
