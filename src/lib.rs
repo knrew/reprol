@@ -6,6 +6,7 @@ pub mod dsu;
 pub mod integer;
 pub mod lazy_segment_tree;
 pub mod linear_sieve;
+pub mod lowlink;
 pub mod math;
 pub mod matrix;
 pub mod modint;
