@@ -1,59 +1,59 @@
 /// componentsには各強連結成分がはいる
 /// componentsはトポロジカル順になっている
 pub struct Scc {
-    n: usize,
+    len: usize,
     graph: Vec<Vec<usize>>,
     rev_graph: Vec<Vec<usize>>,
     components: Vec<Vec<usize>>,
     component_ids: Vec<usize>,
-    has_solved: bool,
+    has_built: bool,
 }
 
 impl Scc {
     pub fn new(n: usize) -> Self {
         Self {
-            n,
+            len: n,
             graph: vec![vec![]; n],
             rev_graph: vec![vec![]; n],
             components: vec![],
             component_ids: vec![0; n],
-            has_solved: false,
+            has_built: false,
         }
     }
 
     pub fn add_edge(&mut self, u: usize, v: usize) {
-        debug_assert!(!self.has_solved);
-        debug_assert!(u < self.n);
-        debug_assert!(v < self.n);
+        debug_assert!(u < self.len);
+        debug_assert!(v < self.len);
         self.graph[u].push(v);
         self.rev_graph[v].push(u);
+        self.has_built = false;
     }
 
     pub fn num_components(&self) -> usize {
-        debug_assert!(self.has_solved);
+        debug_assert!(self.has_built);
         self.components.len()
     }
 
     pub fn component(&self, id: usize) -> &[usize] {
-        debug_assert!(self.has_solved);
+        debug_assert!(self.has_built);
         debug_assert!(id < self.components.len());
         &self.components[id]
     }
 
     pub fn components(&self) -> &[Vec<usize>] {
-        debug_assert!(self.has_solved);
+        debug_assert!(self.has_built);
         &self.components
     }
 
     pub fn solve(&mut self) {
-        debug_assert!(!self.has_solved);
-
-        self.has_solved = true;
+        self.components = vec![];
+        self.component_ids = vec![0; self.len];
+        self.has_built = true;
 
         let order = {
             let mut order = vec![];
-            let mut visited = vec![false; self.n];
-            for v in 0..self.n {
+            let mut visited = vec![false; self.len];
+            for v in 0..self.len {
                 if !visited[v] {
                     dfs(&self.graph, &mut visited, &mut order, v);
                 }
@@ -63,8 +63,8 @@ impl Scc {
 
         let mut component_id = 0;
 
-        let mut visited = vec![false; self.n];
-        for i in (0..self.n).rev() {
+        let mut visited = vec![false; self.len];
+        for i in (0..self.len).rev() {
             let v = order[i];
             if !visited[v] {
                 let mut rev_order = vec![];
