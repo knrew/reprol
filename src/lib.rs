@@ -10,7 +10,6 @@ pub mod math;
 pub mod matrix;
 pub mod modint;
 pub mod number_theory;
-pub mod potentialized_dsu;
 pub mod scanner;
 pub mod scc;
 pub mod segment_tree;
