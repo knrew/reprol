@@ -1,6 +1,6 @@
-use std::{cmp::Reverse, collections::BinaryHeap};
+use std::{cmp::Reverse, collections::BinaryHeap, ops::Add};
 
-pub struct Dijkstra {
+pub struct Dijkstra<T> {
     /// グラフの頂点の個数
     /// 頂点番号は0, 1, ..., len-1
     len: usize,
@@ -10,22 +10,30 @@ pub struct Dijkstra {
 
     /// costs[v]: 頂点startからvへの最短経路のコスト
     /// startから到達不可能である場合はNone
-    costs: Vec<Option<u64>>,
+    costs: Vec<Option<T>>,
 
     /// previous_vertices[v]: 最短経路においてvの直前に訪問する頂点
     previous_vertices: Vec<Option<usize>>,
 }
 
-impl Dijkstra {
+impl<T> Dijkstra<T>
+where
+    T: Copy + Ord + Add<Output = T>,
+{
     /// 隣接リストから最短経路を計算する
-    pub fn from_adjacencies(g: &[Vec<(usize, u64)>], start: usize) -> Self {
-        Dijkstra::from_mapping(g.len(), start, |&i| g[i].iter().copied())
+    pub fn from_adjacencies(g: &[Vec<(usize, T)>], start: usize, zero: T) -> Self {
+        Dijkstra::from_mapping(g.len(), start, zero, |&i| g[i].iter().copied())
     }
 
     /// 頂点を引数にとり隣接頂点リストのイテレータを返す関数neighborsを用いて最短経路を計算する
-    pub fn from_mapping<E>(len: usize, start: usize, mut neighbors: impl FnMut(&usize) -> E) -> Self
+    pub fn from_mapping<E>(
+        len: usize,
+        start: usize,
+        zero: T,
+        mut neighbors: impl FnMut(&usize) -> E,
+    ) -> Self
     where
-        E: Iterator<Item = (usize, u64)>,
+        E: Iterator<Item = (usize, T)>,
     {
         debug_assert!(start < len);
 
@@ -34,8 +42,8 @@ impl Dijkstra {
 
         let mut heap = BinaryHeap::new();
 
-        costs[start] = Some(0u64);
-        heap.push(Reverse((0, start)));
+        costs[start] = Some(zero);
+        heap.push(Reverse((zero, start)));
 
         while let Some(Reverse((cost, v))) = heap.pop() {
             if let Some(min_distance) = costs[v] {
@@ -45,7 +53,7 @@ impl Dijkstra {
             }
 
             for (nv, diff_cost) in neighbors(&v) {
-                let new_distance = cost.saturating_add(diff_cost);
+                let new_distance = cost + diff_cost;
 
                 if let Some(min_distance) = costs[nv] {
                     if min_distance <= new_distance {
@@ -75,11 +83,11 @@ impl Dijkstra {
         self.start
     }
 
-    pub fn costs(&self) -> &[Option<u64>] {
+    pub fn costs(&self) -> &[Option<T>] {
         &self.costs
     }
 
-    pub fn cost(&self, v: usize) -> Option<u64> {
+    pub fn cost(&self, v: usize) -> Option<T> {
         self.costs[v]
     }
 
@@ -116,17 +124,17 @@ mod tests {
             vec![(0, 1)],
             vec![],
         ];
-        let dijkstra = Dijkstra::from_adjacencies(&g, 0);
+        let dijkstra = Dijkstra::from_adjacencies(&g, 0, 0);
         let costs = dijkstra.costs().to_vec();
         assert_eq!(costs, vec![Some(0), Some(2), Some(5), None, Some(9)]);
 
         let g = vec![vec![(1, 2)], vec![(2, 3)], vec![], vec![(4, 1)], vec![]];
-        let dijkstra = Dijkstra::from_adjacencies(&g, 0);
+        let dijkstra = Dijkstra::from_adjacencies(&g, 0, 0);
         let costs = dijkstra.costs().to_vec();
         assert_eq!(costs, vec![Some(0), Some(2), Some(5), None, None]);
 
         let g = vec![vec![(1, 2)], vec![(2, 3)], vec![], vec![(4, 1)], vec![]];
-        let dijkstra = Dijkstra::from_adjacencies(&g, 0);
+        let dijkstra = Dijkstra::from_adjacencies(&g, 0, 0);
         let costs = dijkstra.costs().to_vec();
         assert_eq!(costs, vec![Some(0), Some(2), Some(5), None, None]);
 
@@ -136,12 +144,12 @@ mod tests {
             vec![(1, 1), (3, 4)],
             vec![],
         ];
-        let dijkstra = Dijkstra::from_adjacencies(&g, 0);
+        let dijkstra = Dijkstra::from_adjacencies(&g, 0, 0);
         let costs = dijkstra.costs().to_vec();
         assert_eq!(costs, vec![Some(0), Some(2), Some(1), Some(4)]);
 
         let g = vec![vec![(1, 1)], vec![(2, 1)], vec![(0, 1)]];
-        let dijkstra = Dijkstra::from_adjacencies(&g, 0);
+        let dijkstra = Dijkstra::from_adjacencies(&g, 0, 0);
         let costs = dijkstra.costs().to_vec();
         assert_eq!(costs, vec![Some(0), Some(1), Some(2)]);
 
@@ -152,7 +160,7 @@ mod tests {
             vec![(4, 2)],
             vec![],
         ];
-        let dijkstra = Dijkstra::from_adjacencies(&g, 0);
+        let dijkstra = Dijkstra::from_adjacencies(&g, 0, 0);
         let costs = dijkstra.costs().to_vec();
         assert_eq!(costs, vec![Some(0), Some(2), Some(4), Some(3), Some(5)]);
 
@@ -163,16 +171,16 @@ mod tests {
             vec![(0, 1)],
             vec![],
         ];
-        let dijkstra = Dijkstra::from_adjacencies(&g, 1);
+        let dijkstra = Dijkstra::from_adjacencies(&g, 1, 0);
         let costs = dijkstra.costs().to_vec();
         assert_eq!(costs, vec![None, Some(0), Some(3), None, Some(7)]);
-        let dijkstra = Dijkstra::from_adjacencies(&g, 2);
+        let dijkstra = Dijkstra::from_adjacencies(&g, 2, 0);
         let costs = dijkstra.costs().to_vec();
         assert_eq!(costs, vec![None, None, Some(0), None, Some(4)]);
-        let dijkstra = Dijkstra::from_adjacencies(&g, 3);
+        let dijkstra = Dijkstra::from_adjacencies(&g, 3, 0);
         let costs = dijkstra.costs().to_vec();
         assert_eq!(costs, vec![Some(1), Some(3), Some(6), Some(0), Some(10)]);
-        let dijkstra = Dijkstra::from_adjacencies(&g, 4);
+        let dijkstra = Dijkstra::from_adjacencies(&g, 4, 0);
         let costs = dijkstra.costs().to_vec();
         assert_eq!(costs, vec![None, None, None, None, Some(0)]);
     }
