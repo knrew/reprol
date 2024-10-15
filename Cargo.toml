@@ -1,13 +1,9 @@
 [package]
-name = "rewac"
+name = "reprol"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-# itertools = "0.13.0"
-# petgraph = "0.6.5"
-# proconio = { version = "0.5.0", features = ["derive"] }
 rand = "0.8.5"
-# superslice = "1.0.0"

@@ -89,7 +89,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "rewac"
+name = "reprol"
 version = "0.1.0"
 dependencies = [
  "rand",
