@@ -129,7 +129,7 @@ impl Dsu {
 
 #[cfg(test)]
 mod tests {
-    use crate::dsu::Dsu;
+    use super::Dsu;
 
     #[test]
     fn test_dsu() {

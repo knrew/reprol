@@ -43,7 +43,7 @@ pub fn topological_sort(graph: &[Vec<usize>]) -> Option<Vec<usize>> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::topological_sort;
 
     #[test]
     fn test_topological_sort() {

@@ -29,7 +29,7 @@ impl<T: Ord> LowerBound for [T] {
 
 #[cfg(test)]
 mod tests {
-    use crate::bisect::LowerBound;
+    use super::LowerBound;
 
     #[test]
     fn test_lower_bound() {

@@ -93,7 +93,7 @@ impl LinearSieve {
 
 #[cfg(test)]
 mod tests {
-    use crate::linear_sieve::LinearSieve;
+    use super::LinearSieve;
 
     #[test]
     fn test_is_prime() {

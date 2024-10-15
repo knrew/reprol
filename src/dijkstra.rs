@@ -105,7 +105,7 @@ impl Dijkstra {
 
 #[cfg(test)]
 mod tests {
-    use crate::dijkstra::Dijkstra;
+    use super::Dijkstra;
 
     #[test]
     fn test_dijkstra() {

@@ -54,7 +54,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::matrix::{rotate_anticlockwise, rotate_clockwise, transpose};
+    use super::{rotate_anticlockwise, rotate_clockwise, transpose};
 
     #[test]
     fn test_rotate() {

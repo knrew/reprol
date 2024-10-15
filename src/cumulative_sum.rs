@@ -123,7 +123,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{CumulativeSum1D, CumulativeSum2D};
     use rand::Rng;
 
     #[test]

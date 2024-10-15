@@ -194,7 +194,7 @@ pub type ModInt1000000007 = ModInt<1000000007>;
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{inv_mod, ModInt};
 
     const P1: u64 = 998244353;
     const P2: u64 = 1000000007;
