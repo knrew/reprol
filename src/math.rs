@@ -1,33 +1,18 @@
 use crate::integer::Integer;
 
 /// x/yをする 小数点以下切り上げ
+/// NOTE:負のときは未定義
 pub fn ceil_div<T: Integer>(x: T, y: T) -> T {
+    debug_assert!(x >= T::ZERO);
+    debug_assert!(y >= T::ONE);
     (x + y - T::ONE) / y
-}
-
-pub fn gcd<T: Integer>(m: T, n: T) -> T {
-    if n == T::ZERO {
-        abs(m)
-    } else {
-        gcd(n, m % n)
-    }
-}
-
-pub fn lcm<T: Integer>(m: T, n: T) -> T {
-    abs(m) / gcd(m, n) * abs(n)
-}
-
-#[inline]
-fn abs<T: Integer>(n: T) -> T {
-    if n < T::ZERO {
-        T::ZERO - n
-    } else {
-        n
-    }
 }
 
 /// 繰り返し二乗法による冪乗の計算
 pub fn pow<T: Integer>(mut base: T, mut exp: T) -> T {
+    debug_assert!(base >= T::ZERO);
+    debug_assert!(exp >= T::ZERO);
+
     if exp == T::ZERO {
         return T::ONE;
     }
@@ -48,45 +33,29 @@ pub fn pow<T: Integer>(mut base: T, mut exp: T) -> T {
 
 #[cfg(test)]
 mod tests {
-    use crate::math::{gcd, lcm};
+    use super::{ceil_div, pow};
 
     #[test]
-    fn test_gcd() {
-        assert_eq!(gcd(48, 18), 6);
-        assert_eq!(gcd(54, 24), 6);
-        assert_eq!(gcd(101, 103), 1);
-        assert_eq!(gcd(0, 10), 10);
-        assert_eq!(gcd(10, 0), 10);
-        assert_eq!(gcd(0, 0), 0);
-        assert_eq!(gcd(48u32, 18u32), 6);
-        assert_eq!(gcd(54u64, 24u64), 6);
-        assert_eq!(gcd(-48, -18), 6);
-        assert_eq!(gcd(-54, 24), 6);
-        assert_eq!(gcd(-101, -103), 1);
-        assert_eq!(
-            gcd(1_000_000_000_000_000_000u128, 500_000_000_000_000_000u128),
-            500_000_000_000_000_000u128
-        );
-        assert_eq!(gcd(42, 42), 42);
-        assert_eq!(gcd(-42, -42), 42);
+    fn test_ceil_div() {
+        assert_eq!(ceil_div(10, 2), 5);
+        assert_eq!(ceil_div(100, 5), 20);
+        assert_eq!(ceil_div(10, 3), 4);
+        assert_eq!(ceil_div(7, 2), 4);
+        assert_eq!(ceil_div(15, 1), 15);
+        assert_eq!(ceil_div(0, 1), 0);
+        assert_eq!(ceil_div(0, 5), 0);
+        assert_eq!(ceil_div(0, 100), 0);
     }
 
     #[test]
-    fn test_lcm() {
-        assert_eq!(lcm(4, 5), 20);
-        assert_eq!(lcm(6, 8), 24);
-        assert_eq!(lcm(7, 3), 21);
-        assert_eq!(lcm(10, 15), 30);
-        assert_eq!(lcm(7u32, 3u32), 21);
-        assert_eq!(lcm(9u64, 6u64), 18);
-        assert_eq!(lcm(-4, 5), 20);
-        assert_eq!(lcm(-6, -8), 24);
-        assert_eq!(lcm(-7, 3), 21);
-        assert_eq!(
-            lcm(1_000_000_000_000_000_000u128, 500_000_000_000_000_000u128),
-            1_000_000_000_000_000_000u128
-        );
-        assert_eq!(lcm(42, 42), 42);
-        assert_eq!(lcm(-42, -42), 42);
+    fn test_pow() {
+        assert_eq!(pow(2, 3), 8);
+        assert_eq!(pow(5, 0), 1);
+        assert_eq!(pow(7, 1), 7);
+        assert_eq!(pow(3, 4), 81);
+        assert_eq!(pow(0, 5), 0);
+        assert_eq!(pow(0, 0), 1);
+        assert_eq!(pow(2, 30), 1073741824);
+        assert_eq!(pow(10, 9), 1000000000);
     }
 }

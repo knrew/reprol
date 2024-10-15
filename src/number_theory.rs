@@ -1,5 +1,26 @@
 use crate::integer::Integer;
 
+pub fn gcd<T: Integer>(m: T, n: T) -> T {
+    if n == T::ZERO {
+        abs(m)
+    } else {
+        gcd(n, m % n)
+    }
+}
+
+pub fn lcm<T: Integer>(m: T, n: T) -> T {
+    abs(m) / gcd(m, n) * abs(n)
+}
+
+#[inline]
+fn abs<T: Integer>(n: T) -> T {
+    if n < T::ZERO {
+        T::ZERO - n
+    } else {
+        n
+    }
+}
+
 pub fn is_prime<T: Integer>(n: T) -> bool {
     if n <= T::ONE {
         return false;
@@ -63,7 +84,47 @@ pub fn prime_factorize<T: Integer>(n: T) -> Vec<(T, usize)> {
 
 #[cfg(test)]
 mod tests {
-    use crate::number_theory::{enumerate_divisors, is_prime, prime_factorize};
+    use super::{enumerate_divisors, gcd, is_prime, lcm, prime_factorize};
+
+    #[test]
+    fn test_gcd() {
+        assert_eq!(gcd(48, 18), 6);
+        assert_eq!(gcd(54, 24), 6);
+        assert_eq!(gcd(101, 103), 1);
+        assert_eq!(gcd(0, 10), 10);
+        assert_eq!(gcd(10, 0), 10);
+        assert_eq!(gcd(0, 0), 0);
+        assert_eq!(gcd(48u32, 18u32), 6);
+        assert_eq!(gcd(54u64, 24u64), 6);
+        assert_eq!(gcd(-48, -18), 6);
+        assert_eq!(gcd(-54, 24), 6);
+        assert_eq!(gcd(-101, -103), 1);
+        assert_eq!(
+            gcd(1_000_000_000_000_000_000u128, 500_000_000_000_000_000u128),
+            500_000_000_000_000_000u128
+        );
+        assert_eq!(gcd(42, 42), 42);
+        assert_eq!(gcd(-42, -42), 42);
+    }
+
+    #[test]
+    fn test_lcm() {
+        assert_eq!(lcm(4, 5), 20);
+        assert_eq!(lcm(6, 8), 24);
+        assert_eq!(lcm(7, 3), 21);
+        assert_eq!(lcm(10, 15), 30);
+        assert_eq!(lcm(7u32, 3u32), 21);
+        assert_eq!(lcm(9u64, 6u64), 18);
+        assert_eq!(lcm(-4, 5), 20);
+        assert_eq!(lcm(-6, -8), 24);
+        assert_eq!(lcm(-7, 3), 21);
+        assert_eq!(
+            lcm(1_000_000_000_000_000_000u128, 500_000_000_000_000_000u128),
+            1_000_000_000_000_000_000u128
+        );
+        assert_eq!(lcm(42, 42), 42);
+        assert_eq!(lcm(-42, -42), 42);
+    }
 
     #[test]
     fn test_is_prime() {
@@ -90,16 +151,16 @@ mod tests {
     #[test]
     fn test_enumerate_divisors() {
         let test_cases = [
-            (1u64, vec![1]),                                 // 1
-            (2u64, vec![1, 2]),                              // 1, 2
-            (3u64, vec![1, 3]),                              // 1, 3
-            (4u64, vec![1, 2, 4]),                           // 1, 2, 4
-            (6u64, vec![1, 2, 3, 6]),                        // 1, 2, 3, 6
-            (12u64, vec![1, 2, 3, 4, 6, 12]),                // 1, 2, 3, 4, 6, 12
-            (28u64, vec![1, 2, 4, 7, 14, 28]),               // 1, 2, 4, 7, 14, 28
-            (36u64, vec![1, 2, 3, 4, 6, 9, 12, 18, 36]),     // 1, 2, 3, 4, 6, 9, 12, 18, 36
-            (49u64, vec![1, 7, 49]),                         // 1, 7, 49
-            (100u64, vec![1, 2, 4, 5, 10, 20, 25, 50, 100]), // 1, 2, 4, 5, 10, 20, 25, 50, 100
+            (1u64, vec![1]),
+            (2u64, vec![1, 2]),
+            (3u64, vec![1, 3]),
+            (4u64, vec![1, 2, 4]),
+            (6u64, vec![1, 2, 3, 6]),
+            (12u64, vec![1, 2, 3, 4, 6, 12]),
+            (28u64, vec![1, 2, 4, 7, 14, 28]),
+            (36u64, vec![1, 2, 3, 4, 6, 9, 12, 18, 36]),
+            (49u64, vec![1, 7, 49]),
+            (100u64, vec![1, 2, 4, 5, 10, 20, 25, 50, 100]),
         ];
 
         for (n, expected) in test_cases {
@@ -112,14 +173,14 @@ mod tests {
     #[test]
     fn test_prime_factorize() {
         let test_cases = [
-            (1u64, vec![]),                                 // 1 = 1
-            (2u64, vec![(2u64, 1usize)]),                   // 2 = 2
-            (3u64, vec![(3u64, 1usize)]),                   // 3 = 3
-            (4u64, vec![(2u64, 2usize)]),                   // 4 = 2^2
-            (6u64, vec![(2u64, 1usize), (3u64, 1usize)]),   // 6 = 2 * 3
-            (8u64, vec![(2u64, 3usize)]),                   // 8 = 2^3
-            (12u64, vec![(2u64, 2usize), (3u64, 1usize)]),  // 12 = 2^2 * 3
-            (100u64, vec![(2u64, 2usize), (5u64, 2usize)]), // 100 = 2^2 * 5^2
+            (1u64, vec![]),
+            (2u64, vec![(2u64, 1usize)]),
+            (3u64, vec![(3u64, 1usize)]),
+            (4u64, vec![(2u64, 2usize)]),
+            (6u64, vec![(2u64, 1usize), (3u64, 1usize)]),
+            (8u64, vec![(2u64, 3usize)]),
+            (12u64, vec![(2u64, 2usize), (3u64, 1usize)]),
+            (100u64, vec![(2u64, 2usize), (5u64, 2usize)]),
             (
                 210u64,
                 vec![
@@ -128,9 +189,9 @@ mod tests {
                     (5u64, 1usize),
                     (7u64, 1usize),
                 ],
-            ), // 210 = 2 * 3 * 5 * 7
-            (1024u64, vec![(2u64, 10usize)]),               // 1024 = 2^10
-            (243, vec![(3u64, 5usize)]),                    // 243 = 3^5
+            ),
+            (1024u64, vec![(2u64, 10usize)]),
+            (243, vec![(3u64, 5usize)]),
         ];
 
         for (n, expected) in test_cases {
