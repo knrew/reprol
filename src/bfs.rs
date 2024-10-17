@@ -70,11 +70,14 @@ impl Bfs {
     }
 
     pub fn cost(&self, v: usize) -> Option<u64> {
+        debug_assert!(v < self.len);
         self.costs[v]
     }
 
     /// 頂点endへの最短経路を構築する
     pub fn construct_path(&self, end: usize) -> Option<Vec<usize>> {
+        debug_assert!(end < self.len);
+
         if self.costs[end].is_none() {
             return None;
         }

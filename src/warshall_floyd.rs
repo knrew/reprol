@@ -6,6 +6,12 @@ pub struct WarshallFloyd<T> {
 
     /// cost[u][v]: u->vの最小コスト
     costs: Vec<Vec<Option<T>>>,
+
+    /// previous_vertices[u][v]: u->vの最短経路においてvの直前の頂点
+    // previous_vertices: Vec<Vec<Option<usize>>>,
+
+    /// 0
+    zero: T,
 }
 
 impl<T> WarshallFloyd<T>
@@ -19,7 +25,12 @@ where
             costs[i][i] = Some(zero);
         }
 
-        Self { len, costs }
+        Self {
+            len,
+            costs,
+            // previous_vertices: vec![vec![None; len]; len],
+            zero,
+        }
     }
 
     fn add_edge(&mut self, u: usize, v: usize, c: T) {
@@ -81,9 +92,11 @@ where
                                 if z < x + y {
                                     z
                                 } else {
+                                    // self.previous_vertices[i][j] = self.previous_vertices[k][j];
                                     x + y
                                 }
                             } else {
+                                // self.previous_vertices[i][j] = self.previous_vertices[k][j];
                                 x + y
                             });
                         }
@@ -101,11 +114,36 @@ where
         &self.costs
     }
 
-    // u->vの最小コスト
+    /// u->vの最小コスト
     pub fn cost(&self, u: usize, v: usize) -> Option<T> {
         debug_assert!(u < self.len);
         debug_assert!(v < self.len);
         self.costs[u][v]
+    }
+
+    /// start->endへの最短経路を構築する
+    // pub fn construct_path(&self, start: usize, end: usize) -> Option<Vec<usize>> {
+    //     if self.costs[start][end].is_none() {
+    //         return None;
+    //     }
+
+    //     let mut res = vec![end];
+
+    //     while let Some(p) = self.previous_vertices[start][*res.last().unwrap()] {
+    //         res.push(p);
+    //         if p == start {
+    //             break;
+    //         }
+    //     }
+
+    //     res.reverse();
+
+    //     Some(res)
+    // }
+
+    /// 負の閉路が存在するか
+    pub fn has_negative_cycle(&self) -> bool {
+        (0..self.len).any(|v| self.costs[v][v].unwrap() < self.zero)
     }
 }
 
