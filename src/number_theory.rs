@@ -1,129 +1,186 @@
-use crate::integer::Integer;
-
-pub fn gcd<T: Integer>(m: T, n: T) -> T {
-    if n == T::ZERO {
-        abs(m)
-    } else {
-        gcd(n, m % n)
-    }
+pub trait Gcd {
+    fn gcd(self, rhs: Self) -> Self;
+    fn lcm(self, rhs: Self) -> Self;
 }
 
-pub fn lcm<T: Integer>(m: T, n: T) -> T {
-    abs(m) / gcd(m, n) * abs(n)
-}
+macro_rules! impl_signed {
+    ($($ty:ident),*) => {$(
+        impl Gcd for $ty {
+            fn gcd(self, rhs: Self) -> Self {
+                if rhs == 0 {
+                    self.abs()
+                } else {
+                    rhs.gcd(self % rhs)
+                }
+            }
 
-#[inline]
-fn abs<T: Integer>(n: T) -> T {
-    if n < T::ZERO {
-        T::ZERO - n
-    } else {
-        n
-    }
-}
-
-pub fn is_prime<T: Integer>(n: T) -> bool {
-    if n <= T::ONE {
-        return false;
-    }
-
-    let mut i = T::TWO;
-    while i * i <= n {
-        if n % i == T::ZERO {
-            return false;
-        }
-        i = i + T::ONE;
-    }
-
-    true
-}
-
-/// NOTE: 出力はソートされていないので必要ならソートすること
-pub fn enumerate_divisors<T: Integer>(n: T) -> Vec<T> {
-    let mut divisors = vec![];
-
-    let mut i = T::ONE;
-    while i * i <= n {
-        if n % i == T::ZERO {
-            divisors.push(i);
-            if n / i != i {
-                divisors.push(n / i);
+            fn lcm(self, rhs: Self) -> Self {
+                self.abs() / self.gcd(rhs) * rhs.abs()
             }
         }
-        i = i + T::ONE;
-    }
-
-    divisors
+    )*};
 }
 
-pub fn prime_factorize<T: Integer>(n: T) -> Vec<(T, usize)> {
-    let mut n = n;
+impl_signed! { i8, i16, i32, i64, i128, isize }
 
-    let mut factors = vec![];
+macro_rules! impl_unsigned {
+    ($($ty:ident),*) => {$(
+        impl Gcd for $ty {
+            fn gcd(self, rhs: Self) -> Self {
+                if rhs == 0 {
+                    self
+                } else {
+                    Self::gcd(rhs, self % rhs)
+                }
+            }
 
-    let mut i = T::TWO;
-    while i * i <= n {
-        let mut ex = 0;
-        while n % i == T::ZERO {
-            ex += 1;
-            n = n / i;
+            fn lcm(self, rhs: Self) -> Self {
+                self / self.gcd(rhs) * rhs
+            }
         }
-
-        if ex != 0 {
-            factors.push((i, ex));
-        }
-
-        i = i + T::ONE;
-    }
-
-    if n != T::ONE {
-        factors.push((n, 1));
-    }
-
-    factors
+    )*};
 }
+
+impl_unsigned! { u8, u16, u32, u64, u128, usize }
+
+pub trait NumberTheory: Sized {
+    fn is_prime(self) -> bool;
+
+    /// 約数を列挙する
+    /// NOTE: 出力はソートされていないので必要ならソートすること
+    fn divisors(self) -> Vec<Self>;
+
+    /// 素因数分解する
+    fn factors(self) -> Vec<(Self, u64)>;
+}
+
+macro_rules! impl_integer {
+    ($($ty:ident),*) => {$(
+        impl NumberTheory for $ty {
+            fn is_prime(self) -> bool {
+                if self <= 1 {
+                    return false;
+                }
+                (2..).take_while(|i| i * i <= self).all(|i| self % i != 0)
+            }
+
+            fn divisors(self) -> Vec<Self> {
+                let n = self;
+                (1..)
+                    .take_while(|i| i * i <= n)
+                    .filter(|i| n % i == 0)
+                    .flat_map(|i| if n / i == i { vec![i] } else { vec![i, n / i] }.into_iter())
+                    .collect()
+            }
+
+            fn factors(self) -> Vec<(Self, u64)> {
+                let mut n = self;
+
+                let mut factors = vec![];
+
+                let mut i = 2;
+                while i * i <= n {
+                    let mut ex = 0;
+                    while n % i == 0 {
+                        ex += 1;
+                        n = n / i;
+                    }
+
+                    if ex != 0 {
+                        factors.push((i, ex));
+                    }
+
+                    i = i + 1;
+                }
+
+                if n != 1 {
+                    factors.push((n, 1));
+                }
+
+                factors
+            }
+        }
+    )*};
+}
+
+impl_integer! { u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize }
 
 #[cfg(test)]
 mod tests {
-    use super::{enumerate_divisors, gcd, is_prime, lcm, prime_factorize};
+    use super::{Gcd, NumberTheory};
 
     #[test]
     fn test_gcd() {
-        assert_eq!(gcd(48, 18), 6);
-        assert_eq!(gcd(54, 24), 6);
-        assert_eq!(gcd(101, 103), 1);
-        assert_eq!(gcd(0, 10), 10);
-        assert_eq!(gcd(10, 0), 10);
-        assert_eq!(gcd(0, 0), 0);
-        assert_eq!(gcd(48u32, 18u32), 6);
-        assert_eq!(gcd(54u64, 24u64), 6);
-        assert_eq!(gcd(-48, -18), 6);
-        assert_eq!(gcd(-54, 24), 6);
-        assert_eq!(gcd(-101, -103), 1);
-        assert_eq!(
-            gcd(1_000_000_000_000_000_000u128, 500_000_000_000_000_000u128),
-            500_000_000_000_000_000u128
-        );
-        assert_eq!(gcd(42, 42), 42);
-        assert_eq!(gcd(-42, -42), 42);
+        let testcases = vec![
+            ((48u64, 18), 6),
+            ((54, 24), 6),
+            ((101, 103), 1),
+            ((0, 10), 10),
+            ((10, 0), 10),
+            ((0, 0), 0),
+            ((48, 18), 6),
+            ((54, 24), 6),
+            ((42, 42), 42),
+        ];
+
+        for &((m, n), answer) in &testcases {
+            assert_eq!(m.gcd(n), answer);
+        }
+
+        let testcases = vec![
+            ((-48, -18), 6),
+            ((-54, 24), 6),
+            ((-101, -103), 1),
+            ((-42, -42), 42),
+        ];
+
+        for &((m, n), answer) in &testcases {
+            assert_eq!(m.gcd(n), answer);
+        }
+
+        let testcases = vec![(
+            (1_000_000_000_000_000_000u128, 500_000_000_000_000_000u128),
+            500_000_000_000_000_000u128,
+        )];
+
+        for &((m, n), answer) in &testcases {
+            assert_eq!(m.gcd(n), answer);
+        }
     }
 
     #[test]
     fn test_lcm() {
-        assert_eq!(lcm(4, 5), 20);
-        assert_eq!(lcm(6, 8), 24);
-        assert_eq!(lcm(7, 3), 21);
-        assert_eq!(lcm(10, 15), 30);
-        assert_eq!(lcm(7u32, 3u32), 21);
-        assert_eq!(lcm(9u64, 6u64), 18);
-        assert_eq!(lcm(-4, 5), 20);
-        assert_eq!(lcm(-6, -8), 24);
-        assert_eq!(lcm(-7, 3), 21);
-        assert_eq!(
-            lcm(1_000_000_000_000_000_000u128, 500_000_000_000_000_000u128),
-            1_000_000_000_000_000_000u128
-        );
-        assert_eq!(lcm(42, 42), 42);
-        assert_eq!(lcm(-42, -42), 42);
+        let testcases = vec![
+            ((4, 5), 20),
+            ((6, 8), 24),
+            ((7, 3), 21),
+            ((10, 15), 30),
+            ((7, 3), 21),
+            ((9, 6), 18),
+            ((42, 42), 42),
+        ];
+
+        for &((m, n), answer) in &testcases {
+            assert_eq!(m.lcm(n), answer);
+        }
+
+        let testcases = vec![
+            ((-4, 5), 20),
+            ((-6, -8), 24),
+            ((-7, 3), 21),
+            ((-42, -42), 42),
+        ];
+        for &((m, n), answer) in &testcases {
+            assert_eq!(m.lcm(n), answer);
+        }
+
+        let testcases = vec![(
+            (1_000_000_000_000_000_000u128, 500_000_000_000_000_000u128),
+            1_000_000_000_000_000_000u128,
+        )];
+        for &((m, n), answer) in &testcases {
+            assert_eq!(m.lcm(n), answer);
+        }
     }
 
     #[test]
@@ -144,7 +201,7 @@ mod tests {
         ];
 
         for (n, ans) in test_cases {
-            assert_eq!(is_prime(n), ans);
+            assert_eq!(n.is_prime(), ans);
         }
     }
 
@@ -164,7 +221,7 @@ mod tests {
         ];
 
         for (n, expected) in test_cases {
-            let mut result = enumerate_divisors(n);
+            let mut result = n.divisors();
             result.sort_unstable();
             assert_eq!(result, expected);
         }
@@ -174,28 +231,20 @@ mod tests {
     fn test_prime_factorize() {
         let test_cases = [
             (1u64, vec![]),
-            (2u64, vec![(2u64, 1usize)]),
-            (3u64, vec![(3u64, 1usize)]),
-            (4u64, vec![(2u64, 2usize)]),
-            (6u64, vec![(2u64, 1usize), (3u64, 1usize)]),
-            (8u64, vec![(2u64, 3usize)]),
-            (12u64, vec![(2u64, 2usize), (3u64, 1usize)]),
-            (100u64, vec![(2u64, 2usize), (5u64, 2usize)]),
-            (
-                210u64,
-                vec![
-                    (2u64, 1usize),
-                    (3u64, 1usize),
-                    (5u64, 1usize),
-                    (7u64, 1usize),
-                ],
-            ),
-            (1024u64, vec![(2u64, 10usize)]),
-            (243, vec![(3u64, 5usize)]),
+            (2u64, vec![(2u64, 1)]),
+            (3u64, vec![(3u64, 1)]),
+            (4u64, vec![(2u64, 2)]),
+            (6u64, vec![(2u64, 1), (3u64, 1)]),
+            (8u64, vec![(2u64, 3)]),
+            (12u64, vec![(2u64, 2), (3u64, 1)]),
+            (100u64, vec![(2u64, 2), (5u64, 2)]),
+            (210u64, vec![(2u64, 1), (3u64, 1), (5u64, 1), (7u64, 1)]),
+            (1024u64, vec![(2u64, 10)]),
+            (243, vec![(3u64, 5)]),
         ];
 
         for (n, expected) in test_cases {
-            assert_eq!(prime_factorize(n), expected);
+            assert_eq!(n.factors(), expected);
         }
     }
 }

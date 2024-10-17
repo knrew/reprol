@@ -5,6 +5,82 @@ use std::{
     ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
 };
 
+/// 法pにおける逆元を計算する
+pub trait InvMod {
+    fn inv_mod(self, p: Self) -> Self;
+}
+
+macro_rules! impl_signed {
+    ($($ty:ident),*) => {$(
+        impl InvMod for $ty {
+            fn inv_mod(self, p: Self) -> Self {
+                debug_assert!(self > 0);
+                debug_assert!(p > 0);
+                if self == 1 {
+                    return 1;
+                }
+                p + (1 - p * (p % self).inv_mod(self)) / self
+            }
+        }
+    )*};
+}
+
+impl_signed! { i8, i16, i32, i64, i128, isize }
+
+macro_rules! impl_unsigned {
+    ($($ty:ident),*) => {$(
+        impl InvMod for $ty {
+            fn inv_mod(self, p: Self) -> Self {
+                (self as i64).inv_mod(p as i64) as $ty
+            }
+        }
+    )*};
+}
+
+impl_unsigned! { u8, u16, u32, u64, usize }
+
+impl InvMod for u128 {
+    fn inv_mod(self, p: Self) -> Self {
+        (self as i128).inv_mod(p as i128) as u128
+    }
+}
+
+pub trait PowMod {
+    fn pow_mod(self, exp: Self, p: Self) -> Self;
+}
+
+macro_rules! impl_integer {
+    ($($ty:ident),*) => {$(
+        impl PowMod for $ty {
+            #[allow(unused_comparisons)]
+            fn pow_mod(self, mut exp: Self, p: Self) -> Self {
+                debug_assert!(self >= 0);
+                debug_assert!(exp >= 0);
+                debug_assert!(p >= 0);
+
+                if p == 1 {
+                    return 0;
+                }
+
+                let mut res = 1;
+                let mut base = self % p;
+
+                while exp > 0 {
+                    if exp & 1 == 1 {
+                        res = res * base % p;
+                    }
+                    base = base * base % p;
+                    exp >>= 1;
+                }
+
+                res
+            }
+        }
+    )*};
+}
+
+impl_integer! { u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize }
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct ModInt<const P: u64> {
     value: u64,
@@ -19,35 +95,17 @@ impl<const P: u64> ModInt<P> {
         self.value
     }
 
-    pub fn pow(&self, mut exp: u64) -> Self {
-        let mut res = Self::new(1);
-        let mut base = *self;
-
-        while exp > 0 {
-            if exp & 1 == 1 {
-                res *= base;
-            }
-            base *= base;
-            exp >>= 1;
-        }
-
-        res
-    }
-
-    pub const fn inv(&self) -> Self {
+    pub fn pow(&self, exp: u64) -> Self {
         Self {
-            value: inv_mod(self.value as i64, P as i64) as u64,
+            value: self.value.pow_mod(exp, P),
         }
     }
-}
 
-const fn inv_mod(x: i64, p: i64) -> i64 {
-    debug_assert!(x > 0);
-    debug_assert!(p > 0);
-    if x == 1 {
-        return 1;
+    pub fn inv(&self) -> Self {
+        Self {
+            value: self.value.inv_mod(P),
+        }
     }
-    p + (1 - p * inv_mod(p % x, x)) / x
 }
 
 impl<const P: u64> Add for ModInt<P> {
@@ -194,7 +252,7 @@ pub type ModInt1000000007 = ModInt<1000000007>;
 
 #[cfg(test)]
 mod tests {
-    use super::{inv_mod, ModInt};
+    use super::{InvMod, ModInt};
 
     const P1: u64 = 998244353;
     const P2: u64 = 1000000007;
@@ -208,13 +266,13 @@ mod tests {
 
         let p1: i64 = P1 as i64;
         for &a in &test_cases {
-            let a_inv = inv_mod(a, p1);
+            let a_inv = a.inv_mod(p1);
             assert_eq!((a % p1 * a_inv % p1), 1);
         }
 
         let p2 = P2 as i64;
         for &a in &test_cases {
-            let a_inv = inv_mod(a, p2);
+            let a_inv = a.inv_mod(p2);
             assert_eq!((a % p2 * a_inv % p2), 1);
         }
     }
@@ -319,14 +377,14 @@ mod tests {
         ];
 
         for &(x, y) in &test_cases {
-            let answer = (x % P1 * inv_mod(y as i64, P1 as i64) as u64) % P1;
+            let answer = (x % P1 * y.inv_mod(P1)) % P1;
             let x_mod = ModInt::<P1>::new(x);
             let y_mod = ModInt::<P1>::new(y);
             assert_eq!((x_mod / y_mod).value(), answer);
         }
 
         for &(x, y) in &test_cases {
-            let answer = (x % P2 * inv_mod(y as i64, P2 as i64) as u64) % P2;
+            let answer = (x % P2 * y.inv_mod(P2)) % P2;
             let x_mod = ModInt::<P2>::new(x);
             let y_mod = ModInt::<P2>::new(y);
             assert_eq!((x_mod / y_mod).value(), answer);

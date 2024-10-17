@@ -1,4 +1,4 @@
-use crate::integer::Integer;
+use std::ops::Mul;
 
 pub struct LinearSieve {
     lpf: Vec<usize>,
@@ -8,7 +8,10 @@ pub struct LinearSieve {
 impl LinearSieve {
     const UNASSIGNED: usize = usize::MAX;
 
-    pub fn new<T: Integer>(n: T) -> Self {
+    pub fn new<T>(n: T) -> Self
+    where
+        T: Integer,
+    {
         let n = n.as_usize();
 
         let mut primes = vec![];
@@ -31,17 +34,23 @@ impl LinearSieve {
         Self { lpf, primes }
     }
 
-    pub fn primes_raw<T: Integer>(&self) -> &[usize] {
+    pub fn primes_usize(&self) -> &[usize] {
         &self.primes
     }
 
-    pub fn primes<T: Integer>(&self) -> Vec<T> {
+    pub fn primes<T>(&self) -> Vec<T>
+    where
+        T: Integer,
+    {
         self.primes.iter().map(|&p| T::from_usize(p)).collect()
     }
 
-    pub fn is_prime<T: Integer>(&self, x: T) -> bool {
+    pub fn is_prime<T>(&self, x: T) -> bool
+    where
+        T: Ord + Integer,
+    {
         debug_assert!(x.as_usize() < self.lpf.len());
-        if x <= T::ONE {
+        if x <= T::one() {
             false
         } else {
             let x = x.as_usize();
@@ -49,9 +58,12 @@ impl LinearSieve {
         }
     }
 
-    pub fn factorize<T: Integer>(&self, x: T) -> Vec<(T, usize)> {
+    pub fn factorize<T>(&self, x: T) -> Vec<(T, usize)>
+    where
+        T: Copy + Ord + Integer,
+    {
+        debug_assert!(x >= T::zero());
         debug_assert!(x.as_usize() < self.lpf.len());
-        debug_assert!(x >= T::ZERO);
 
         let mut x = x.as_usize();
 
@@ -70,18 +82,21 @@ impl LinearSieve {
         factors
     }
 
-    pub fn enumerate_divisors<T: Integer>(&self, x: T) -> Vec<T> {
+    pub fn enumerate_divisors<T>(&self, x: T) -> Vec<T>
+    where
+        T: Copy + Ord + Mul<Output = T> + Integer,
+    {
+        debug_assert!(x >= T::zero());
         debug_assert!(x.as_usize() < self.lpf.len());
-        debug_assert!(x >= T::ZERO);
 
-        let mut divisors = vec![T::ONE];
+        let mut divisors = vec![T::one()];
         let factors = self.factorize(x);
 
         for &(factor, ex) in &factors {
             for i in 0..divisors.len() {
-                let mut v = T::ONE;
+                let mut v = T::one();
                 for _ in 0..ex {
-                    v *= factor;
+                    v = v * factor;
                     divisors.push(divisors[i] * v);
                 }
             }
@@ -90,6 +105,36 @@ impl LinearSieve {
         divisors
     }
 }
+
+pub trait Integer {
+    fn zero() -> Self;
+    fn one() -> Self;
+    fn from_usize(x: usize) -> Self;
+    fn as_usize(&self) -> usize;
+}
+
+macro_rules! impl_integer {
+    ($($ty:ident),*) => {$(
+        impl Integer for $ty {
+            fn zero() -> Self {
+                0
+            }
+
+            fn one() -> Self{
+                1
+            }
+
+            fn from_usize(x: usize) -> Self {
+                x as $ty
+            }
+            fn as_usize(&self) -> usize {
+                *self as usize
+            }
+        }
+    )*};
+}
+
+impl_integer! { u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize }
 
 #[cfg(test)]
 mod tests {
@@ -124,16 +169,16 @@ mod tests {
         let sieve = LinearSieve::new(100);
 
         let test_cases = [
-            (1, vec![1]),                                 // 1
-            (2, vec![1, 2]),                              // 1, 2
-            (3, vec![1, 3]),                              // 1, 3
-            (4, vec![1, 2, 4]),                           // 1, 2, 4
-            (6, vec![1, 2, 3, 6]),                        // 1, 2, 3, 6
-            (12, vec![1, 2, 3, 4, 6, 12]),                // 1, 2, 3, 4, 6, 12
-            (28, vec![1, 2, 4, 7, 14, 28]),               // 1, 2, 4, 7, 14, 28
-            (36, vec![1, 2, 3, 4, 6, 9, 12, 18, 36]),     // 1, 2, 3, 4, 6, 9, 12, 18, 36
-            (49, vec![1, 7, 49]),                         // 1, 7, 49
-            (100, vec![1, 2, 4, 5, 10, 20, 25, 50, 100]), // 1, 2, 4, 5, 10, 20, 25, 50, 100
+            (1, vec![1]),
+            (2, vec![1, 2]),
+            (3, vec![1, 3]),
+            (4, vec![1, 2, 4]),
+            (6, vec![1, 2, 3, 6]),
+            (12, vec![1, 2, 3, 4, 6, 12]),
+            (28, vec![1, 2, 4, 7, 14, 28]),
+            (36, vec![1, 2, 3, 4, 6, 9, 12, 18, 36]),
+            (49, vec![1, 7, 49]),
+            (100, vec![1, 2, 4, 5, 10, 20, 25, 50, 100]),
         ];
 
         for (n, expected) in test_cases {
@@ -148,17 +193,17 @@ mod tests {
         let sieve = LinearSieve::new(1024);
 
         let test_cases = [
-            (1usize, vec![]),                            // 1 = 1
-            (2, vec![(2, 1)]),                           // 2 = 2
-            (3, vec![(3, 1)]),                           // 3 = 3
-            (4, vec![(2, 2)]),                           // 4 = 2^2
-            (6, vec![(2, 1), (3, 1)]),                   // 6 = 2 * 3
-            (8, vec![(2, 3)]),                           // 8 = 2^3
-            (12, vec![(2, 2), (3, 1)]),                  // 12 = 2^2 * 3
-            (100, vec![(2, 2), (5, 2)]),                 // 100 = 2^2 * 5^2
-            (210, vec![(2, 1), (3, 1), (5, 1), (7, 1)]), // 210 = 2 * 3 * 5 * 7
-            (1024, vec![(2, 10)]),                       // 1024 = 2^10
-            (243, vec![(3, 5)]),                         // 243 = 3^5
+            (1usize, vec![]),
+            (2, vec![(2, 1)]),
+            (3, vec![(3, 1)]),
+            (4, vec![(2, 2)]),
+            (6, vec![(2, 1), (3, 1)]),
+            (8, vec![(2, 3)]),
+            (12, vec![(2, 2), (3, 1)]),
+            (100, vec![(2, 2), (5, 2)]),
+            (210, vec![(2, 1), (3, 1), (5, 1), (7, 1)]),
+            (1024, vec![(2, 10)]),
+            (243, vec![(3, 5)]),
         ];
 
         for (n, expected) in test_cases {

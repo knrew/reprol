@@ -3,7 +3,6 @@ pub mod bisect;
 pub mod cumulative_sum;
 pub mod dijkstra;
 pub mod dsu;
-pub mod integer;
 pub mod lazy_segment_tree;
 pub mod linear_sieve;
 pub mod lowlink;
