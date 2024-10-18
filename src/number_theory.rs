@@ -78,9 +78,13 @@ macro_rules! impl_integer {
 
                 let mut factors = vec![];
 
-                let mut i = 2;
-                while i * i <= n {
+                for i in 2.. {
+                    if i * i > n {
+                        break;
+                    }
+
                     let mut ex = 0;
+
                     while n % i == 0 {
                         ex += 1;
                         n = n / i;
@@ -89,8 +93,6 @@ macro_rules! impl_integer {
                     if ex != 0 {
                         factors.push((i, ex));
                     }
-
-                    i = i + 1;
                 }
 
                 if n != 1 {

@@ -47,7 +47,7 @@ impl LinearSieve {
 
     pub fn is_prime<T>(&self, x: T) -> bool
     where
-        T: Ord + Integer,
+        T: Integer,
     {
         debug_assert!(x.as_usize() < self.lpf.len());
         if x <= T::one() {
@@ -60,7 +60,7 @@ impl LinearSieve {
 
     pub fn factorize<T>(&self, x: T) -> Vec<(T, usize)>
     where
-        T: Copy + Ord + Integer,
+        T: Integer,
     {
         debug_assert!(x >= T::zero());
         debug_assert!(x.as_usize() < self.lpf.len());
@@ -84,7 +84,7 @@ impl LinearSieve {
 
     pub fn enumerate_divisors<T>(&self, x: T) -> Vec<T>
     where
-        T: Copy + Ord + Mul<Output = T> + Integer,
+        T: Integer,
     {
         debug_assert!(x >= T::zero());
         debug_assert!(x.as_usize() < self.lpf.len());
@@ -106,11 +106,11 @@ impl LinearSieve {
     }
 }
 
-pub trait Integer {
+pub trait Integer: Copy + Ord + Mul<Output = Self> {
     fn zero() -> Self;
     fn one() -> Self;
     fn from_usize(x: usize) -> Self;
-    fn as_usize(&self) -> usize;
+    fn as_usize(self) -> usize;
 }
 
 macro_rules! impl_integer {
@@ -120,15 +120,16 @@ macro_rules! impl_integer {
                 0
             }
 
-            fn one() -> Self{
+            fn one() -> Self {
                 1
             }
 
             fn from_usize(x: usize) -> Self {
                 x as $ty
             }
-            fn as_usize(&self) -> usize {
-                *self as usize
+
+            fn as_usize(self) -> usize {
+                self as usize
             }
         }
     )*};

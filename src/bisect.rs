@@ -46,7 +46,7 @@ impl<T: Ord> LowerBound for [T] {
         if self.is_empty() {
             return 0;
         }
-        (0..self.len()).bisect(|&i| self.get(i).unwrap() < x)
+        (0..self.len()).bisect(|&i| &self[i] < x)
     }
 }
 
@@ -61,15 +61,13 @@ impl<T: Ord> UpperBound for [T] {
         if self.is_empty() {
             return 0;
         }
-        (0..self.len()).bisect(|&i| self.get(i).unwrap() <= x)
+        (0..self.len()).bisect(|&i| &self[i] <= x)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::bisect::UpperBound;
-
-    use super::LowerBound;
+    use super::{LowerBound, UpperBound};
 
     #[test]
     fn test_lower_bound_basic() {
