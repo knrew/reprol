@@ -10,6 +10,11 @@ pub trait Pow {
     fn pow_(self, exp: Self) -> Self;
 }
 
+/// 整数の桁数を計算する
+pub trait Digit {
+    fn digit(self) -> usize;
+}
+
 macro_rules! impl_integer {
     ($($ty:ident),*) => {$(
         impl DivCeil for $ty {
@@ -44,6 +49,21 @@ macro_rules! impl_integer {
                 res * base
             }
         }
+
+        impl Digit for $ty {
+            #[allow(unused_comparisons)]
+            fn digit(self) -> usize {
+                debug_assert!(self >= 0);
+                let mut x = self;
+                let mut res = 0;
+                while x > 0 {
+                    x /= 10;
+                    res += 1;
+                }
+                res
+            }
+        }
+
     )*};
 }
 
