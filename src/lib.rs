@@ -1,3 +1,4 @@
+pub mod action;
 pub mod bfs;
 pub mod bisect;
 pub mod cumulative_sum;
@@ -8,6 +9,7 @@ pub mod lowlink;
 pub mod math;
 pub mod matrix;
 pub mod modint;
+pub mod monoid;
 pub mod scanner;
 pub mod scc;
 pub mod segment_tree;

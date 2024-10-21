@@ -1,40 +1,33 @@
 use std::ops::{Bound, Range, RangeBounds};
 
-pub trait MonoidAction {
-    type Value;
-    type Operator;
-    fn identity(&self) -> Self::Value;
-    fn op(&self, x: &Self::Value, y: &Self::Value) -> Self::Value;
-    fn identity_operator(&self) -> Self::Operator;
-    fn map(&self, f: &Self::Operator, x: &Self::Value) -> Self::Value;
+use crate::{action::Action, monoid::Monoid};
 
-    /// gの方が後に作用する
-    fn compose(&self, g: &Self::Operator, f: &Self::Operator) -> Self::Operator;
-}
-
-pub struct LazySegmentTree<M>
+pub struct LazySegmentTree<M, A>
 where
-    M: MonoidAction,
+    M: Monoid,
+    A: Action<M>,
 {
     len: usize,
     offset: usize,
     log: u32,
     nodes: Vec<M::Value>,
-    lazy: Vec<M::Operator>,
+    lazy: Vec<A::Value>,
     monoid: M,
+    action: A,
 }
 
-impl<M> LazySegmentTree<M>
+impl<M, A> LazySegmentTree<M, A>
 where
-    M: MonoidAction,
+    M: Monoid,
     M::Value: Clone,
-    M::Operator: Clone + Eq,
+    A: Action<M>,
+    A::Value: Clone + Eq,
 {
-    pub fn new(len: usize, monoid: M) -> Self {
+    pub fn new(len: usize, monoid: M, action: A) -> Self {
         let offset = len.next_power_of_two();
         let log = offset.trailing_zeros();
         let nodes = vec![monoid.identity(); 2 * offset];
-        let lazy = vec![monoid.identity_operator(); 2 * offset];
+        let lazy = vec![action.identity(); 2 * offset];
         Self {
             len,
             offset,
@@ -42,6 +35,7 @@ where
             nodes,
             lazy,
             monoid,
+            action,
         }
     }
 
@@ -52,15 +46,15 @@ where
         &self.nodes[index]
     }
 
-    pub fn set(&mut self, index: usize, value: M::Value) {
+    pub fn set(&mut self, index: usize, value: &M::Value) {
         debug_assert!(index < self.len);
         let index = index + self.offset;
         self.push(index);
-        self.nodes[index] = value;
+        self.nodes[index] = value.clone();
         self.pull(index);
     }
 
-    pub fn apply<R: RangeBounds<usize>>(&mut self, range: R, f: &M::Operator) {
+    pub fn apply<R: RangeBounds<usize>>(&mut self, range: R, f: &A::Value) {
         let Range { start: l, end: r } = to_open(range, self.len);
 
         if l == r {
@@ -234,13 +228,13 @@ where
     }
 
     fn push_lazy(&mut self, k: usize) {
-        if self.lazy[k] == self.monoid.identity_operator() {
+        if self.lazy[k] == self.action.identity() {
             return;
         }
         let lzk = self.lazy[k].clone();
         self.apply_lazy(2 * k, &lzk);
         self.apply_lazy(2 * k + 1, &lzk);
-        self.lazy[k] = self.monoid.identity_operator();
+        self.lazy[k] = self.action.identity();
     }
 
     fn push(&mut self, k: usize) {
@@ -249,10 +243,10 @@ where
         }
     }
 
-    fn apply_lazy(&mut self, k: usize, f: &M::Operator) {
-        self.nodes[k] = self.monoid.map(f, &self.nodes[k]);
+    fn apply_lazy(&mut self, k: usize, f: &A::Value) {
+        self.nodes[k] = self.action.act(f, &self.nodes[k]);
         if k < self.offset {
-            self.lazy[k] = self.monoid.compose(f, &self.lazy[k]);
+            self.lazy[k] = self.action.op(f, &self.lazy[k]);
         }
     }
 }
@@ -274,14 +268,15 @@ fn to_open<R: RangeBounds<usize>>(range: R, n: usize) -> Range<usize> {
     l..r
 }
 
-impl<M> From<(&[M::Value], M)> for LazySegmentTree<M>
+impl<M, A> From<&[M::Value]> for LazySegmentTree<M, A>
 where
-    M: MonoidAction,
+    M: Monoid + Default,
     M::Value: Clone,
-    M::Operator: Clone + Eq,
+    A: Action<M> + Default,
+    A::Value: Clone + Eq,
 {
-    fn from((v, monoid): (&[M::Value], M)) -> Self {
-        let mut res = Self::new(v.len(), monoid);
+    fn from(v: &[M::Value]) -> Self {
+        let mut res = Self::new(v.len(), M::default(), A::default());
 
         for i in 0..res.len {
             res.nodes[i + res.offset] = v[i].clone();
@@ -295,35 +290,14 @@ where
     }
 }
 
-impl<M> From<(&Vec<M::Value>, M)> for LazySegmentTree<M>
+impl<M, A> From<&Vec<M::Value>> for LazySegmentTree<M, A>
 where
-    M: MonoidAction,
+    M: Monoid + Default,
     M::Value: Clone,
-    M::Operator: Clone + Eq,
-{
-    fn from((v, m): (&Vec<M::Value>, M)) -> Self {
-        Self::from((v.as_slice(), m))
-    }
-}
-
-impl<M> From<&[M::Value]> for LazySegmentTree<M>
-where
-    M: MonoidAction + Default,
-    M::Value: Clone,
-    M::Operator: Clone + Eq,
-{
-    fn from(v: &[M::Value]) -> Self {
-        Self::from((v, M::default()))
-    }
-}
-
-impl<M> From<&Vec<M::Value>> for LazySegmentTree<M>
-where
-    M: MonoidAction + Default,
-    M::Value: Clone,
-    M::Operator: Clone + Eq,
+    A: Action<M> + Default,
+    A::Value: Clone + Eq,
 {
     fn from(v: &Vec<M::Value>) -> Self {
-        Self::from((v, M::default()))
+        Self::from(v.as_slice())
     }
 }

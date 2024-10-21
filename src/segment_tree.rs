@@ -1,10 +1,6 @@
 use std::ops::{Bound, Range, RangeBounds};
 
-pub trait Monoid {
-    type Value;
-    fn identity(&self) -> Self::Value;
-    fn op(&self, x: &Self::Value, y: &Self::Value) -> Self::Value;
-}
+use crate::monoid::Monoid;
 
 pub struct SegmentTree<M>
 where
@@ -39,9 +35,9 @@ where
         self.nodes[k] = self.monoid.op(&self.nodes[k * 2], &self.nodes[k * 2 + 1]);
     }
 
-    pub fn set(&mut self, index: usize, value: M::Value) {
+    pub fn set(&mut self, index: usize, value: &M::Value) {
         let index = index + self.offset;
-        self.nodes[index] = value;
+        self.nodes[index] = value.clone();
         for i in 1..=self.log {
             self.update(index >> i)
         }
@@ -147,26 +143,6 @@ where
     }
 }
 
-impl<M> From<(&[M::Value], M)> for SegmentTree<M>
-where
-    M: Monoid,
-    M::Value: Clone,
-{
-    fn from((v, monoid): (&[M::Value], M)) -> Self {
-        let mut res = Self::new(v.len(), monoid);
-
-        for i in 0..res.len {
-            res.nodes[i + res.offset] = v[i].clone();
-        }
-
-        for i in (1..res.offset).rev() {
-            res.update(i)
-        }
-
-        res
-    }
-}
-
 /// ranageを区間[l, r)に変換する
 fn to_open<R: RangeBounds<usize>>(range: R, n: usize) -> Range<usize> {
     let l = match range.start_bound() {
@@ -184,23 +160,23 @@ fn to_open<R: RangeBounds<usize>>(range: R, n: usize) -> Range<usize> {
     l..r
 }
 
-impl<M> From<(&Vec<M::Value>, M)> for SegmentTree<M>
-where
-    M: Monoid,
-    M::Value: Clone,
-{
-    fn from((v, m): (&Vec<M::Value>, M)) -> Self {
-        SegmentTree::from((v.as_slice(), m))
-    }
-}
-
 impl<M> From<&[M::Value]> for SegmentTree<M>
 where
     M: Monoid + Default,
     M::Value: Clone,
 {
     fn from(v: &[M::Value]) -> Self {
-        Self::from((v, M::default()))
+        let mut res = Self::new(v.len(), M::default());
+
+        for i in 0..res.len {
+            res.nodes[i + res.offset] = v[i].clone();
+        }
+
+        for i in (1..res.offset).rev() {
+            res.update(i)
+        }
+
+        res
     }
 }
 
@@ -210,6 +186,6 @@ where
     M::Value: Clone,
 {
     fn from(v: &Vec<M::Value>) -> Self {
-        Self::from((v, M::default()))
+        Self::from(v.as_slice())
     }
 }
