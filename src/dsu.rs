@@ -1,4 +1,7 @@
-use std::ops::{Add, Neg, Sub};
+use std::{
+    mem::swap,
+    ops::{Add, Neg, Sub},
+};
 
 pub struct PotentializedDsu<T> {
     parents: Vec<usize>,
@@ -37,7 +40,8 @@ where
     }
 
     /// xが属するグループとyが属するグループを統合する
-    /// すでに決まっているポテンシャルと矛盾があればfalseを返す
+    /// potential[u]+w=potential[v]となるように頂点にポテンシャルを置く
+    /// 既存のポテンシャルと矛盾があれば，もとのポテンシャルを維持して返り値としてfalseを返す
     pub fn merge(&mut self, u: usize, v: usize, w: T) -> bool {
         debug_assert!(u < self.parents.len());
         debug_assert!(v < self.parents.len());
@@ -54,7 +58,7 @@ where
         self.num_components -= 1;
 
         if self.sizes[u] < self.sizes[v] {
-            (u, v) = (v, u);
+            swap(&mut u, &mut v);
             w = -w;
         }
 
@@ -79,12 +83,15 @@ where
         self.sizes[v]
     }
 
+    /// vに置かれたポテンシャル
     pub fn potential(&mut self, v: usize) -> T {
         debug_assert!(v < self.parents.len());
         let _ = self.find(v);
         self.potentials[v]
     }
 
+    /// uとvのポテンシャルの差
+    /// potential[v] - potential[u]
     pub fn difference_potential(&mut self, u: usize, v: usize) -> T {
         debug_assert!(u < self.parents.len());
         debug_assert!(v < self.parents.len());
