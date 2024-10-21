@@ -1,6 +1,6 @@
 use std::mem::swap;
 
-// LowLinkを用いて無向グラフの橋を検出する
+/// LowLinkを用いて無向グラフの橋を検出する
 pub struct LowLink {
     len: usize,
 

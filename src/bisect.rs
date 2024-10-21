@@ -72,7 +72,6 @@ mod tests {
     #[test]
     fn test_lower_bound_basic() {
         let v = vec![1, 3, 3, 5, 7, 9, 9, 9, 11, 13];
-
         assert_eq!(v.lower_bound(&0), 0);
         assert_eq!(v.lower_bound(&3), 1);
         assert_eq!(v.lower_bound(&9), 5);
@@ -94,32 +93,28 @@ mod tests {
         assert_eq!(v.lower_bound(&5), 5);
 
         let v = vec![1, 3, 5, 7, 9, 11, 13, 15, 17, 19];
-        let test_cases = vec![(5, 2), (6, 3), (1, 0), (19, 9), (0, 0), (20, 10)];
-        for (input, expected) in test_cases {
-            assert_eq!(v.lower_bound(&input), expected);
-        }
+        assert_eq!(v.lower_bound(&5), 2);
+        assert_eq!(v.lower_bound(&6), 3);
+        assert_eq!(v.lower_bound(&1), 0);
+        assert_eq!(v.lower_bound(&19), 9);
+        assert_eq!(v.lower_bound(&0), 0);
+        assert_eq!(v.lower_bound(&20), 10);
 
         let v = vec![
             2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40,
         ];
-        let test_cases = vec![
-            (10, 4),
-            (25, 12),
-            (0, 0),
-            (40, 19),
-            (41, 20),
-            (15, 7),
-            (5, 2),
-        ];
-        for (input, expected) in test_cases {
-            assert_eq!(v.lower_bound(&input), expected);
-        }
+        assert_eq!(v.lower_bound(&10), 4);
+        assert_eq!(v.lower_bound(&25), 12);
+        assert_eq!(v.lower_bound(&0), 0);
+        assert_eq!(v.lower_bound(&40), 19);
+        assert_eq!(v.lower_bound(&41), 20);
+        assert_eq!(v.lower_bound(&15), 7);
+        assert_eq!(v.lower_bound(&5), 2);
     }
 
     #[test]
     fn test_upper_bound() {
         let v = vec![1, 3, 3, 5, 7, 9, 9, 9, 11, 13];
-
         assert_eq!(v.upper_bound(&0), 0);
         assert_eq!(v.upper_bound(&3), 3);
         assert_eq!(v.upper_bound(&9), 8);

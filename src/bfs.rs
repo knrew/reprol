@@ -119,37 +119,51 @@ pub fn bfs_adjacencies(
     )
 }
 
+// TODO: パス復元のテストを書く
 #[cfg(test)]
 mod tests {
-
     use super::bfs_adjacencies;
 
     #[test]
     fn test_bfs() {
+        let start = 0;
         let graph = vec![vec![1], vec![2], vec![3], vec![]];
-        let answer = vec![Some(0), Some(1), Some(2), Some(3)];
-        let bfs = bfs_adjacencies(&graph, 0);
+        let expected = vec![Some(0), Some(1), Some(2), Some(3)];
+        let bfs = bfs_adjacencies(&graph, start);
         for v in 0..graph.len() {
-            assert_eq!(*bfs.cost(&v), answer[v]);
+            assert_eq!(*bfs.cost(&v), expected[v]);
         }
 
-        // let graph = vec![vec![1], vec![2], vec![], vec![4], vec![]];
-        // let costs = Bfs::from_adjacencies(&graph, 0).costs().to_vec();
-        // assert_eq!(costs, vec![Some(0), Some(1), Some(2), None, None]);
+        let start = 0;
+        let graph = vec![vec![1], vec![2], vec![], vec![4], vec![]];
+        let expected = vec![Some(0), Some(1), Some(2), None, None];
+        let bfs = bfs_adjacencies(&graph, start);
+        for v in 0..graph.len() {
+            assert_eq!(*bfs.cost(&v), expected[v]);
+        }
 
-        // let graph = vec![vec![1], vec![2], vec![0]];
-        // let costs = Bfs::from_adjacencies(&graph, 0).costs().to_vec();
-        // assert_eq!(costs, vec![Some(0), Some(1), Some(2)]);
+        let start = 0;
+        let graph = vec![vec![1], vec![2], vec![0]];
+        let expected = vec![Some(0), Some(1), Some(2)];
+        let bfs = bfs_adjacencies(&graph, start);
+        for v in 0..graph.len() {
+            assert_eq!(*bfs.cost(&v), expected[v]);
+        }
 
-        // let graph = vec![vec![1], vec![2], vec![3], vec![]];
-        // let costs = Bfs::from_adjacencies(&graph, 2).costs().to_vec();
-        // assert_eq!(costs, vec![None, None, Some(0), Some(1)]);
+        let start = 2;
+        let graph = vec![vec![1], vec![2], vec![3], vec![]];
+        let expected = vec![None, None, Some(0), Some(1)];
+        let bfs = bfs_adjacencies(&graph, start);
+        for v in 0..graph.len() {
+            assert_eq!(*bfs.cost(&v), expected[v]);
+        }
 
-        // let graph = vec![vec![1, 2], vec![3], vec![3, 4], vec![5], vec![5], vec![]];
-        // let costs = Bfs::from_adjacencies(&graph, 0).costs().to_vec();
-        // assert_eq!(
-        //     costs,
-        //     vec![Some(0), Some(1), Some(1), Some(2), Some(2), Some(3)]
-        // );
+        let start = 0;
+        let graph = vec![vec![1, 2], vec![3], vec![3, 4], vec![5], vec![5], vec![]];
+        let expected = vec![Some(0), Some(1), Some(1), Some(2), Some(2), Some(3)];
+        let bfs = bfs_adjacencies(&graph, start);
+        for v in 0..graph.len() {
+            assert_eq!(*bfs.cost(&v), expected[v]);
+        }
     }
 }

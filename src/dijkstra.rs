@@ -122,79 +122,132 @@ pub fn dijkstra_adjacencies(
     )
 }
 
+// TODO: パス復元のテストを書く
 #[cfg(test)]
 mod tests {
     use super::dijkstra_adjacencies;
 
     #[test]
     fn test_dijkstra() {
-        let g = vec![
-            vec![(1, 2)],
-            vec![(2, 3), (4, 9)],
-            vec![(4, 4)],
-            vec![(0, 1)],
-            vec![],
-        ];
-        let answer = vec![Some(0), Some(2), Some(5), None, Some(9)];
-        let dijkstra = dijkstra_adjacencies(&g, 0);
-        for v in 0..g.len() {
-            assert_eq!(*dijkstra.cost(&v), answer[v]);
+        fn costs(g: &[Vec<(usize, u64)>], start: usize) -> Vec<Option<u64>> {
+            let dijkstra = dijkstra_adjacencies(&g, start);
+            (0..g.len()).map(|v| dijkstra.cost(&v).clone()).collect()
         }
 
-        //         let g = vec![vec![(1, 2)], vec![(2, 3)], vec![], vec![(4, 1)], vec![]];
-        //         let dijkstra = Dijkstra::from_adjacencies(&g, 0, 0);
-        //         let costs = dijkstra.costs().to_vec();
-        //         assert_eq!(costs, vec![Some(0), Some(2), Some(5), None, None]);
+        // (graph, start, expected)
+        // test 6-10: グラフは同じ．startが異なる
+        let testcases = vec![
+            // test 1
+            (
+                vec![
+                    vec![(1, 2)],
+                    vec![(2, 3), (4, 9)],
+                    vec![(4, 4)],
+                    vec![(0, 1)],
+                    vec![],
+                ],
+                0,
+                vec![Some(0), Some(2), Some(5), None, Some(9)],
+            ),
+            // test 2
+            (
+                vec![vec![(1, 2)], vec![(2, 3)], vec![], vec![(4, 1)], vec![]],
+                0,
+                vec![Some(0), Some(2), Some(5), None, None],
+            ),
+            // test 3
+            (
+                vec![
+                    vec![(1, 10), (2, 1)],
+                    vec![(3, 2)],
+                    vec![(1, 1), (3, 4)],
+                    vec![],
+                ],
+                0,
+                vec![Some(0), Some(2), Some(1), Some(4)],
+            ),
+            // test 4
+            (
+                vec![vec![(1, 1)], vec![(2, 1)], vec![(0, 1)]],
+                0,
+                vec![Some(0), Some(1), Some(2)],
+            ),
+            // test 5
+            (
+                vec![
+                    vec![(1, 2), (2, 5)],
+                    vec![(2, 2), (3, 1)],
+                    vec![(3, 3), (4, 1)],
+                    vec![(4, 2)],
+                    vec![],
+                ],
+                0,
+                vec![Some(0), Some(2), Some(4), Some(3), Some(5)],
+            ),
+            // test 6
+            (
+                vec![
+                    vec![(1, 2)],
+                    vec![(2, 3), (4, 9)],
+                    vec![(4, 4)],
+                    vec![(0, 1)],
+                    vec![],
+                ],
+                0,
+                vec![Some(0), Some(2), Some(5), None, Some(9)],
+            ),
+            // test 7
+            (
+                vec![
+                    vec![(1, 2)],
+                    vec![(2, 3), (4, 9)],
+                    vec![(4, 4)],
+                    vec![(0, 1)],
+                    vec![],
+                ],
+                1,
+                vec![None, Some(0), Some(3), None, Some(7)],
+            ),
+            // test 8
+            (
+                vec![
+                    vec![(1, 2)],
+                    vec![(2, 3), (4, 9)],
+                    vec![(4, 4)],
+                    vec![(0, 1)],
+                    vec![],
+                ],
+                2,
+                vec![None, None, Some(0), None, Some(4)],
+            ),
+            // test 9
+            (
+                vec![
+                    vec![(1, 2)],
+                    vec![(2, 3), (4, 9)],
+                    vec![(4, 4)],
+                    vec![(0, 1)],
+                    vec![],
+                ],
+                3,
+                vec![Some(1), Some(3), Some(6), Some(0), Some(10)],
+            ),
+            // test 10
+            (
+                vec![
+                    vec![(1, 2)],
+                    vec![(2, 3), (4, 9)],
+                    vec![(4, 4)],
+                    vec![(0, 1)],
+                    vec![],
+                ],
+                4,
+                vec![None, None, None, None, Some(0)],
+            ),
+        ];
 
-        //         let g = vec![vec![(1, 2)], vec![(2, 3)], vec![], vec![(4, 1)], vec![]];
-        //         let dijkstra = Dijkstra::from_adjacencies(&g, 0, 0);
-        //         let costs = dijkstra.costs().to_vec();
-        //         assert_eq!(costs, vec![Some(0), Some(2), Some(5), None, None]);
-
-        //         let g = vec![
-        //             vec![(1, 10), (2, 1)],
-        //             vec![(3, 2)],
-        //             vec![(1, 1), (3, 4)],
-        //             vec![],
-        //         ];
-        //         let dijkstra = Dijkstra::from_adjacencies(&g, 0, 0);
-        //         let costs = dijkstra.costs().to_vec();
-        //         assert_eq!(costs, vec![Some(0), Some(2), Some(1), Some(4)]);
-
-        //         let g = vec![vec![(1, 1)], vec![(2, 1)], vec![(0, 1)]];
-        //         let dijkstra = Dijkstra::from_adjacencies(&g, 0, 0);
-        //         let costs = dijkstra.costs().to_vec();
-        //         assert_eq!(costs, vec![Some(0), Some(1), Some(2)]);
-
-        //         let g = vec![
-        //             vec![(1, 2), (2, 5)],
-        //             vec![(2, 2), (3, 1)],
-        //             vec![(3, 3), (4, 1)],
-        //             vec![(4, 2)],
-        //             vec![],
-        //         ];
-        //         let dijkstra = Dijkstra::from_adjacencies(&g, 0, 0);
-        //         let costs = dijkstra.costs().to_vec();
-        //         assert_eq!(costs, vec![Some(0), Some(2), Some(4), Some(3), Some(5)]);
-
-        //         let g = vec![
-        //             vec![(1, 2)],
-        //             vec![(2, 3), (4, 9)],
-        //             vec![(4, 4)],
-        //             vec![(0, 1)],
-        //             vec![],
-        //         ];
-        //         let dijkstra = Dijkstra::from_adjacencies(&g, 1, 0);
-        //         let costs = dijkstra.costs().to_vec();
-        //         assert_eq!(costs, vec![None, Some(0), Some(3), None, Some(7)]);
-        //         let dijkstra = Dijkstra::from_adjacencies(&g, 2, 0);
-        //         let costs = dijkstra.costs().to_vec();
-        //         assert_eq!(costs, vec![None, None, Some(0), None, Some(4)]);
-        //         let dijkstra = Dijkstra::from_adjacencies(&g, 3, 0);
-        //         let costs = dijkstra.costs().to_vec();
-        //         assert_eq!(costs, vec![Some(1), Some(3), Some(6), Some(0), Some(10)]);
-        //         let dijkstra = Dijkstra::from_adjacencies(&g, 4, 0);
-        //         let costs = dijkstra.costs().to_vec();
-        //         assert_eq!(costs, vec![None, None, None, None, Some(0)]);
+        for (g, start, expected) in testcases {
+            assert_eq!(costs(&g, start), expected);
+        }
     }
 }

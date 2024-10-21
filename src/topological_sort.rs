@@ -1,35 +1,35 @@
 use std::{cmp::Reverse, collections::BinaryHeap};
 
 /// トポロジカルソート
+/// 入力は隣接リスト表現のグラフ
 /// 辞書順最小の頂点番号配列を返す
 /// グラフが閉路を含む場合はNoneを返す
-/// https://zenn.dev/reputeless/books/standard-cpp-for-competitive-programming/viewer/topological-sort
 pub fn topological_sort(graph: &[Vec<usize>]) -> Option<Vec<usize>> {
-    let mut indegrees = vec![0; graph.len()];
+    let mut degrees = vec![0; graph.len()];
 
     for v in graph {
-        for &to in v {
-            indegrees[to] += 1;
+        for &nv in v {
+            degrees[nv] += 1;
         }
     }
 
     let mut heap = BinaryHeap::new();
 
     for i in 0..graph.len() {
-        if indegrees[i] == 0 {
+        if degrees[i] == 0 {
             heap.push(Reverse(i));
         }
     }
 
     let mut res = vec![];
 
-    while let Some(Reverse(from)) = heap.pop() {
-        res.push(from);
+    while let Some(Reverse(v)) = heap.pop() {
+        res.push(v);
 
-        for &to in &graph[from] {
-            indegrees[to] -= 1;
-            if indegrees[to] == 0 {
-                heap.push(Reverse(to));
+        for &nv in &graph[v] {
+            degrees[nv] -= 1;
+            if degrees[nv] == 0 {
+                heap.push(Reverse(nv));
             }
         }
     }
@@ -47,10 +47,21 @@ mod tests {
 
     #[test]
     fn test_topological_sort() {
-        let g = vec![vec![1], vec![2], vec![], vec![1, 4], vec![5], vec![2]];
-        assert_eq!(topological_sort(&g), Some(vec![0, 3, 1, 4, 5, 2]));
+        let test_cases = vec![
+            // test 1
+            (
+                vec![vec![1], vec![2], vec![], vec![1, 4], vec![5], vec![2]],
+                Some(vec![0, 3, 1, 4, 5, 2]),
+            ),
+            // test 2: 閉路が存在する場合
+            (
+                vec![vec![1], vec![2], vec![3], vec![1, 4], vec![5], vec![2]],
+                None,
+            ),
+        ];
 
-        let g = vec![vec![1], vec![2], vec![3], vec![1, 4], vec![5], vec![2]];
-        assert_eq!(topological_sort(&g), None);
+        for (g, expected) in test_cases {
+            assert_eq!(topological_sort(&g), expected);
+        }
     }
 }
