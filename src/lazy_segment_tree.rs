@@ -57,6 +57,9 @@ where
     pub fn apply<R: RangeBounds<usize>>(&mut self, range: R, f: &A::Value) {
         let Range { start: l, end: r } = to_open(range, self.len);
 
+        debug_assert!(l < self.len);
+        debug_assert!(r <= self.len);
+
         if l == r {
             return;
         }
@@ -103,6 +106,9 @@ where
     pub fn product<R: RangeBounds<usize>>(&mut self, range: R) -> M::Value {
         let Range { start: l, end: r } = to_open(range, self.len);
 
+        debug_assert!(l < self.len);
+        debug_assert!(r <= self.len);
+
         if l == r {
             return self.monoid.identity();
         }
@@ -131,6 +137,7 @@ where
                 r -= 1;
                 sum_right = self.monoid.op(&self.nodes[r], &sum_right)
             }
+
             l >>= 1;
             r >>= 1;
         }
@@ -298,6 +305,18 @@ where
     A::Value: Clone + Eq,
 {
     fn from(v: &Vec<M::Value>) -> Self {
+        Self::from(v.as_slice())
+    }
+}
+
+impl<M, A> From<Vec<M::Value>> for LazySegmentTree<M, A>
+where
+    M: Monoid + Default,
+    M::Value: Clone,
+    A: Action<M> + Default,
+    A::Value: Clone + Eq,
+{
+    fn from(v: Vec<M::Value>) -> Self {
         Self::from(v.as_slice())
     }
 }

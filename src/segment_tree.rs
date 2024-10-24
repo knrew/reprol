@@ -189,3 +189,13 @@ where
         Self::from(v.as_slice())
     }
 }
+
+impl<M> From<Vec<M::Value>> for SegmentTree<M>
+where
+    M: Monoid + Default,
+    M::Value: Clone,
+{
+    fn from(v: Vec<M::Value>) -> Self {
+        Self::from(v.as_slice())
+    }
+}

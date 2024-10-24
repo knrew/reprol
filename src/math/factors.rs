@@ -1,12 +1,12 @@
 /// 素因数分解する
 pub trait Factors: Sized {
-    fn factors(self) -> Vec<(Self, u64)>;
+    fn factors(self) -> Vec<(Self, u32)>;
 }
 
 macro_rules! impl_integer {
     ($($ty:ident),*) => {$(
         impl Factors for $ty {
-            fn factors(self) -> Vec<(Self, u64)> {
+            fn factors(self) -> Vec<(Self, u32)> {
                 let mut n = self;
 
                 let mut factors = vec![];
