@@ -45,7 +45,7 @@ impl Scc {
         &self.components
     }
 
-    pub fn solve(&mut self) {
+    pub fn build(&mut self) {
         self.components = vec![];
         self.component_ids = vec![0; self.len];
         self.has_built = true;

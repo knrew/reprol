@@ -1,5 +1,5 @@
-/// 法pのもとで冪乗を計算する
 pub trait PowMod {
+    /// 法pのもとで冪乗を計算する
     fn pow_mod(self, exp: Self, p: Self) -> Self;
 }
 

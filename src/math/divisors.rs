@@ -1,6 +1,6 @@
-/// 約数を列挙する
-/// NOTE: 出力はソートされていないので必要ならソートすること
 pub trait Divisors: Sized {
+    /// 約数を列挙する
+    /// NOTE: 出力はソートされていないので必要ならソートすること
     fn divisors(self) -> Vec<Self>;
 }
 

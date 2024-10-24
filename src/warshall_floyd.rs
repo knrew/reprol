@@ -1,5 +1,6 @@
 use std::ops::Add;
 
+/// ワーシャルフロイド法によって頂点間の最小コストを計算する
 pub struct WarshallFloyd<T> {
     /// 頂点の個数
     len: usize,

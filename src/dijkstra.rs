@@ -86,11 +86,14 @@ where
         &self.start
     }
 
+    /// start->vの最小コスト
+    /// startからvへ到達不可能であればNone
     pub fn cost(&self, v: &V) -> &Option<C> {
         &self.costs[(self.to_index)(v)]
     }
 
     /// 頂点endへの最短経路を構築する
+    /// startとendを含む
     pub fn construct_path(&self, end: &V) -> Option<Vec<V>> {
         if self.costs[(self.to_index)(end)].is_none() {
             return None;
@@ -108,7 +111,7 @@ where
     }
 }
 
-/// 隣接リスト表現のグラフをダイクストラによって最短経路を計算する
+/// 隣接リスト表現のグラフからダイクストラによって最短経路を計算する
 pub fn dijkstra_adjacencies(
     g: &[Vec<(usize, u64)>],
     start: usize,

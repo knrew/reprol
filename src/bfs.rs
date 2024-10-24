@@ -80,10 +80,14 @@ where
         &self.start
     }
 
+    /// start->vの最小コスト
+    /// startからvへ到達不可能であればNone
     pub fn cost(&self, v: &V) -> &Option<C> {
         &self.costs[(self.to_index)(&v)]
     }
 
+    /// 頂点endへの最短経路を構築する
+    /// startとendを含む
     pub fn costruct_path(&self, end: &V) -> Option<Vec<V>> {
         if self.costs[(self.to_index)(end)].is_none() {
             return None;

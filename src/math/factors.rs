@@ -1,5 +1,5 @@
-/// 素因数分解する
 pub trait Factors: Sized {
+    /// 素因数分解する
     fn factors(self) -> Vec<(Self, u32)>;
 }
 

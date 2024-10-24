@@ -1,5 +1,5 @@
-/// 法pにおける逆元を計算する
 pub trait InvMod {
+    /// 法pにおける逆元を計算する
     fn inv_mod(self, p: Self) -> Self;
 }
 

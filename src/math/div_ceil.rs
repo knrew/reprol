@@ -1,7 +1,7 @@
-/// x/yをする 小数点以下切り上げ
-/// NOTE: 非負のみ対応
-/// NOTE: stdのdiv_ceilはrustc1.73から
 pub trait DivCeil {
+    /// x/yをする 小数点以下切り上げ
+    /// NOTE: 非負のみ対応
+    /// NOTE: stdのdiv_ceilはrustc1.73から
     fn div_ceil_(self, rhs: Self) -> Self;
 }
 

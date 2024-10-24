@@ -1,5 +1,5 @@
-/// 整数の桁数を計算する
 pub trait Digit {
+    /// 整数の桁数を計算する
     fn digit(self) -> usize;
 }
 

@@ -29,6 +29,8 @@ impl LowLink {
         }
     }
 
+    // 辺(u, v)を追加する
+    // 辺(v, u)も自動的に追加される
     pub fn add_edge(&mut self, u: usize, v: usize) {
         debug_assert!(u < self.len);
         debug_assert!(v < self.len);
@@ -37,6 +39,9 @@ impl LowLink {
         self.has_built = false;
     }
 
+    /// 辺(u, v)が橋かどうかを判定する
+    /// build()を読んでから使う
+    /// TODO: uとvを結ぶ辺がないときの挙動が不明
     pub fn is_bridge(&self, mut u: usize, mut v: usize) -> bool {
         debug_assert!(self.has_built);
         if self.order[u] > self.order[v] {

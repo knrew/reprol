@@ -1,6 +1,6 @@
-/// 繰り返し二乗法による冪乗の計算
-/// NOTE: stdにpowあるのでいらないかも
 pub trait Pow {
+    /// 繰り返し二乗法による冪乗の計算
+    /// NOTE: stdにpowあるのでいらないかも
     fn pow_(self, exp: Self) -> Self;
 }
 
