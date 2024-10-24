@@ -1,18 +1,18 @@
 use std::{collections::VecDeque, fmt::Debug, io, str::FromStr};
 
-/// for AOJ
-pub struct Scanner {
+/// 主に AOJ(Aizu Online Judge)用
+pub struct Io {
     buffer: VecDeque<String>,
 }
 
-impl Scanner {
+impl Io {
     pub fn new() -> Self {
         Self {
             buffer: VecDeque::new(),
         }
     }
 
-    fn update(&mut self) {
+    fn read_line(&mut self) {
         let mut input = String::new();
         io::stdin().read_line(&mut input).unwrap();
         for e in input.split_whitespace() {
@@ -21,8 +21,8 @@ impl Scanner {
     }
 
     pub fn read_string(&mut self) -> String {
-        if self.buffer.is_empty() {
-            self.update();
+        while self.buffer.is_empty() {
+            self.read_line();
         }
         return self.buffer.pop_front().unwrap();
     }
@@ -37,5 +37,13 @@ impl Scanner {
         T::Err: Debug,
     {
         self.read_string().parse::<T>().unwrap()
+    }
+
+    pub fn read_vec<T>(&mut self, n: usize) -> Vec<T>
+    where
+        T: FromStr + Sized,
+        T::Err: Debug,
+    {
+        (0..n).map(|_| self.read::<T>()).collect()
     }
 }
