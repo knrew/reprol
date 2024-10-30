@@ -1,6 +1,7 @@
 pub trait ToRadix {
     /// 10進法の非負整数をbase進法に変換する
     /// base^iの係数がres[i]に格納される
+    /// TODO: resの格納順は逆のほうが自然？
     fn to_radix(self, base: Self) -> Vec<u8>;
 }
 

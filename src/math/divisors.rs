@@ -1,14 +1,18 @@
 pub trait Divisors: Sized {
     /// 約数を列挙する
-    /// NOTE: 出力はソートされていないので必要ならソートすること
+    /// 返り値は昇順にソート済み
     fn divisors(self) -> Vec<Self>;
+
+    /// 約数を列挙する
+    /// 返り値はソートされていない
+    fn divisors_unsorted(self) -> Vec<Self>;
 }
 
 macro_rules! impl_integer {
     ($($ty:ident),*) => {$(
         impl Divisors for $ty {
             #[allow(unused_comparisons)]
-            fn divisors(self) -> Vec<Self> {
+            fn divisors_unsorted(self) -> Vec<Self> {
                 debug_assert!(self >= 0);
                 let n = self;
                 (1..)
@@ -16,6 +20,12 @@ macro_rules! impl_integer {
                     .filter(|i| n % i == 0)
                     .flat_map(|i| if n / i == i { vec![i] } else { vec![i, n / i] }.into_iter())
                     .collect()
+            }
+
+            fn divisors(self) -> Vec<Self> {
+                let mut res = self.divisors_unsorted();
+                res.sort_unstable();
+                res
             }
         }
     )*};
@@ -44,9 +54,7 @@ mod tests {
         ];
 
         for (n, expected) in test_cases {
-            let mut result = n.divisors();
-            result.sort_unstable();
-            assert_eq!(result, expected);
+            assert_eq!(n.divisors(), expected);
         }
     }
 }
