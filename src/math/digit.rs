@@ -9,7 +9,7 @@ macro_rules! impl_integer {
             #[allow(unused_comparisons)]
             fn digit(self) -> usize {
                 debug_assert!(self >= 0);
-                if self ==0 {
+                if self == 0 {
                     return 1;
                 }
                 let mut x = self;

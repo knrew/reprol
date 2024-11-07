@@ -34,15 +34,11 @@ impl LinearSieve {
         Self { lpf, primes }
     }
 
-    pub fn primes_usize(&self) -> &[usize] {
-        &self.primes
-    }
-
-    pub fn primes<T>(&self) -> Vec<T>
+    pub fn primes<T>(&self) -> impl Iterator<Item = T> + '_
     where
         T: Integer,
     {
-        self.primes.iter().map(|&p| T::from_usize(p)).collect()
+        self.primes.iter().map(|&p| T::from_usize(p))
     }
 
     pub fn is_prime<T>(&self, x: T) -> bool
@@ -58,9 +54,9 @@ impl LinearSieve {
         }
     }
 
-    pub fn factors<T>(&self, x: T) -> Vec<(T, u64)>
+    pub fn factors<'a, T>(&self, x: T) -> impl Iterator<Item = (T, u32)> + 'a
     where
-        T: Integer,
+        T: 'a + Integer,
     {
         debug_assert!(x >= T::zero());
         debug_assert!(x.as_usize() < self.lpf.len());
@@ -79,20 +75,19 @@ impl LinearSieve {
             factors.push((T::from_usize(p), ex));
         }
 
-        factors
+        factors.into_iter()
     }
 
-    pub fn divisors<T>(&self, x: T) -> Vec<T>
+    pub fn divisors<'a, T>(&self, x: T) -> impl Iterator<Item = T> + 'a
     where
-        T: Integer,
+        T: 'a + Integer,
     {
         debug_assert!(x >= T::zero());
         debug_assert!(x.as_usize() < self.lpf.len());
 
         let mut divisors = vec![T::one()];
-        let factors = self.factors(x);
 
-        for &(factor, ex) in &factors {
+        for (factor, ex) in self.factors(x) {
             for i in 0..divisors.len() {
                 let mut v = T::one();
                 for _ in 0..ex {
@@ -102,11 +97,11 @@ impl LinearSieve {
             }
         }
 
-        divisors
+        divisors.into_iter()
     }
 }
 
-pub trait Integer: Copy + Ord + Mul<Output = Self> {
+pub trait Integer: Sized + Copy + Ord + Mul<Output = Self> {
     fn zero() -> Self;
     fn one() -> Self;
     fn from_usize(x: usize) -> Self;
@@ -273,7 +268,7 @@ mod tests {
         ];
 
         for (n, expected) in test_cases {
-            let mut result = sieve.divisors(n);
+            let mut result = sieve.divisors(n).collect::<Vec<_>>();
             result.sort_unstable();
             assert_eq!(result, expected);
         }
@@ -299,7 +294,7 @@ mod tests {
         ];
 
         for (n, expected) in test_cases {
-            assert_eq!(sieve.factors(n), expected);
+            assert_eq!(sieve.factors(n).collect::<Vec<_>>(), expected);
         }
     }
 }

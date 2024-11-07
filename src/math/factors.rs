@@ -1,12 +1,16 @@
 pub trait Factors: Sized {
+    type Output: Iterator<Item = (Self, u32)>;
+
     /// 素因数分解する
-    fn factors(self) -> Vec<(Self, u32)>;
+    fn factors(self) -> Self::Output;
 }
 
 macro_rules! impl_integer {
     ($($ty:ident),*) => {$(
         impl Factors for $ty {
-            fn factors(self) -> Vec<(Self, u32)> {
+            type Output = <Vec<(Self, u32)> as IntoIterator>::IntoIter;
+
+            fn factors(self) -> Self::Output {
                 let mut n = self;
 
                 let mut factors = vec![];
@@ -32,7 +36,7 @@ macro_rules! impl_integer {
                     factors.push((n, 1));
                 }
 
-                factors
+                factors.into_iter()
             }
         }
     )*};
@@ -47,7 +51,7 @@ mod tests {
     #[test]
     fn test_factors() {
         let test_cases = vec![
-            (1, vec![]),
+            (1i32, vec![]),
             (2, vec![(2, 1)]),
             (3, vec![(3, 1)]),
             (4, vec![(2, 2)]),
@@ -62,7 +66,7 @@ mod tests {
         ];
 
         for (n, expected) in test_cases {
-            assert_eq!(n.factors(), expected);
+            assert_eq!(n.factors().collect::<Vec<_>>(), expected);
         }
     }
 }

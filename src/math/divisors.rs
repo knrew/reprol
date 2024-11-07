@@ -1,31 +1,36 @@
 pub trait Divisors: Sized {
+    type Output: Iterator<Item = Self>;
+
     /// 約数を列挙する
     /// 返り値は昇順にソート済み
-    fn divisors(self) -> Vec<Self>;
+    fn divisors(self) -> Self::Output;
 
     /// 約数を列挙する
     /// 返り値はソートされていない
-    fn divisors_unsorted(self) -> Vec<Self>;
+    fn divisors_unsorted(self) -> Self::Output;
 }
 
 macro_rules! impl_integer {
     ($($ty:ident),*) => {$(
         impl Divisors for $ty {
+            type Output = <Vec<Self> as IntoIterator>::IntoIter;
+
             #[allow(unused_comparisons)]
-            fn divisors_unsorted(self) -> Vec<Self> {
+            fn divisors_unsorted(self) -> Self::Output {
                 debug_assert!(self >= 0);
                 let n = self;
                 (1..)
                     .take_while(|i| i * i <= n)
                     .filter(|i| n % i == 0)
                     .flat_map(|i| if n / i == i { vec![i] } else { vec![i, n / i] }.into_iter())
-                    .collect()
+                    .collect::<Vec<_>>()
+                    .into_iter()
             }
 
-            fn divisors(self) -> Vec<Self> {
-                let mut res = self.divisors_unsorted();
+            fn divisors(self) -> Self::Output {
+                let mut res = self.divisors_unsorted().collect::<Vec<_>>();
                 res.sort_unstable();
-                res
+                res.into_iter()
             }
         }
     )*};
@@ -40,7 +45,7 @@ mod tests {
     #[test]
     fn test_divisors() {
         let test_cases = vec![
-            (1, vec![1]),
+            (1i32, vec![1]),
             (2, vec![1, 2]),
             (3, vec![1, 3]),
             (4, vec![1, 2, 4]),
@@ -54,7 +59,7 @@ mod tests {
         ];
 
         for (n, expected) in test_cases {
-            assert_eq!(n.divisors(), expected);
+            assert_eq!(n.divisors().collect::<Vec<_>>(), expected);
         }
     }
 }
