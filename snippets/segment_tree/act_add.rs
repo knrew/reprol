@@ -1,8 +1,8 @@
-/// Range Sum Query
+/// Range Add Query
 #[derive(Default)]
-pub struct RsqMonoid;
+pub struct ActAdd;
 
-impl Monoid for RsqMonoid {
+impl Monoid for ActAdd {
     // TODO: 型チェック
     type Value = i64;
 
@@ -12,5 +12,11 @@ impl Monoid for RsqMonoid {
 
     fn op(&self, x: &Self::Value, y: &Self::Value) -> Self::Value {
         x + y
+    }
+}
+
+impl Action<M> for ActAdd {
+    fn act(&self, f: &<Self as Monoid>::Value, x: &<M as Monoid>::Value) -> <M as Monoid>::Value {
+        x + f
     }
 }

@@ -1,7 +1,9 @@
-#[derive(Default)]
-pub struct M;
+/// Range Sum Query and Range Add Query
 
-impl Monoid for M {
+#[derive(Default)]
+pub struct OpAdd;
+
+impl Monoid for OpAdd {
     // TODO: 型チェック
     type Value = (i64, i64);
 
@@ -15,9 +17,9 @@ impl Monoid for M {
 }
 
 #[derive(Default)]
-pub struct A;
+pub struct ActAdd;
 
-impl Monoid for A {
+impl Monoid for ActAdd {
     // TODO: 型チェック
     type Value = i64;
 
@@ -30,8 +32,12 @@ impl Monoid for A {
     }
 }
 
-impl Action<M> for A {
-    fn act(&self, f: &<Self as Monoid>::Value, x: &<M as Monoid>::Value) -> <M as Monoid>::Value {
+impl Action<OpAdd> for ActAdd {
+    fn act(
+        &self,
+        f: &<Self as Monoid>::Value,
+        x: &<OpAdd as Monoid>::Value,
+    ) -> <OpAdd as Monoid>::Value {
         (x.0 + f * x.1, x.1)
     }
 }

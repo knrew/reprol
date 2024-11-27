@@ -1,16 +1,16 @@
-/// Range Minimum Query
+/// Range Sum Query
 #[derive(Default)]
-pub struct RmqMonoid;
+pub struct OpAdd;
 
-impl Monoid for RmqMonoid {
-    // 型チェック
+impl Monoid for OpAdd {
+    // TODO: 型チェック
     type Value = i64;
 
     fn identity(&self) -> Self::Value {
-        i64::MAX
+        0
     }
 
     fn op(&self, x: &Self::Value, y: &Self::Value) -> Self::Value {
-        *x.min(y)
+        x + y
     }
 }

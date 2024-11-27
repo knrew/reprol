@@ -1,8 +1,8 @@
 /// Range Update Query(Range Set Query)
 #[derive(Default)]
-pub struct RuqAction;
+pub struct ActSet;
 
-impl Monoid for RuqAction {
+impl Monoid for ActSet {
     // TODO: 型チェック
     type Value = i64;
 
@@ -15,7 +15,7 @@ impl Monoid for RuqAction {
     }
 }
 
-impl Action<M> for RuqAction {
+impl Action<M> for ActSet {
     fn act(&self, f: &<Self as Monoid>::Value, x: &<M as Monoid>::Value) -> <M as Monoid>::Value {
         *if f == &self.identity() { x } else { f }
     }
