@@ -1,32 +1,30 @@
-/// 正方行列を時計回りに90度回転させる
+/// NxM行列を時計回りに90度回転させる
+/// 処理後の行列はMxN行列になる
 pub fn rotate_clockwise<T>(m: &[Vec<T>]) -> Vec<Vec<T>>
 where
     T: Clone,
 {
     debug_assert!(!m.is_empty());
-    debug_assert!(m.len() == m[0].len());
-    let n = m.len();
-    let mut rotated = vec![vec![m[0][0].clone(); n]; n];
-    for i in 0..n {
-        for j in 0..n {
-            rotated[j][n - 1 - i] = m[i][j].clone();
+    let mut rotated = vec![vec![m[0][0].clone(); m.len()]; m[0].len()];
+    for i in 0..m.len() {
+        for j in 0..m[i].len() {
+            rotated[j][m.len() - 1 - i] = m[i][j].clone();
         }
     }
     rotated
 }
 
-/// 正方行列を反時計回りに90度回転させる
+/// NxM行列を反時計回りに90度回転させる
+/// 処理後の行列はMxN行列になる
 pub fn rotate_anticlockwise<T>(m: &[Vec<T>]) -> Vec<Vec<T>>
 where
     T: Clone,
 {
     debug_assert!(!m.is_empty());
-    debug_assert!(m.len() == m[0].len());
-    let n = m.len();
-    let mut rotated = vec![vec![m[0][0].clone(); n]; n];
-    for i in 0..n {
-        for j in 0..n {
-            rotated[n - 1 - j][i] = m[i][j].clone();
+    let mut rotated = vec![vec![m[0][0].clone(); m.len()]; m[0].len()];
+    for i in 0..m.len() {
+        for j in 0..m[i].len() {
+            rotated[m[i].len() - 1 - j][i] = m[i][j].clone();
         }
     }
     rotated
@@ -52,6 +50,7 @@ where
     transposed
 }
 
+// TODO: 正方行列以外のテストを書く
 #[cfg(test)]
 mod tests {
     use super::{rotate_anticlockwise, rotate_clockwise, transpose};
