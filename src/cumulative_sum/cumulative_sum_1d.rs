@@ -21,7 +21,7 @@ where
 
     /// 半区間[l, r)の和を計算する
     /// a[l]+ ... + a[r-1]
-    pub fn get_sum(&self, range: Range<usize>) -> T {
+    pub fn sum(&self, range: Range<usize>) -> T {
         self.0[range.end] - self.0[range.start]
     }
 }
@@ -45,7 +45,7 @@ mod tests {
         ];
         let cum = CumulativeSum1D::new(&v, 0);
         for ((l, r), expected) in test_cases {
-            assert_eq!(cum.get_sum(l..r), expected);
+            assert_eq!(cum.sum(l..r), expected);
         }
 
         let cum = CumulativeSum1D::construct(5, 0, |i| i as i32 + 1);
@@ -61,7 +61,7 @@ mod tests {
         ];
 
         for ((l, r), expected) in test_cases {
-            assert_eq!(cum.get_sum(l..r), expected);
+            assert_eq!(cum.sum(l..r), expected);
         }
     }
 }

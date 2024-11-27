@@ -29,7 +29,7 @@ where
         Self(cum)
     }
 
-    pub fn get_sum(&self, x_range: Range<usize>, y_range: Range<usize>) -> T {
+    pub fn sum(&self, x_range: Range<usize>, y_range: Range<usize>) -> T {
         self.0[x_range.end][y_range.end] + self.0[x_range.start][y_range.start]
             - self.0[x_range.start][y_range.end]
             - self.0[x_range.end][y_range.start]
@@ -54,7 +54,7 @@ mod tests {
         ];
         let cum = CumulativeSum2D::new(&v, 0);
         for ((r1, c1, r2, c2), expected) in test_cases {
-            assert_eq!(cum.get_sum(r1..r2, c1..c2), expected);
+            assert_eq!(cum.sum(r1..r2, c1..c2), expected);
         }
 
         let v = vec![
@@ -75,7 +75,7 @@ mod tests {
         ];
         let cum = CumulativeSum2D::new(&v, 0);
         for ((x1, y1, x2, y2), expected) in test_cases {
-            assert_eq!(cum.get_sum(x1..x2, y1..y2), expected);
+            assert_eq!(cum.sum(x1..x2, y1..y2), expected);
         }
     }
 

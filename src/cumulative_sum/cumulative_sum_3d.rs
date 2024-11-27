@@ -42,12 +42,7 @@ where
         Self(cum)
     }
 
-    pub fn get_sum(
-        &self,
-        x_range: Range<usize>,
-        y_range: Range<usize>,
-        z_range: Range<usize>,
-    ) -> T {
+    pub fn sum(&self, x_range: Range<usize>, y_range: Range<usize>, z_range: Range<usize>) -> T {
         self.0[x_range.end][y_range.end][z_range.end]
             + self.0[x_range.start][y_range.start][z_range.end]
             + self.0[x_range.start][y_range.end][z_range.start]
@@ -83,7 +78,7 @@ mod tests {
         ];
         let cum = CumulativeSum3D::new(&v, 0);
         for ((x1, y1, z1, x2, y2, z2), expected) in test_cases {
-            assert_eq!(cum.get_sum(x1..x2, y1..y2, z1..z2), expected);
+            assert_eq!(cum.sum(x1..x2, y1..y2, z1..z2), expected);
         }
     }
 }
