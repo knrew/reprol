@@ -8,6 +8,7 @@ pub mod is_prime;
 pub mod isqrt;
 pub mod lcm;
 pub mod linear_sieve;
+pub mod modint;
 pub mod pow;
 pub mod pow_mod;
 pub mod radix;

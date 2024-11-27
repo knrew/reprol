@@ -6,10 +6,7 @@ macro_rules! impl_integer {
     ($($ty:ident),*) => {$(
         impl IsPrime for $ty {
             fn is_prime(self) -> bool {
-                if self <= 1 {
-                    return false;
-                }
-                (2..).take_while(|i| i * i <= self).all(|i| self % i != 0)
+                self >= 2 && (2..).take_while(|i| i * i <= self).all(|i| self % i != 0)
             }
         }
     )*};
