@@ -12,6 +12,7 @@ pub mod math;
 pub mod matrix;
 pub mod monoid;
 pub mod monoid_dsu;
+pub mod multiset;
 pub mod rle;
 pub mod scc;
 pub mod segment_tree;
