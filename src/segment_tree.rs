@@ -100,7 +100,7 @@ where
             sum = self.monoid.op(&sum, &self.nodes[l]);
             l += 1;
 
-            if l & (!l + 1) == l {
+            if l.is_power_of_two() {
                 break;
             }
         }
@@ -134,7 +134,7 @@ where
 
             sum = self.monoid.op(&self.nodes[r], &sum);
 
-            if r & (!r + 1) == r {
+            if r.is_power_of_two() {
                 break;
             }
         }
@@ -158,6 +158,16 @@ fn to_open<R: RangeBounds<usize>>(range: R, n: usize) -> Range<usize> {
     };
 
     l..r
+}
+
+impl<M> SegmentTree<M>
+where
+    M: Monoid + Default,
+    M::Value: Clone,
+{
+    pub fn with_len(len: usize) -> Self {
+        Self::new(len, M::default())
+    }
 }
 
 impl<M> From<&[M::Value]> for SegmentTree<M>
