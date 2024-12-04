@@ -40,25 +40,25 @@ where
     }
 
     pub fn get(&mut self, index: usize) -> &M::Value {
-        debug_assert!(index < self.len);
+        assert!(index < self.len);
         let index = index + self.offset;
         self.push(index);
         &self.nodes[index]
     }
 
-    pub fn set(&mut self, index: usize, value: &M::Value) {
-        debug_assert!(index < self.len);
+    pub fn set(&mut self, index: usize, value: M::Value) {
+        assert!(index < self.len);
         let index = index + self.offset;
         self.push(index);
-        self.nodes[index] = value.clone();
+        self.nodes[index] = value;
         self.pull(index);
     }
 
     pub fn apply<R: RangeBounds<usize>>(&mut self, range: R, f: &A::Value) {
         let Range { start: l, end: r } = to_open(range, self.len);
 
-        debug_assert!(l < self.len);
-        debug_assert!(r <= self.len);
+        assert!(r <= self.len);
+        assert!(l <= r);
 
         if l == r {
             return;
@@ -106,8 +106,8 @@ where
     pub fn product<R: RangeBounds<usize>>(&mut self, range: R) -> M::Value {
         let Range { start: l, end: r } = to_open(range, self.len);
 
-        debug_assert!(l < self.len);
-        debug_assert!(r <= self.len);
+        assert!(r <= self.len);
+        assert!(l <= r);
 
         if l == r {
             return self.monoid.identity();
@@ -145,7 +145,9 @@ where
         self.monoid.op(&sum_left, &sum_right)
     }
 
+    /// f(op(a[l], a[l + 1], ..., a[r - 1])) = true となる最大のr
     pub fn max_right(&mut self, l: usize, mut f: impl FnMut(&M::Value) -> bool) -> usize {
+        assert!(l <= self.len);
         debug_assert!(f(&self.monoid.identity()));
 
         if l == self.len {
@@ -154,17 +156,18 @@ where
 
         let mut l = l + self.offset;
         self.push(l);
+
         let mut sum = self.monoid.identity();
 
         loop {
-            while (!l & 1) != 0 {
+            while l % 2 == 0 {
                 l >>= 1;
             }
 
             if !f(&self.monoid.op(&sum, &self.nodes[l])) {
                 while l < self.offset {
                     self.push_lazy(l);
-                    l <<= 1;
+                    l = 2 * l;
                     let tmp = self.monoid.op(&sum, &self.nodes[l]);
                     if f(&tmp) {
                         sum = tmp;
@@ -177,7 +180,7 @@ where
             sum = self.monoid.op(&sum, &self.nodes[l]);
             l += 1;
 
-            if l & (!l + 1) == l {
+            if l.is_power_of_two() {
                 break;
             }
         }
@@ -185,8 +188,10 @@ where
         self.len
     }
 
+    /// f(op(a[l], a[l + 1], ..., a[r - 1])) = true となる最小のl
     pub fn min_left(&mut self, r: usize, mut f: impl FnMut(&M::Value) -> bool) -> usize {
-        // debug_assert!(f(&self.monoid.identity()));
+        assert!(r <= self.len);
+        debug_assert!(f(&self.monoid.identity()));
 
         if r == 0 {
             return 0;
@@ -198,7 +203,7 @@ where
 
         loop {
             r -= 1;
-            while r > 1 && (r & 1 != 0) {
+            while r > 1 && (r % 2 == 1) {
                 r >>= 1;
             }
             if !f(&self.monoid.op(&self.nodes[r], &sum)) {
@@ -216,7 +221,7 @@ where
 
             sum = self.monoid.op(&self.nodes[r], &sum);
 
-            if r & (!r + 1) == r {
+            if r.is_power_of_two() {
                 break;
             }
         }
@@ -273,6 +278,18 @@ fn to_open<R: RangeBounds<usize>>(range: R, n: usize) -> Range<usize> {
     };
 
     l..r
+}
+
+impl<M, A> LazySegmentTree<M, A>
+where
+    M: Monoid + Default,
+    M::Value: Clone,
+    A: Action<M> + Default,
+    A::Value: Clone + Eq,
+{
+    pub fn with_len(len: usize) -> Self {
+        Self::new(len, M::default(), A::default())
+    }
 }
 
 impl<M, A> From<&[M::Value]> for LazySegmentTree<M, A>
