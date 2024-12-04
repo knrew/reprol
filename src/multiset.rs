@@ -24,13 +24,8 @@ where
         }
     }
 
-    /// 挿入されている要素の総和
-    /// 複数挿入されている要素がある場合、その分総和に含まれる
-    pub fn sum(&self) -> T {
-        self.sum
-    }
-
     /// 要素数
+    /// 複数挿入されている要素はその分重複して数える
     pub fn len(&self) -> usize {
         self.len
     }
@@ -76,6 +71,12 @@ where
             Some(&count) if count > 0 => true,
             _ => false,
         }
+    }
+
+    /// 挿入されている要素の総和
+    /// 複数挿入されている要素がある場合その分総和に加算される
+    pub fn sum(&self) -> T {
+        self.sum
     }
 
     pub fn min(&self) -> Option<&T> {
