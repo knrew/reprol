@@ -1,10 +1,30 @@
 use std::{cmp::Reverse, collections::BinaryHeap};
 
+pub trait TopologicalSort {
+    /// トポロジカルソート
+    /// 入力は隣接リスト表現のグラフ
+    /// 辞書順最小の頂点番号配列を返す
+    /// グラフが閉路を含む場合はNoneを返す
+    fn topological_sort(&self) -> Option<Vec<usize>>;
+}
+
+impl TopologicalSort for Vec<Vec<usize>> {
+    fn topological_sort(&self) -> Option<Vec<usize>> {
+        topological_sort(self)
+    }
+}
+
+impl TopologicalSort for &[Vec<usize>] {
+    fn topological_sort(&self) -> Option<Vec<usize>> {
+        topological_sort(self)
+    }
+}
+
 /// トポロジカルソート
 /// 入力は隣接リスト表現のグラフ
 /// 辞書順最小の頂点番号配列を返す
 /// グラフが閉路を含む場合はNoneを返す
-pub fn topological_sort(graph: &[Vec<usize>]) -> Option<Vec<usize>> {
+fn topological_sort(graph: &[Vec<usize>]) -> Option<Vec<usize>> {
     let mut degrees = vec![0; graph.len()];
 
     for v in graph {
