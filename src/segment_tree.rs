@@ -36,6 +36,7 @@ where
     }
 
     pub fn set(&mut self, index: usize, value: &M::Value) {
+        assert!(index < self.len);
         let index = index + self.offset;
         self.nodes[index] = value.clone();
         for i in 1..=self.log {
@@ -44,11 +45,16 @@ where
     }
 
     pub fn get(&self, index: usize) -> &M::Value {
+        assert!(index < self.len);
         &self.nodes[index + self.offset]
     }
 
     pub fn product<R: RangeBounds<usize>>(&self, range: R) -> M::Value {
         let Range { start: l, end: r } = to_open(range, self.len);
+
+        assert!(r <= self.len);
+        assert!(l <= r);
+
         let (mut l, mut r) = (l + self.offset, r + self.offset);
 
         let mut vl = self.monoid.identity();
@@ -71,6 +77,11 @@ where
     }
 
     pub fn max_right(&self, l: usize, mut f: impl FnMut(&M::Value) -> bool) -> usize {
+        assert!(l <= self.len);
+
+        #[cfg(debug_assertions)]
+        assert!(f(&self.monoid.identity()));
+
         if l == self.len {
             return self.len;
         }
@@ -109,6 +120,11 @@ where
     }
 
     pub fn min_left(&self, r: usize, mut f: impl FnMut(&M::Value) -> bool) -> usize {
+        assert!(r <= self.len);
+
+        #[cfg(debug_assertions)]
+        assert!(f(&self.monoid.identity()));
+
         if r == 0 {
             return 0;
         }

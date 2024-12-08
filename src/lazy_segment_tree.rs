@@ -148,7 +148,9 @@ where
     /// f(op(a[l], a[l + 1], ..., a[r - 1])) = true となる最大のr
     pub fn max_right(&mut self, l: usize, mut f: impl FnMut(&M::Value) -> bool) -> usize {
         assert!(l <= self.len);
-        debug_assert!(f(&self.monoid.identity()));
+
+        #[cfg(debug_assertions)]
+        assert!(f(&self.monoid.identity()));
 
         if l == self.len {
             return self.len;
@@ -191,7 +193,9 @@ where
     /// f(op(a[l], a[l + 1], ..., a[r - 1])) = true となる最小のl
     pub fn min_left(&mut self, r: usize, mut f: impl FnMut(&M::Value) -> bool) -> usize {
         assert!(r <= self.len);
-        debug_assert!(f(&self.monoid.identity()));
+
+        #[cfg(debug_assertions)]
+        assert!(f(&self.monoid.identity()));
 
         if r == 0 {
             return 0;
