@@ -54,11 +54,11 @@ where
                 }
             }
 
-            for (nv, diff_cost) in neighbors(&v) {
-                let new_cost = cost.clone() + diff_cost;
+            for (nv, dcost) in neighbors(&v) {
+                let new_cost = cost.clone() + dcost;
 
-                if let Some(min_distance) = &costs[to_index(&nv)] {
-                    if min_distance <= &new_cost {
+                if let Some(min_cost) = &costs[to_index(&nv)] {
+                    if min_cost <= &new_cost {
                         continue;
                     }
                 }

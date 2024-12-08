@@ -95,7 +95,7 @@ where
     pub fn difference_potential(&mut self, u: usize, v: usize) -> T {
         debug_assert!(u < self.parents.len());
         debug_assert!(v < self.parents.len());
-        debug_assert!(self.connected(u, v));
+        assert!(self.connected(u, v));
         self.potential(v) - self.potential(u)
     }
 

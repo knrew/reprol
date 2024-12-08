@@ -51,8 +51,6 @@ fn rotate_clockwise<T>(m: &[Vec<T>]) -> Vec<Vec<T>>
 where
     T: Clone,
 {
-    assert!(!m.is_empty());
-
     let h = m[0].len();
     let w = m.len();
 
@@ -73,8 +71,6 @@ fn rotate_anticlockwise<T>(m: &[Vec<T>]) -> Vec<Vec<T>>
 where
     T: Clone,
 {
-    assert!(!m.is_empty());
-
     let h = m[0].len();
     let w = m.len();
 
@@ -97,8 +93,6 @@ where
     if m.is_empty() {
         return vec![];
     }
-
-    assert!(!m[0].is_empty());
 
     let nrows = m.len();
     let ncols = m[0].len();
