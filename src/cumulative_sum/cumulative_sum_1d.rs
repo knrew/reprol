@@ -7,7 +7,6 @@ where
     T: Copy + Add<Output = T> + Sub<Output = T>,
 {
     pub fn new(v: &[T], zero: T) -> Self {
-        debug_assert!(!v.is_empty());
         Self::construct(v.len(), zero, |i| v[i])
     }
 
@@ -22,6 +21,7 @@ where
     /// 半区間[l, r)の和を計算する
     /// a[l]+ ... + a[r-1]
     pub fn sum(&self, range: Range<usize>) -> T {
+        assert!(range.start <= range.end);
         self.0[range.end] - self.0[range.start]
     }
 }

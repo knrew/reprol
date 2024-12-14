@@ -7,8 +7,6 @@ where
     T: Copy + Add<Output = T> + Sub<Output = T>,
 {
     pub fn new(v: &[Vec<T>], zero: T) -> Self {
-        debug_assert!(!v.is_empty());
-        debug_assert!(!v[0].is_empty());
         Self::construct(v.len(), v[0].len(), zero, |i, j| v[i][j])
     }
 
@@ -30,6 +28,8 @@ where
     }
 
     pub fn sum(&self, x_range: Range<usize>, y_range: Range<usize>) -> T {
+        assert!(x_range.start <= x_range.end);
+        assert!(y_range.start <= y_range.end);
         self.0[x_range.end][y_range.end] + self.0[x_range.start][y_range.start]
             - self.0[x_range.start][y_range.end]
             - self.0[x_range.end][y_range.start]
