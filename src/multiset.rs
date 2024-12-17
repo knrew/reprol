@@ -5,6 +5,7 @@ use std::{
 
 /// 多重集合
 /// NOTE: Copyできる型Tのみ
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MultiSet<T> {
     map: BTreeMap<T, usize>,
     len: usize,
@@ -54,9 +55,9 @@ where
     pub fn remove(&mut self, value: &T) -> bool {
         if let Some(count) = self.map.get_mut(value) {
             *count -= 1;
-            // if *count == 0 {
-            //     self.map.remove(value);
-            // }
+            if *count == 0 {
+                self.map.remove(value);
+            }
             self.len -= 1;
             self.sum = self.sum - *value;
             true

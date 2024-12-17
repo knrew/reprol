@@ -35,7 +35,7 @@ where
         self.nodes[k] = self.monoid.op(&self.nodes[k * 2], &self.nodes[k * 2 + 1]);
     }
 
-    pub fn set(&mut self, index: usize, value: &M::Value) {
+    pub fn set(&mut self, index: usize, value: M::Value) {
         assert!(index < self.len);
         let index = index + self.offset;
         self.nodes[index] = value.clone();
@@ -133,9 +133,11 @@ where
 
         loop {
             r -= 1;
+
             while r > 1 && r % 2 == 1 {
                 r /= 2;
             }
+
             if !f(&self.monoid.op(&self.nodes[r], &sum)) {
                 while r < self.offset {
                     r = 2 * r + 1;
@@ -145,6 +147,7 @@ where
                         r -= 1;
                     }
                 }
+
                 return r + 1 - self.offset;
             }
 

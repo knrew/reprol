@@ -92,6 +92,12 @@ where
         &self.costs[(self.to_index)(v)]
     }
 
+    /// startからの最短経路においてvの直前に訪れる頂点
+    /// そのような頂点が存在しなければNone
+    pub fn previous(&self, v: &V) -> &Option<V> {
+        &self.previous_vertices[(self.to_index)(v)]
+    }
+
     /// 頂点endへの最短経路を構築する
     /// startとendを含む
     pub fn construct_path(&self, end: &V) -> Option<Vec<V>> {
