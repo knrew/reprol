@@ -22,27 +22,34 @@ impl Scc {
     }
 
     pub fn add_edge(&mut self, u: usize, v: usize) {
-        debug_assert!(u < self.len);
-        debug_assert!(v < self.len);
+        assert!(u < self.len);
+        assert!(v < self.len);
         self.graph[u].push(v);
         self.rev_graph[v].push(u);
         self.has_built = false;
     }
 
+    pub fn components(&self) -> impl DoubleEndedIterator<Item = &Vec<usize>> {
+        assert!(self.has_built);
+        self.components.iter()
+    }
+
+    pub fn component(&self, id: usize) -> impl DoubleEndedIterator<Item = usize> + '_ {
+        assert!(self.has_built);
+        assert!(id < self.components.len());
+        self.components[id].iter().cloned()
+    }
+
+    /// 分解された連結成分の個数
     pub fn num_components(&self) -> usize {
-        debug_assert!(self.has_built);
+        assert!(self.has_built);
         self.components.len()
     }
 
-    pub fn component(&self, id: usize) -> &[usize] {
-        debug_assert!(self.has_built);
-        debug_assert!(id < self.components.len());
-        &self.components[id]
-    }
-
-    pub fn components(&self) -> &[Vec<usize>] {
-        debug_assert!(self.has_built);
-        &self.components
+    /// 連結成分idに含まれる要素数
+    pub fn size(&self, id: usize) -> usize {
+        assert!(self.has_built);
+        self.components[id].len()
     }
 
     pub fn build(&mut self) {
