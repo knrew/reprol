@@ -1,9 +1,11 @@
 pub mod action;
 pub mod bfs;
+pub mod bfs01;
 pub mod bisect;
 pub mod cumulative_sum;
 pub mod dijkstra;
 pub mod dsu;
+pub mod factorial_mod;
 pub mod interval_set;
 pub mod io;
 pub mod lazy_segment_tree;
@@ -19,3 +21,4 @@ pub mod segment_tree;
 pub mod topological_sort;
 pub mod trie;
 pub mod warshall_floyd;
+pub mod z_algorithm;
