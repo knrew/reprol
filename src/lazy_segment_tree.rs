@@ -341,3 +341,62 @@ where
         Self::from(v.as_slice())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{Action, LazySegmentTree, Monoid};
+
+    #[derive(Default)]
+    struct Op;
+
+    impl Monoid for Op {
+        type Value = i64;
+
+        fn identity(&self) -> Self::Value {
+            0
+        }
+
+        fn op(&self, x: &Self::Value, y: &Self::Value) -> Self::Value {
+            *x.max(y)
+        }
+    }
+
+    #[derive(Default)]
+    struct Act;
+
+    impl Monoid for Act {
+        type Value = i64;
+
+        fn identity(&self) -> Self::Value {
+            0
+        }
+
+        fn op(&self, g: &Self::Value, f: &Self::Value) -> Self::Value {
+            f + g
+        }
+    }
+
+    impl Action<Op> for Act {
+        fn act(&self, f: &Self::Value, x: &<Op as Monoid>::Value) -> <Op as Monoid>::Value {
+            x + f
+        }
+    }
+
+    #[test]
+    fn test_lazyseg() {
+        let v = vec![4, 4, 4, 4, 4];
+        let mut seg = LazySegmentTree::<Op, Act>::from(&v);
+        seg.apply(1..4, &2);
+        assert_eq!(
+            (0..5).map(|i| *seg.get(i)).collect::<Vec<_>>(),
+            vec![4, 6, 6, 6, 4]
+        );
+        assert_eq!(seg.product(0..=2), 6);
+        seg.apply(0..5, &(-1));
+        assert_eq!(
+            (0..5).map(|i| *seg.get(i)).collect::<Vec<_>>(),
+            vec![3, 5, 5, 5, 3]
+        );
+        assert_eq!(seg.product(..), 5);
+    }
+}

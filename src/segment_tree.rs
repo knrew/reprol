@@ -228,3 +228,68 @@ where
         Self::from(v.as_slice())
     }
 }
+
+// TODO: min_left, max_rightのテストを書く
+#[cfg(test)]
+mod tests {
+    mod tests_add {
+        use crate::{monoid::Monoid, segment_tree::SegmentTree};
+
+        #[derive(Default)]
+        struct Op;
+
+        impl Monoid for Op {
+            type Value = i64;
+
+            fn identity(&self) -> Self::Value {
+                0
+            }
+
+            fn op(&self, x: &Self::Value, y: &Self::Value) -> Self::Value {
+                x + y
+            }
+        }
+
+        #[test]
+        fn test_add() {
+            let v = vec![1, 3, 5, 7, 9, 11];
+            let mut seg = SegmentTree::<Op>::from(&v);
+            assert_eq!(seg.product(0..3), 9);
+            assert_eq!(seg.product(1..=4), 24);
+            assert_eq!(seg.product(..), 36);
+            seg.set(2, 6);
+            assert_eq!(seg.product(0..3), 10);
+        }
+    }
+
+    mod tests_min {
+        use crate::{monoid::Monoid, segment_tree::SegmentTree};
+
+        #[derive(Default)]
+        struct Op;
+
+        impl Monoid for Op {
+            type Value = i64;
+
+            fn identity(&self) -> Self::Value {
+                i64::MAX
+            }
+
+            fn op(&self, x: &Self::Value, y: &Self::Value) -> Self::Value {
+                *x.min(y)
+            }
+        }
+
+        #[test]
+        fn test_min() {
+            let v = vec![5, 2, 6, 3, 7, 1];
+            let mut seg = SegmentTree::<Op>::from(&v);
+            assert_eq!(seg.product(0..4), 2);
+            assert_eq!(seg.product(2..=5), 1);
+            assert_eq!(seg.product(..), 1);
+            assert_eq!(seg.product(..=4), 2);
+            seg.set(3, 0);
+            assert_eq!(seg.product(0..4), 0);
+        }
+    }
+}
