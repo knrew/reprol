@@ -1,6 +1,5 @@
 pub trait DivCeil {
-    /// x/yをする 小数点以下切り上げ
-    /// NOTE: 非負のみ対応
+    /// $\lceil \frac{x}{y} \rceil$を計算する 小数点以下切り上げ
     /// NOTE: stdのdiv_ceilはrustc1.73から
     fn div_ceil_(self, rhs: Self) -> Self;
 }
@@ -10,14 +9,16 @@ macro_rules! impl_integer {
         impl DivCeil for $ty {
             #[allow(unused_comparisons)]
             fn div_ceil_(self, rhs: Self) -> Self {
-                debug_assert!(self >= 0);
-                debug_assert!(rhs >= 1);
-                let d = self / rhs;
-                let r = self % rhs;
-                if r > 0 {
-                    d + 1
+                if self >= 0 {
+                    let d = self / rhs;
+                    let r = self % rhs;
+                    if r > 0 {
+                        d + 1
+                    } else {
+                        d
+                    }
                 } else {
-                    d
+                    self / rhs
                 }
             }
         }
