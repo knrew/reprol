@@ -2,6 +2,7 @@ pub mod action;
 pub mod bfs;
 pub mod bfs01;
 pub mod bisect;
+pub mod change_min_max;
 pub mod cumulative_sum;
 pub mod dijkstra;
 pub mod dsu;
