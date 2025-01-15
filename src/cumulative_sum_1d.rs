@@ -9,6 +9,7 @@ where
     T: Copy + Add<Output = T> + Sub<Output = T>,
 {
     pub fn new(v: &[T], zero: T) -> Self {
+        assert!(!v.is_empty());
         Self::construct(v.len(), zero, |i| v[i])
     }
 

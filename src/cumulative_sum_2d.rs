@@ -9,6 +9,10 @@ where
     T: Copy + Add<Output = T> + Sub<Output = T>,
 {
     pub fn new(v: &[Vec<T>], zero: T) -> Self {
+        assert!(!v.is_empty());
+        assert!(!v[0].is_empty());
+        #[cfg(debug_assertions)]
+        assert!(v.iter().all(|vi| vi.len() == v[0].len()));
         Self::construct(v.len(), v[0].len(), zero, |i, j| v[i][j])
     }
 
