@@ -1,6 +1,6 @@
 //! 区間をsetで管理するやつ
 
-use std::collections::BTreeSet;
+use std::{collections::BTreeSet, ops::RangeInclusive};
 
 pub struct IntervalSet<T>(BTreeSet<(T, T)>);
 
@@ -12,7 +12,10 @@ where
         Self(BTreeSet::new())
     }
 
-    pub fn insert(&mut self, mut l: T, mut r: T) {
+    pub fn insert(&mut self, range: RangeInclusive<T>) {
+        let mut l = *range.start();
+        let mut r = *range.end();
+
         assert!(l <= r);
 
         if let Some(&(ll, rr)) = self.0.range(..=(l, T::sup())).max() {
@@ -38,6 +41,14 @@ where
         }
 
         self.0.insert((l, r));
+    }
+
+    pub fn contains(&self, x: T) -> bool {
+        if let Some(&(_, r)) = self.0.range((x, T::inf())..).min() {
+            x <= r
+        } else {
+            false
+        }
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &(T, T)> {
