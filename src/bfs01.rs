@@ -56,7 +56,7 @@ where
                 let index_nv = to_index(&nv);
 
                 match costs[index_nv] {
-                    Some(cost_nv) if cost_nv < costs[index_v].unwrap() + dcost => {}
+                    Some(cost_nv) if cost_nv <= costs[index_v].unwrap() + dcost => {}
                     _ => {
                         costs[index_nv] = Some(costs[index_v].unwrap() + dcost);
                         previous_vertices[index_nv] = Some(v.clone());
