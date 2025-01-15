@@ -1,8 +1,8 @@
 use std::ops::{Add, Range, Sub};
 
-pub struct CumulativeSum3D<T>(Vec<Vec<Vec<T>>>);
+pub struct CumulativeSum3d<T>(Vec<Vec<Vec<T>>>);
 
-impl<T> CumulativeSum3D<T>
+impl<T> CumulativeSum3d<T>
 where
     T: Copy + Add<Output = T> + Sub<Output = T>,
 {
@@ -56,7 +56,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::CumulativeSum3D;
+    use super::CumulativeSum3d;
 
     #[test]
     fn test_cumultaive_sum_3d() {
@@ -76,7 +76,7 @@ mod tests {
             ((2, 1, 2, 3, 3, 3), 51),
             ((0, 0, 0, 0, 0, 0), 0),
         ];
-        let cum = CumulativeSum3D::new(&v, 0);
+        let cum = CumulativeSum3d::new(&v, 0);
         for ((x1, y1, z1, x2, y2, z2), expected) in test_cases {
             assert_eq!(cum.sum(x1..x2, y1..y2, z1..z2), expected);
         }

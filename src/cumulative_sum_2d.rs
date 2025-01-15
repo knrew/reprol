@@ -1,8 +1,8 @@
 use std::ops::{Add, Range, Sub};
 
-pub struct CumulativeSum2D<T>(Vec<Vec<T>>);
+pub struct CumulativeSum2d<T>(Vec<Vec<T>>);
 
-impl<T> CumulativeSum2D<T>
+impl<T> CumulativeSum2d<T>
 where
     T: Copy + Add<Output = T> + Sub<Output = T>,
 {
@@ -38,7 +38,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::CumulativeSum2D;
+    use super::CumulativeSum2d;
 
     #[test]
     fn test_cumulative_sum_2d() {
@@ -52,7 +52,7 @@ mod tests {
             ((0, 0, 1, 1), 1),
             ((0, 0, 0, 0), 0),
         ];
-        let cum = CumulativeSum2D::new(&v, 0);
+        let cum = CumulativeSum2d::new(&v, 0);
         for ((r1, c1, r2, c2), expected) in test_cases {
             assert_eq!(cum.sum(r1..r2, c1..c2), expected);
         }
@@ -73,7 +73,7 @@ mod tests {
             ((0, 4, 3, 5), 30),
             ((0, 0, 0, 0), 0),
         ];
-        let cum = CumulativeSum2D::new(&v, 0);
+        let cum = CumulativeSum2d::new(&v, 0);
         for ((x1, y1, x2, y2), expected) in test_cases {
             assert_eq!(cum.sum(x1..x2, y1..y2), expected);
         }
