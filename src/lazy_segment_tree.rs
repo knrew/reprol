@@ -342,6 +342,18 @@ where
     }
 }
 
+impl<M, A> FromIterator<M::Value> for LazySegmentTree<M, A>
+where
+    M: Monoid + Default,
+    M::Value: Clone,
+    A: Action<M> + Default,
+    A::Value: Clone + Eq,
+{
+    fn from_iter<T: IntoIterator<Item = M::Value>>(iter: T) -> Self {
+        Self::from(iter.into_iter().collect::<Vec<_>>())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{Action, LazySegmentTree, Monoid};

@@ -3,7 +3,10 @@ pub trait ChangeMinMax {
     fn change_max(&mut self, value: Self) -> bool;
 }
 
-impl<T: PartialOrd> ChangeMinMax for T {
+impl<T> ChangeMinMax for T
+where
+    T: PartialOrd,
+{
     fn change_min(&mut self, value: T) -> bool {
         if value < *self {
             *self = value;

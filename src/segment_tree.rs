@@ -229,6 +229,16 @@ where
     }
 }
 
+impl<M> FromIterator<M::Value> for SegmentTree<M>
+where
+    M: Monoid + Default,
+    M::Value: Clone,
+{
+    fn from_iter<T: IntoIterator<Item = M::Value>>(iter: T) -> Self {
+        Self::from(iter.into_iter().collect::<Vec<_>>())
+    }
+}
+
 // TODO: min_left, max_rightのテストを書く
 #[cfg(test)]
 mod tests {
