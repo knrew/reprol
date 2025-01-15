@@ -1,11 +1,11 @@
 use std::{collections::VecDeque, fmt::Debug, io, str::FromStr};
 
-/// 主に AOJ(Aizu Online Judge)用
-pub struct Io {
+/// proconioが使えないとき用
+pub struct Scanner {
     buffer: VecDeque<String>,
 }
 
-impl Io {
+impl Scanner {
     pub fn new() -> Self {
         Self {
             buffer: VecDeque::new(),
@@ -24,11 +24,15 @@ impl Io {
         while self.buffer.is_empty() {
             self.read_line();
         }
-        return self.buffer.pop_front().unwrap();
+        self.buffer.pop_front().unwrap()
     }
 
     pub fn read_chars(&mut self) -> Vec<char> {
         self.read_string().chars().collect()
+    }
+
+    pub fn read_bytes(&mut self) -> Vec<u8> {
+        self.read_string().bytes().collect()
     }
 
     pub fn read<T>(&mut self) -> T
