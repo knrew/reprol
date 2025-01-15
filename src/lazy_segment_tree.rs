@@ -1,6 +1,6 @@
-use std::ops::{Bound, Range, RangeBounds};
+use std::ops::{Range, RangeBounds};
 
-use crate::{action::Action, monoid::Monoid};
+use crate::{action::Action, monoid::Monoid, utilities::to_open_range};
 
 pub struct LazySegmentTree<M, A>
 where
@@ -54,8 +54,8 @@ where
         self.pull(index);
     }
 
-    pub fn apply<R: RangeBounds<usize>>(&mut self, range: R, f: &A::Value) {
-        let Range { start: l, end: r } = to_open(range, self.len);
+    pub fn apply(&mut self, range: impl RangeBounds<usize>, f: &A::Value) {
+        let Range { start: l, end: r } = to_open_range(range, self.len);
 
         assert!(r <= self.len);
         assert!(l <= r);
@@ -103,8 +103,8 @@ where
         }
     }
 
-    pub fn product<R: RangeBounds<usize>>(&mut self, range: R) -> M::Value {
-        let Range { start: l, end: r } = to_open(range, self.len);
+    pub fn product(&mut self, range: impl RangeBounds<usize>) -> M::Value {
+        let Range { start: l, end: r } = to_open_range(range, self.len);
 
         assert!(r <= self.len);
         assert!(l <= r);
@@ -265,23 +265,6 @@ where
             self.lazy[k] = self.action.op(f, &self.lazy[k]);
         }
     }
-}
-
-/// ranageを区間[l, r)に変換する
-fn to_open<R: RangeBounds<usize>>(range: R, n: usize) -> Range<usize> {
-    let l = match range.start_bound() {
-        Bound::Unbounded => 0,
-        Bound::Included(&x) => x,
-        Bound::Excluded(&x) => x + 1,
-    };
-
-    let r = match range.end_bound() {
-        Bound::Unbounded => n,
-        Bound::Included(&x) => x + 1,
-        Bound::Excluded(&x) => x,
-    };
-
-    l..r
 }
 
 impl<M, A> LazySegmentTree<M, A>

@@ -1,4 +1,6 @@
-use std::ops::{Add, Range, Sub};
+use std::ops::{Add, Range, RangeBounds, Sub};
+
+use crate::utilities::to_open_range;
 
 pub struct CumulativeSum1d<T>(Vec<T>);
 
@@ -18,11 +20,12 @@ where
         Self(cum)
     }
 
-    /// 半区間[l, r)の和を計算する
+    /// 区間和を計算する
     /// a[l]+ ... + a[r-1]
-    pub fn sum(&self, range: Range<usize>) -> T {
-        assert!(range.start <= range.end);
-        self.0[range.end] - self.0[range.start]
+    pub fn sum(&self, range: impl RangeBounds<usize>) -> T {
+        let Range { start: l, end: r } = to_open_range(range, self.0.len());
+        assert!(l <= r);
+        self.0[r] - self.0[l]
     }
 }
 

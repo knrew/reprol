@@ -1,6 +1,6 @@
-use std::ops::{Bound, Range, RangeBounds};
+use std::ops::{Range, RangeBounds};
 
-use crate::monoid::Monoid;
+use crate::{monoid::Monoid, utilities::to_open_range};
 
 pub struct SegmentTree<M>
 where
@@ -49,8 +49,8 @@ where
         &self.nodes[index + self.offset]
     }
 
-    pub fn product<R: RangeBounds<usize>>(&self, range: R) -> M::Value {
-        let Range { start: l, end: r } = to_open(range, self.len);
+    pub fn product(&self, range: impl RangeBounds<usize>) -> M::Value {
+        let Range { start: l, end: r } = to_open_range(range, self.len);
 
         assert!(r <= self.len);
         assert!(l <= r);
@@ -160,23 +160,6 @@ where
 
         0
     }
-}
-
-/// ranageを区間[l, r)に変換する
-fn to_open<R: RangeBounds<usize>>(range: R, n: usize) -> Range<usize> {
-    let l = match range.start_bound() {
-        Bound::Unbounded => 0,
-        Bound::Included(&x) => x,
-        Bound::Excluded(&x) => x + 1,
-    };
-
-    let r = match range.end_bound() {
-        Bound::Unbounded => n,
-        Bound::Included(&x) => x + 1,
-        Bound::Excluded(&x) => x,
-    };
-
-    l..r
 }
 
 impl<M> SegmentTree<M>

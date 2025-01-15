@@ -1,4 +1,6 @@
-use std::ops::{Add, Range, Sub};
+use std::ops::{Add, Range, RangeBounds, Sub};
+
+use crate::utilities::to_open_range;
 
 pub struct CumulativeSum2d<T>(Vec<Vec<T>>);
 
@@ -27,12 +29,12 @@ where
         Self(cum)
     }
 
-    pub fn sum(&self, x_range: Range<usize>, y_range: Range<usize>) -> T {
-        assert!(x_range.start <= x_range.end);
-        assert!(y_range.start <= y_range.end);
-        self.0[x_range.end][y_range.end] + self.0[x_range.start][y_range.start]
-            - self.0[x_range.start][y_range.end]
-            - self.0[x_range.end][y_range.start]
+    pub fn sum(&self, x_range: impl RangeBounds<usize>, y_range: impl RangeBounds<usize>) -> T {
+        let Range { start: xl, end: xr } = to_open_range(x_range, self.0.len());
+        let Range { start: yl, end: yr } = to_open_range(y_range, self.0[0].len());
+        assert!(xl <= xr);
+        assert!(yl <= yr);
+        self.0[xr][yr] + self.0[xl][yl] - self.0[xl][yr] - self.0[xr][yl]
     }
 }
 
