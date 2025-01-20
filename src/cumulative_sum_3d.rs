@@ -47,9 +47,9 @@ where
         y_range: impl RangeBounds<usize>,
         z_range: impl RangeBounds<usize>,
     ) -> T {
-        let Range { start: xl, end: xr } = to_open_range(x_range, self.0.len());
-        let Range { start: yl, end: yr } = to_open_range(y_range, self.0[0].len());
-        let Range { start: zl, end: zr } = to_open_range(z_range, self.0[0][0].len());
+        let Range { start: xl, end: xr } = to_open_range(x_range, self.0.len() - 1);
+        let Range { start: yl, end: yr } = to_open_range(y_range, self.0[0].len() - 1);
+        let Range { start: zl, end: zr } = to_open_range(z_range, self.0[0][0].len() - 1);
         assert!(xl <= xr);
         assert!(yl <= yr);
         assert!(zl <= zr);
@@ -84,6 +84,7 @@ mod tests {
             ((0, 0, 0, 0, 0, 0), 0),
         ];
         let cum = CumulativeSum3d::new(&v, 0);
+        assert_eq!(cum.sum(.., .., ..), 378);
         for ((x1, y1, z1, x2, y2, z2), expected) in test_cases {
             assert_eq!(cum.sum(x1..x2, y1..y2, z1..z2), expected);
         }

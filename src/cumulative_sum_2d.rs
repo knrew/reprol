@@ -34,8 +34,8 @@ where
     }
 
     pub fn sum(&self, x_range: impl RangeBounds<usize>, y_range: impl RangeBounds<usize>) -> T {
-        let Range { start: xl, end: xr } = to_open_range(x_range, self.0.len());
-        let Range { start: yl, end: yr } = to_open_range(y_range, self.0[0].len());
+        let Range { start: xl, end: xr } = to_open_range(x_range, self.0.len() - 1);
+        let Range { start: yl, end: yr } = to_open_range(y_range, self.0[0].len() - 1);
         assert!(xl <= xr);
         assert!(yl <= yr);
         self.0[xr][yr] + self.0[xl][yl] - self.0[xl][yr] - self.0[xr][yl]
@@ -59,6 +59,7 @@ mod tests {
             ((0, 0, 0, 0), 0),
         ];
         let cum = CumulativeSum2d::new(&v, 0);
+        assert_eq!(cum.sum(.., ..), 45);
         for ((r1, c1, r2, c2), expected) in test_cases {
             assert_eq!(cum.sum(r1..r2, c1..c2), expected);
         }

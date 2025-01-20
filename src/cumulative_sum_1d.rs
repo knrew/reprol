@@ -24,7 +24,7 @@ where
     /// 区間和を計算する
     /// a[l]+ ... + a[r-1]
     pub fn sum(&self, range: impl RangeBounds<usize>) -> T {
-        let Range { start: l, end: r } = to_open_range(range, self.0.len());
+        let Range { start: l, end: r } = to_open_range(range, self.0.len() - 1);
         assert!(l <= r);
         self.0[r] - self.0[l]
     }
@@ -48,6 +48,7 @@ mod tests {
             ((0, 4), 10),
         ];
         let cum = CumulativeSum1d::new(&v, 0);
+        assert_eq!(cum.sum(..), 15);
         for ((l, r), expected) in test_cases {
             assert_eq!(cum.sum(l..r), expected);
         }
