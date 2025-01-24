@@ -29,22 +29,6 @@ where
     }
 }
 
-impl<T> Matrix for &[Vec<T>]
-where
-    T: Clone,
-{
-    type Output = Vec<Vec<T>>;
-    fn rotate_clockwise(&self) -> Self::Output {
-        rotate_clockwise(self)
-    }
-    fn rotate_anticlockwise(&self) -> Self::Output {
-        rotate_anticlockwise(self)
-    }
-    fn transpose(&self) -> Self::Output {
-        transpose(self)
-    }
-}
-
 /// NxM行列を時計回りに90度回転させる
 /// 処理後の行列はMxN行列になる
 fn rotate_clockwise<T>(m: &[Vec<T>]) -> Vec<Vec<T>>

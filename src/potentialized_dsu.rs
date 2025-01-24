@@ -12,7 +12,7 @@ pub struct PotentializedDsu<T> {
 
 impl<T> PotentializedDsu<T>
 where
-    T: Copy + Clone + Eq + Add<Output = T> + Sub<Output = T> + Neg<Output = T>,
+    T: Copy + PartialEq + Add<Output = T> + Sub<Output = T> + Neg<Output = T>,
 {
     pub fn new(n: usize, zero: T) -> Self {
         Self {
@@ -25,14 +25,12 @@ where
 
     /// xのrootのindexを返す
     pub fn find(&mut self, v: usize) -> usize {
-        debug_assert!(v < self.parents.len());
-
         if self.parents[v] == v {
             return v;
         }
         let root = self.find(self.parents[v]);
 
-        let tmp = self.potentials[v] + self.potentials[self.parents[v]];
+        let tmp = self.potentials[v].clone() + self.potentials[self.parents[v]].clone();
         self.potentials[v] = tmp;
 
         self.parents[v] = root;
@@ -43,9 +41,6 @@ where
     /// potential[u]+w=potential[v]となるように頂点にポテンシャルを置く
     /// 既存のポテンシャルと矛盾があれば，もとのポテンシャルを維持して返り値としてfalseを返す
     pub fn merge(&mut self, u: usize, v: usize, w: T) -> bool {
-        debug_assert!(u < self.parents.len());
-        debug_assert!(v < self.parents.len());
-
         let mut w = w + self.potential(u) - self.potential(v);
 
         let mut u = self.find(u);
@@ -71,21 +66,17 @@ where
 
     /// xとyが同じグループに属すか
     pub fn connected(&mut self, u: usize, v: usize) -> bool {
-        debug_assert!(u < self.parents.len());
-        debug_assert!(v < self.parents.len());
         self.find(u) == self.find(v)
     }
 
     /// xが属するグループの要素数
     pub fn size(&mut self, v: usize) -> usize {
-        debug_assert!(v < self.parents.len());
         let v = self.find(v);
         self.sizes[v]
     }
 
     /// vに置かれたポテンシャル
     pub fn potential(&mut self, v: usize) -> T {
-        debug_assert!(v < self.parents.len());
         let _ = self.find(v);
         self.potentials[v]
     }
@@ -93,8 +84,6 @@ where
     /// uとvのポテンシャルの差
     /// potential[v] - potential[u]
     pub fn difference_potential(&mut self, u: usize, v: usize) -> T {
-        debug_assert!(u < self.parents.len());
-        debug_assert!(v < self.parents.len());
         assert!(self.connected(u, v));
         self.potential(v) - self.potential(u)
     }

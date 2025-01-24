@@ -1,6 +1,6 @@
 use std::ops::{Range, RangeBounds};
 
-use crate::{monoid::Monoid, utilities::to_open_range};
+use crate::{monoid::Monoid, range::to_open_range};
 
 pub struct SegmentTree<M>
 where

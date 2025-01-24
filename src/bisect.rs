@@ -12,6 +12,8 @@ macro_rules! impl_integer {
         impl Bisect for Range<$ty> {
             type Item = $ty;
             fn bisect(&self, mut f: impl FnMut(&Self::Item) -> bool) -> Self::Item {
+                assert!(self.start < self.end);
+
                 let Range {
                     start: mut ok,
                     end: mut ng,

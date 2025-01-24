@@ -1,6 +1,6 @@
 use std::ops::{Range, RangeBounds};
 
-use crate::{action::Action, monoid::Monoid, utilities::to_open_range};
+use crate::{action::Action, monoid::Monoid, range::to_open_range};
 
 pub struct LazySegmentTree<M, A>
 where
@@ -21,7 +21,7 @@ where
     M: Monoid,
     M::Value: Clone,
     A: Action<M>,
-    A::Value: Clone + Eq,
+    A::Value: Clone + PartialEq,
 {
     pub fn new(len: usize, monoid: M, action: A) -> Self {
         let offset = len.next_power_of_two();
@@ -267,26 +267,14 @@ where
     }
 }
 
-impl<M, A> LazySegmentTree<M, A>
+impl<M, A> From<Vec<M::Value>> for LazySegmentTree<M, A>
 where
     M: Monoid + Default,
     M::Value: Clone,
     A: Action<M> + Default,
-    A::Value: Clone + Eq,
+    A::Value: Clone + PartialEq,
 {
-    pub fn with_len(len: usize) -> Self {
-        Self::new(len, M::default(), A::default())
-    }
-}
-
-impl<M, A> From<&[M::Value]> for LazySegmentTree<M, A>
-where
-    M: Monoid + Default,
-    M::Value: Clone,
-    A: Action<M> + Default,
-    A::Value: Clone + Eq,
-{
-    fn from(v: &[M::Value]) -> Self {
+    fn from(v: Vec<M::Value>) -> Self {
         let mut res = Self::new(v.len(), M::default(), A::default());
 
         for i in 0..res.len {
@@ -306,22 +294,22 @@ where
     M: Monoid + Default,
     M::Value: Clone,
     A: Action<M> + Default,
-    A::Value: Clone + Eq,
+    A::Value: Clone + PartialEq,
 {
     fn from(v: &Vec<M::Value>) -> Self {
-        Self::from(v.as_slice())
+        Self::from(v.clone())
     }
 }
 
-impl<M, A> From<Vec<M::Value>> for LazySegmentTree<M, A>
+impl<M, A> From<&[M::Value]> for LazySegmentTree<M, A>
 where
     M: Monoid + Default,
     M::Value: Clone,
     A: Action<M> + Default,
-    A::Value: Clone + Eq,
+    A::Value: Clone + PartialEq,
 {
-    fn from(v: Vec<M::Value>) -> Self {
-        Self::from(v.as_slice())
+    fn from(v: &[M::Value]) -> Self {
+        Self::from(v.to_vec())
     }
 }
 
@@ -330,7 +318,7 @@ where
     M: Monoid + Default,
     M::Value: Clone,
     A: Action<M> + Default,
-    A::Value: Clone + Eq,
+    A::Value: Clone + PartialEq,
 {
     fn from_iter<T: IntoIterator<Item = M::Value>>(iter: T) -> Self {
         Self::from(iter.into_iter().collect::<Vec<_>>())

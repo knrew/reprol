@@ -6,7 +6,7 @@ use std::{cmp::Reverse, collections::BinaryHeap, ops::Add};
 /// I: 頂点からインデックスへの写像
 pub struct Dijkstra<V, C, I> {
     /// 頂点数(状態数)
-    n: usize,
+    size: usize,
 
     /// 始点頂点
     start: V,
@@ -70,7 +70,7 @@ where
         }
 
         Self {
-            n,
+            size: n,
             start: start.clone(),
             to_index,
             costs,
@@ -79,7 +79,7 @@ where
     }
 
     pub fn size(&self) -> usize {
-        self.n
+        self.size
     }
 
     pub fn start(&self) -> &V {

@@ -1,7 +1,8 @@
 use std::ops::{Range, RangeBounds};
 
-use crate::{monoid::Monoid, utilities::to_open_range};
+use crate::{monoid::Monoid, range::to_open_range};
 
+/// なんか遅い？
 pub struct SparseTable<M: Monoid> {
     n: usize,
     nodes: Vec<Vec<M::Value>>,
@@ -55,6 +56,16 @@ where
 {
     fn from(v: Vec<M::Value>) -> Self {
         Self::new(v, M::default())
+    }
+}
+
+impl<M> From<&Vec<M::Value>> for SparseTable<M>
+where
+    M: Monoid + Default,
+    M::Value: Clone,
+{
+    fn from(v: &Vec<M::Value>) -> Self {
+        Self::new(v.clone(), M::default())
     }
 }
 

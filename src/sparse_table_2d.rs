@@ -1,6 +1,6 @@
 use std::ops::{Range, RangeBounds};
 
-use crate::{monoid::Monoid, sparse_table::SparseTable, utilities::to_open_range};
+use crate::{monoid::Monoid, range::to_open_range, sparse_table::SparseTable};
 
 pub struct SparseTable2d<M: Monoid> {
     h: usize,
@@ -86,6 +86,16 @@ where
 {
     fn from(v: Vec<Vec<M::Value>>) -> Self {
         Self::new(v, M::default())
+    }
+}
+
+impl<M> From<&Vec<Vec<M::Value>>> for SparseTable2d<M>
+where
+    M: Monoid + Clone + Default,
+    M::Value: Clone,
+{
+    fn from(v: &Vec<Vec<M::Value>>) -> Self {
+        Self::new(v.clone(), M::default())
     }
 }
 

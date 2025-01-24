@@ -1,6 +1,6 @@
 use std::ops::{Add, Range, RangeBounds, Sub};
 
-use crate::utilities::to_open_range;
+use crate::range::to_open_range;
 
 pub struct FenwickTree<T> {
     n: usize,
