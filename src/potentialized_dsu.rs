@@ -1,25 +1,29 @@
-use std::{
-    mem::swap,
-    ops::{Add, Neg, Sub},
-};
+use std::mem::swap;
 
-pub struct PotentializedDsu<T> {
+use crate::group::Group;
+
+#[derive(Clone)]
+pub struct PotentializedDsu<G: Group> {
     parents: Vec<usize>,
     sizes: Vec<usize>,
-    potentials: Vec<T>,
+    potentials: Vec<G::Value>,
     num_components: usize,
+    group: G,
 }
 
-impl<T> PotentializedDsu<T>
+impl<G> PotentializedDsu<G>
 where
-    T: Copy + PartialEq + Add<Output = T> + Sub<Output = T> + Neg<Output = T>,
+    G: Group + Default,
+    G::Value: Clone + PartialEq,
 {
-    pub fn new(n: usize, zero: T) -> Self {
+    pub fn new(n: usize) -> Self {
+        let group = G::default();
         Self {
             parents: (0..n).collect(),
             sizes: vec![1; n],
-            potentials: vec![zero; n],
+            potentials: vec![group.identity(); n],
             num_components: n,
+            group,
         }
     }
 
@@ -30,8 +34,9 @@ where
         }
         let root = self.find(self.parents[v]);
 
-        let tmp = self.potentials[v].clone() + self.potentials[self.parents[v]].clone();
-        self.potentials[v] = tmp;
+        self.potentials[v] = self
+            .group
+            .op(&self.potentials[v], &self.potentials[self.parents[v]]);
 
         self.parents[v] = root;
         root
@@ -40,8 +45,12 @@ where
     /// xが属するグループとyが属するグループを統合する
     /// potential[u]+w=potential[v]となるように頂点にポテンシャルを置く
     /// 既存のポテンシャルと矛盾があれば，もとのポテンシャルを維持して返り値としてfalseを返す
-    pub fn merge(&mut self, u: usize, v: usize, w: T) -> bool {
-        let mut w = w + self.potential(u) - self.potential(v);
+    pub fn merge(&mut self, u: usize, v: usize, w: G::Value) -> bool {
+        let mut w = {
+            let pu = self.potential(u);
+            let pv = self.potential(v);
+            self.group.op(&self.group.op(&w, &pu), &self.group.inv(&pv))
+        };
 
         let mut u = self.find(u);
         let mut v = self.find(v);
@@ -54,7 +63,7 @@ where
 
         if self.sizes[u] < self.sizes[v] {
             swap(&mut u, &mut v);
-            w = -w;
+            w = self.group.inv(&w);
         }
 
         self.sizes[u] += self.sizes[v];
@@ -76,16 +85,18 @@ where
     }
 
     /// vに置かれたポテンシャル
-    pub fn potential(&mut self, v: usize) -> T {
+    pub fn potential(&mut self, v: usize) -> G::Value {
         let _ = self.find(v);
-        self.potentials[v]
+        self.potentials[v].clone()
     }
 
     /// uとvのポテンシャルの差
     /// potential[v] - potential[u]
-    pub fn difference_potential(&mut self, u: usize, v: usize) -> T {
+    pub fn difference_potential(&mut self, u: usize, v: usize) -> G::Value {
         assert!(self.connected(u, v));
-        self.potential(v) - self.potential(u)
+        let pv = self.potential(v);
+        let pu = self.potential(u);
+        self.group.op(&pv, &self.group.inv(&pu))
     }
 
     /// 連結成分の個数
@@ -117,6 +128,8 @@ mod tests {
     }
     use Query::{CountComponents, DifferencePotential, Merge, Size};
 
+    use crate::ops::op_add::OpAdd;
+
     use super::PotentializedDsu;
 
     /// クエリを順に実行する
@@ -124,7 +137,7 @@ mod tests {
     fn run_queries(n: usize, queries: &[Query]) -> Vec<i64> {
         let mut res = vec![];
 
-        let mut dsu = PotentializedDsu::new(n, 0i64);
+        let mut dsu = PotentializedDsu::<OpAdd<i64>>::new(n);
 
         for query in queries {
             match query {

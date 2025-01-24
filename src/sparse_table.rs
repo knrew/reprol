@@ -91,22 +91,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::{Monoid, SparseTable};
+    use crate::ops::op_min::OpMin;
 
-    #[derive(Clone, Default)]
-    struct OpMin;
-
-    impl Monoid for OpMin {
-        type Value = i64;
-
-        fn identity(&self) -> Self::Value {
-            i64::MAX
-        }
-
-        fn op(&self, x: &Self::Value, y: &Self::Value) -> Self::Value {
-            *x.min(y)
-        }
-    }
+    use super::SparseTable;
 
     #[test]
     fn test_sparse_table() {
@@ -124,7 +111,7 @@ mod tests {
             ([3, 4], 100),
         ];
 
-        let sp = SparseTable::new(v, OpMin);
+        let sp = SparseTable::<OpMin<i64>>::from(v);
         for ([l, r], expected) in test_cases {
             assert_eq!(sp.product(l..r), expected);
         }

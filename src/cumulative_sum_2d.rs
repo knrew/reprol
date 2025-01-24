@@ -1,7 +1,8 @@
 use std::ops::{Add, Range, RangeBounds, Sub};
 
-use crate::utilities::to_open_range;
+use crate::range::to_open_range;
 
+// TODO: Refactor
 pub struct CumulativeSum2d<T>(Vec<Vec<T>>);
 
 impl<T> CumulativeSum2d<T>

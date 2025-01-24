@@ -1,6 +1,6 @@
 use std::ops::{Range, RangeBounds};
 
-use crate::{group::Group, range::to_open_range};
+use crate::{group::Group, ops::op_add::OpAdd, range::to_open_range};
 
 #[derive(Clone)]
 pub struct CumulativeProduct<G: Group> {
@@ -80,29 +80,11 @@ where
     }
 }
 
+pub type CumulativeSum<T> = CumulativeProduct<OpAdd<T>>;
+
 #[cfg(test)]
 mod tests {
-    use crate::{group::Group, monoid::Monoid};
-
-    use super::CumulativeProduct;
-
-    struct Op;
-
-    impl Monoid for Op {
-        type Value = i64;
-        fn identity(&self) -> Self::Value {
-            0
-        }
-        fn op(&self, a: &Self::Value, b: &Self::Value) -> Self::Value {
-            a + b
-        }
-    }
-
-    impl Group for Op {
-        fn inv(&self, x: &<Self as Monoid>::Value) -> Self::Value {
-            -x
-        }
-    }
+    use crate::{cumulative_product::CumulativeSum, ops::op_add::OpAdd};
 
     #[test]
     fn test_cumulative_sum_1d() {
@@ -117,13 +99,13 @@ mod tests {
             ((4, 5), 5),
             ((0, 4), 10),
         ];
-        let cum = CumulativeProduct::new(v, Op);
+        let cum = CumulativeSum::<i64>::from(v);
         assert_eq!(cum.product(..), 15);
         for ((l, r), expected) in test_cases {
             assert_eq!(cum.product(l..r), expected);
         }
 
-        let cum = CumulativeProduct::new_by(5, Op, |i| i as i64 + 1);
+        let cum = CumulativeSum::new_by(5, OpAdd::<i64>::default(), |i| i as i64 + 1);
         let test_cases = vec![
             ((0, 5), 15),
             ((0, 1), 1),
