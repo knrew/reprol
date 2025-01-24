@@ -18,7 +18,22 @@ where
     M: Monoid,
     M::Value: Clone,
 {
-    pub fn new(len: usize, monoid: M) -> Self {
+    pub fn new(v: Vec<M::Value>) -> Self
+    where
+        M: Default,
+    {
+        Self::from(v)
+    }
+
+    pub fn with_len(len: usize) -> Self
+    where
+        M: Default,
+    {
+        Self::with_op(len, M::default())
+    }
+
+    /// 演算(モノイド)を引数で指定
+    pub fn with_op(len: usize, monoid: M) -> Self {
         let offset = len.next_power_of_two();
         let log = offset.trailing_zeros();
         let nodes = vec![monoid.identity(); 2 * offset];
@@ -162,23 +177,13 @@ where
     }
 }
 
-impl<M> SegmentTree<M>
-where
-    M: Monoid + Default,
-    M::Value: Clone,
-{
-    pub fn with_len(len: usize) -> Self {
-        Self::new(len, M::default())
-    }
-}
-
 impl<M> From<&[M::Value]> for SegmentTree<M>
 where
     M: Monoid + Default,
     M::Value: Clone,
 {
     fn from(v: &[M::Value]) -> Self {
-        let mut res = Self::new(v.len(), M::default());
+        let mut res = Self::with_op(v.len(), M::default());
 
         for i in 0..res.len {
             res.nodes[i + res.offset] = v[i].clone();

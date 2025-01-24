@@ -13,11 +13,17 @@ pub struct PotentializedDsu<G: Group> {
 
 impl<G> PotentializedDsu<G>
 where
-    G: Group + Default,
+    G: Group,
     G::Value: Clone + PartialEq,
 {
-    pub fn new(n: usize) -> Self {
-        let group = G::default();
+    pub fn new(n: usize) -> Self
+    where
+        G: Default,
+    {
+        Self::with_op(n, G::default())
+    }
+
+    pub fn with_op(n: usize, group: G) -> Self {
         Self {
             parents: (0..n).collect(),
             sizes: vec![1; n],

@@ -14,7 +14,15 @@ where
     M: Monoid,
     M::Value: Clone,
 {
-    pub fn new(v: Vec<M::Value>, monoid: M) -> Self {
+    pub fn new(v: Vec<M::Value>) -> Self
+    where
+        M: Default,
+    {
+        Self::with_op(v, M::default())
+    }
+
+    /// 演算(モノイド)を引数で指定
+    pub fn with_op(v: Vec<M::Value>, monoid: M) -> Self {
         assert!(!v.is_empty());
         let n = v.len();
         let len = v.len().next_power_of_two().trailing_zeros() as usize + 1;
@@ -28,10 +36,6 @@ where
             nodes.push(node);
         }
         Self { n, nodes, monoid }
-    }
-
-    pub fn from_slice(v: &[M::Value], monoid: M) -> Self {
-        Self::new(v.to_vec(), monoid)
     }
 
     pub fn product(&self, range: impl RangeBounds<usize>) -> M::Value {
@@ -55,7 +59,7 @@ where
     M::Value: Clone,
 {
     fn from(v: Vec<M::Value>) -> Self {
-        Self::new(v, M::default())
+        Self::new(v)
     }
 }
 
@@ -65,7 +69,7 @@ where
     M::Value: Clone,
 {
     fn from(v: &Vec<M::Value>) -> Self {
-        Self::new(v.clone(), M::default())
+        Self::new(v.clone())
     }
 }
 
@@ -75,7 +79,7 @@ where
     M::Value: Clone,
 {
     fn from(v: &[M::Value]) -> Self {
-        Self::from_slice(v, M::default())
+        Self::new(v.to_vec())
     }
 }
 
@@ -85,7 +89,7 @@ where
     M::Value: Clone,
 {
     fn from_iter<T: IntoIterator<Item = M::Value>>(iter: T) -> Self {
-        Self::from(iter.into_iter().collect::<Vec<_>>())
+        Self::new(iter.into_iter().collect::<Vec<_>>())
     }
 }
 
@@ -111,7 +115,7 @@ mod tests {
             ([3, 4], 100),
         ];
 
-        let sp = SparseTable::<OpMin<i64>>::from(v);
+        let sp = SparseTable::<OpMin<i64>>::new(v);
         for ([l, r], expected) in test_cases {
             assert_eq!(sp.product(l..r), expected);
         }

@@ -1,44 +1,55 @@
-use std::ops::{Add, Range, RangeBounds, Sub};
+use std::ops::{Range, RangeBounds};
 
-use crate::range::to_open_range;
+use crate::{group::Group, range::to_open_range};
 
-pub struct FenwickTree<T> {
-    n: usize,
-    nodes: Vec<T>,
-    zero: T,
+pub struct FenwickTree<G: Group> {
+    len: usize,
+    nodes: Vec<G::Value>,
+    group: G,
 }
 
-impl<T> FenwickTree<T>
+impl<G> FenwickTree<G>
 where
-    T: Clone + Add<Output = T> + Sub<Output = T>,
+    G: Group,
+    G::Value: Clone,
 {
-    pub fn new(n: usize, zero: T) -> Self {
+    pub fn new(n: usize) -> Self
+    where
+        G: Default,
+    {
+        Self::with_op(n, G::default())
+    }
+
+    /// 演算(群)を引数で指定
+    pub fn with_op(n: usize, group: G) -> Self {
         Self {
-            n,
-            nodes: vec![zero.clone(); n],
-            zero,
+            len: n,
+            nodes: vec![group.identity(); n],
+            group,
         }
     }
 
-    pub fn add(&mut self, mut index: usize, value: T) {
-        assert!(index < self.n);
+    pub fn add(&mut self, mut index: usize, value: G::Value) {
+        assert!(index < self.len);
         index += 1;
-        while index <= self.n {
-            self.nodes[index - 1] = self.nodes[index - 1].clone() + value.clone();
+        while index <= self.len {
+            self.nodes[index - 1] = self.group.op(&self.nodes[index - 1], &value);
             index += index & index.wrapping_neg();
         }
     }
 
-    pub fn sum(&self, range: impl RangeBounds<usize>) -> T {
-        let Range { start: l, end: r } = to_open_range(range, self.n);
+    pub fn product(&self, range: impl RangeBounds<usize>) -> G::Value {
+        let Range { start: l, end: r } = to_open_range(range, self.len);
         assert!(l <= r);
-        self.cum(r) - self.cum(l)
+        let cl = self.cum(l);
+        let cr = self.cum(r);
+        self.group.op(&cr, &self.group.inv(&cl))
     }
 
-    fn cum(&self, mut r: usize) -> T {
-        let mut res = self.zero.clone();
+    fn cum(&self, mut r: usize) -> G::Value {
+        let mut res = self.group.identity();
         while r > 0 {
-            res = res + self.nodes[r - 1].clone();
+            res = self.group.op(&res, &self.nodes[r - 1]);
             r -= r & r.wrapping_neg();
         }
         res
@@ -47,21 +58,23 @@ where
 
 #[cfg(test)]
 mod tests {
+    use crate::ops::op_add::OpAdd;
+
     use super::FenwickTree;
 
     #[test]
     fn test_fenwick_tree() {
-        let mut ft = FenwickTree::new(10, 0);
+        let mut ft = FenwickTree::<OpAdd<i64>>::new(10);
         ft.add(0, 5);
         ft.add(2, 10);
         ft.add(6, 20);
-        assert_eq!(ft.sum(..1), 5);
-        assert_eq!(ft.sum(..3), 15);
-        assert_eq!(ft.sum(..7), 35);
-        assert_eq!(ft.sum(..), 35);
-        assert_eq!(ft.sum(0..3), 15);
-        assert_eq!(ft.sum(3..=6), 20);
+        assert_eq!(ft.product(..1), 5);
+        assert_eq!(ft.product(..3), 15);
+        assert_eq!(ft.product(..7), 35);
+        assert_eq!(ft.product(..), 35);
+        assert_eq!(ft.product(0..3), 15);
+        assert_eq!(ft.product(3..=6), 20);
         ft.add(9, 10);
-        assert_eq!(ft.sum(0..10), 45);
+        assert_eq!(ft.product(0..10), 45);
     }
 }

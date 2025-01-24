@@ -23,13 +23,30 @@ where
     A: Action<M>,
     A::Value: Clone + PartialEq,
 {
-    pub fn new(len: usize, monoid: M, action: A) -> Self {
-        let offset = len.next_power_of_two();
+    pub fn new(v: Vec<M::Value>) -> Self
+    where
+        M: Default,
+        A: Default,
+    {
+        Self::from(v)
+    }
+
+    pub fn with_len(n: usize) -> Self
+    where
+        M: Default,
+        A: Default,
+    {
+        Self::with_op(n, M::default(), A::default())
+    }
+
+    /// 演算(モノイドと作用)を引数で指定
+    pub fn with_op(n: usize, monoid: M, action: A) -> Self {
+        let offset = n.next_power_of_two();
         let log = offset.trailing_zeros();
         let nodes = vec![monoid.identity(); 2 * offset];
         let lazy = vec![action.identity(); 2 * offset];
         Self {
-            len,
+            len: n,
             offset,
             log,
             nodes,
@@ -275,7 +292,7 @@ where
     A::Value: Clone + PartialEq,
 {
     fn from(v: Vec<M::Value>) -> Self {
-        let mut res = Self::new(v.len(), M::default(), A::default());
+        let mut res = Self::with_op(v.len(), M::default(), A::default());
 
         for i in 0..res.len {
             res.nodes[i + res.offset] = v[i].clone();

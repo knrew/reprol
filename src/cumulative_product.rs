@@ -14,11 +14,21 @@ where
     G: Group,
     G::Value: Clone,
 {
-    pub fn new(v: Vec<G::Value>, group: G) -> Self {
+    pub fn new(v: Vec<G::Value>) -> Self
+    where
+        G: Default,
+    {
+        assert!(!v.is_empty());
+        Self::new_by(v.len(), G::default(), |i| v[i].clone())
+    }
+
+    /// 演算(群)を引数で指定
+    pub fn with_op(v: Vec<G::Value>, group: G) -> Self {
         assert!(!v.is_empty());
         Self::new_by(v.len(), group, |i| v[i].clone())
     }
 
+    /// i番目の値を関数で指定
     pub fn new_by(len: usize, group: G, mut f: impl FnMut(usize) -> G::Value) -> Self {
         let mut cum = vec![group.identity(); len + 1];
         for i in 0..len {
@@ -46,7 +56,7 @@ where
     G::Value: Clone,
 {
     fn from(v: Vec<G::Value>) -> Self {
-        CumulativeProduct::new(v, G::default())
+        CumulativeProduct::new(v)
     }
 }
 
@@ -56,7 +66,7 @@ where
     G::Value: Clone,
 {
     fn from(v: &Vec<G::Value>) -> Self {
-        CumulativeProduct::new(v.clone(), G::default())
+        CumulativeProduct::new(v.clone())
     }
 }
 
@@ -66,7 +76,7 @@ where
     G::Value: Clone,
 {
     fn from(v: &[G::Value]) -> Self {
-        CumulativeProduct::new(v.to_vec(), G::default())
+        CumulativeProduct::new(v.to_vec())
     }
 }
 
