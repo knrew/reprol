@@ -1,3 +1,5 @@
+use crate::bisect::Bisect;
+
 pub trait Isqrt {
     /// 二分探索によって整数の平方根を計算する
     /// 非負整数xに対して，isqrt(x)は x^2<=nを満たす最大の整数nを返す
@@ -10,21 +12,15 @@ macro_rules! impl_integer {
         impl Isqrt for $ty {
             #[allow(unused_comparisons)]
             fn isqrt(self) -> Self {
-                debug_assert!(self >= 0);
-                let mut l = 0;
-                let mut r = self;
-                while l <= r {
-                    let mid = l + (r - l) / 2;
-                    let mid2 = mid * mid;
-                    if mid2 == self {
-                        return mid;
-                    } else if mid2 < self {
-                        l = mid + 1;
-                    } else {
-                        r = mid - 1;
-                    }
+                assert!(self >= 0);
+                if self == 0 {
+                    0
+                } else {
+                    (1..self + 1).bisect(|&x| match x.checked_mul(x) {
+                        Some(xx) if xx <= self => true,
+                        _ => false,
+                    }) - 1
                 }
-                r
             }
         }
     )*};
@@ -38,7 +34,7 @@ mod tests {
 
     #[test]
     fn test_isqrt() {
-        let test_cases: Vec<(u32, u32)> = vec![
+        let test_cases: Vec<(u64, u64)> = vec![
             (0, 0),
             (1, 1),
             (4, 2),
@@ -60,6 +56,9 @@ mod tests {
             (45, 6),
             (47, 6),
             (49, 7),
+            (100, 10),
+            (9000000000000000000, 3000000000),
+            (9000000000000000001, 3000000000),
         ];
 
         for (x, ans) in test_cases {
