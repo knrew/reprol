@@ -2,9 +2,9 @@ use std::ops::{Add, Range, RangeBounds, Sub};
 
 use crate::utilities::to_open_range;
 
-pub struct CumulativeSum1d<T>(Vec<T>);
+pub struct CumulativeSum<T>(Vec<T>);
 
-impl<T> CumulativeSum1d<T>
+impl<T> CumulativeSum<T>
 where
     T: Copy + Add<Output = T> + Sub<Output = T>,
 {
@@ -32,7 +32,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::CumulativeSum1d;
+    use super::CumulativeSum;
 
     #[test]
     fn test_cumulative_sum_1d() {
@@ -47,13 +47,13 @@ mod tests {
             ((4, 5), 5),
             ((0, 4), 10),
         ];
-        let cum = CumulativeSum1d::new(&v, 0);
+        let cum = CumulativeSum::new(&v, 0);
         assert_eq!(cum.sum(..), 15);
         for ((l, r), expected) in test_cases {
             assert_eq!(cum.sum(l..r), expected);
         }
 
-        let cum = CumulativeSum1d::construct(5, 0, |i| i as i32 + 1);
+        let cum = CumulativeSum::construct(5, 0, |i| i as i32 + 1);
         let test_cases = vec![
             ((0, 5), 15),
             ((0, 1), 1),
