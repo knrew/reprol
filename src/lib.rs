@@ -28,6 +28,5 @@ pub mod segment_tree;
 pub mod sparse_table;
 pub mod sparse_table_2d;
 pub mod topological_sort;
-pub mod trie;
 pub mod warshall_floyd;
 pub mod z_algorithm;
