@@ -1,4 +1,4 @@
-use std::ops::Range;
+use std::ops::{Range, RangeInclusive};
 
 /// x \in [l, r)の範囲を探索
 /// !f(x)となる最小のxを返す(f(x-1)==true,  f(x)==false)
@@ -30,6 +30,17 @@ macro_rules! impl_integer {
                 }
 
                 ng
+            }
+        }
+
+        impl Bisect for RangeInclusive<$ty> {
+            type Item = $ty;
+            fn bisect(&self, f: impl FnMut(&Self::Item) -> bool) -> Self::Item {
+                let l = *self.start();
+                let u = *self.end();
+                assert!(l <= u);
+                assert!(u < $ty::MAX);
+                (l..u + 1).bisect(f)
             }
         }
     )*};
