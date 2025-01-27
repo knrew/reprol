@@ -24,10 +24,10 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::format::Format;
+    use super::Format;
 
     #[test]
-    fn test_formatter() {
+    fn test_join() {
         let v = vec![1, 2, 3, 4, 5];
         assert_eq!(v.iter().join_with(" "), "1 2 3 4 5");
     }
