@@ -1,6 +1,6 @@
 pub trait ChangeMinMax {
-    fn change_min(&mut self, value: Self) -> bool;
-    fn change_max(&mut self, value: Self) -> bool;
+    fn change_min(&mut self, rhs: Self) -> bool;
+    fn change_max(&mut self, rhs: Self) -> bool;
 }
 
 impl<T> ChangeMinMax for T
@@ -39,9 +39,9 @@ where
 {
     type Item = T;
 
-    fn change_min_or_set(&mut self, rhs: T) -> bool {
+    fn change_min_or_set(&mut self, rhs: Self::Item) -> bool {
         match self {
-            Some(current) if *current < rhs => false,
+            Some(lhs) if *lhs < rhs => false,
             _ => {
                 *self = Some(rhs);
                 true
@@ -51,7 +51,7 @@ where
 
     fn change_max_or_set(&mut self, rhs: Self::Item) -> bool {
         match self {
-            Some(current) if *current > rhs => false,
+            Some(lhs) if *lhs > rhs => false,
             _ => {
                 *self = Some(rhs);
                 true
