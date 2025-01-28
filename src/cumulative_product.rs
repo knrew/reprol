@@ -40,6 +40,7 @@ where
     /// [0, r)の累積を取得する
     /// e.g. cum.get(n)で総積(総和)
     pub fn get(&self, r: usize) -> &O::Value {
+        assert!(r > 0);
         assert!(r <= self.len);
         &self.data[r]
     }
@@ -107,7 +108,12 @@ pub type CumulativeSum<T> = CumulativeProduct<OpAdd<T>>;
 
 #[cfg(test)]
 mod tests {
-    use crate::{cumulative_product::CumulativeSum, ops::op_add::OpAdd};
+    use crate::{
+        cumulative_product::CumulativeSum,
+        ops::{op_add::OpAdd, op_min::OpMin},
+    };
+
+    use super::CumulativeProduct;
 
     #[test]
     fn test_cumulative_sum() {
@@ -124,6 +130,7 @@ mod tests {
         ];
         let cum = CumulativeSum::<i64>::from(v);
         assert_eq!(cum.product(..), 15);
+        assert_eq!(cum.get(5), &15);
         for ((l, r), expected) in test_cases {
             assert_eq!(cum.product(l..r), expected);
         }
@@ -141,6 +148,16 @@ mod tests {
         ];
         for ((l, r), expected) in test_cases {
             assert_eq!(cum.product(l..r), expected);
+        }
+    }
+
+    #[test]
+    fn test_cumulative_min() {
+        let v = vec![8, 10, 4, 2, 3];
+        let test_cases = vec![(1, 8), (2, 8), (3, 4), (4, 2), (5, 2)];
+        let cum = CumulativeProduct::<OpMin<i32>>::from(v);
+        for (r, expected) in test_cases {
+            assert_eq!(cum.get(r), &expected);
         }
     }
 }
