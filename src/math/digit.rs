@@ -57,6 +57,10 @@ mod tests {
             u64::MAX,
         ];
 
+        for x in &test_cases_u64 {
+            assert_eq!(x.digit(), x.to_string().len());
+        }
+
         let test_cases_u128 = vec![
             45509468001592877595755948073788932500,
             65248981567317200482825491029219331650,
@@ -64,10 +68,6 @@ mod tests {
             239815775772489046182975036721875234352,
             u128::MAX,
         ];
-
-        for x in &test_cases_u64 {
-            assert_eq!(x.digit(), x.to_string().len());
-        }
 
         for x in &test_cases_u128 {
             assert_eq!(x.digit(), x.to_string().len());

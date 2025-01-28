@@ -4,14 +4,16 @@ pub trait DivCeil {
     fn div_ceil_(self, rhs: Self) -> Self;
 }
 
-macro_rules! impl_integer {
+macro_rules! impl_signed {
     ($($ty:ident),*) => {$(
         impl DivCeil for $ty {
-            #[allow(unused_comparisons)]
             fn div_ceil_(self, rhs: Self) -> Self {
-                if self >= 0 {
-                    let d = self / rhs;
-                    let r = self % rhs;
+                assert!(rhs != 0);
+                if (self >= 0) == (rhs > 0) {
+                    let lhs = self.abs();
+                    let rhs = rhs.abs();
+                    let d = lhs / rhs;
+                    let r = lhs % rhs;
                     if r > 0 {
                         d + 1
                     } else {
@@ -25,7 +27,26 @@ macro_rules! impl_integer {
     )*};
 }
 
-impl_integer! { u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize }
+impl_signed! { i8, i16, i32, i64, i128, isize }
+
+macro_rules! impl_unsigned {
+    ($($ty:ident),*) => {$(
+        impl DivCeil for $ty {
+            fn div_ceil_(self, rhs: Self) -> Self {
+                assert!(rhs != 0);
+                let d = self / rhs;
+                let r = self % rhs;
+                if r > 0 {
+                    d + 1
+                } else {
+                    d
+                }
+            }
+        }
+    )*};
+}
+
+impl_unsigned! { u8, u16, u32, u64, u128, usize }
 
 #[cfg(test)]
 mod tests {
@@ -48,6 +69,14 @@ mod tests {
             (2137006360, 1895544918, 2),
             (i32::MAX, i32::MAX, 1),
             (i32::MAX, 1, i32::MAX),
+            (-7, 3, -2),
+            (-9, 3, -3),
+            (7, -3, -2),
+            (9, -3, -3),
+            (-7, -3, 3),
+            (-9, -3, 3),
+            (0, 5, 0),
+            (0, -5, 0),
         ];
         for &(x, y, ans) in &test_cases {
             assert_eq!(x.div_ceil_(y), ans);
