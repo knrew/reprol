@@ -24,7 +24,6 @@ macro_rules! impl_integer {
                 }
 
                 while ng > ok + 1 {
-                    // TODO: implement checked_mid
                     let mid = ok + (ng - ok) / 2;
                     *if f(&mid) { &mut ok } else { &mut ng } = mid;
                 }
@@ -83,7 +82,7 @@ mod tests {
     use super::{LowerBound, UpperBound};
 
     #[test]
-    fn test_lower_bound_basic() {
+    fn test_lower_bound() {
         let v = vec![1, 3, 3, 5, 7, 9, 9, 9, 11, 13];
         assert_eq!(v.lower_bound(&0), 0);
         assert_eq!(v.lower_bound(&3), 1);
