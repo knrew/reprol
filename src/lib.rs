@@ -20,6 +20,7 @@ pub mod monoid;
 pub mod monoid_dsu;
 pub mod multiset;
 pub mod ops;
+pub mod permutation;
 pub mod potentialized_dsu;
 mod range;
 pub mod rle;
