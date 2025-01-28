@@ -1,17 +1,6 @@
-pub trait ZAlgorithm {
-    fn z_algorithm(&self) -> Vec<usize>;
-}
-
-impl<T> ZAlgorithm for Vec<T>
-where
-    T: PartialEq,
-{
-    fn z_algorithm(&self) -> Vec<usize> {
-        z_algorithm(self)
-    }
-}
-
-pub fn z_algorithm<T>(s: &[T]) -> Vec<usize>
+/// Z-algorithm
+/// 配列sに対して，i番目の要素がsとs[i..]の最長共通接頭辞の長さであるような配列を構築する
+pub fn construct_z_array<T>(s: &[T]) -> Vec<usize>
 where
     T: PartialEq,
 {
@@ -45,4 +34,33 @@ where
     }
 
     z
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fmt::Debug;
+
+    use super::construct_z_array;
+
+    fn check<T: PartialOrd + Debug>(s: &[T]) {
+        let z = construct_z_array(&s);
+        let n = s.len();
+        for i in 0..n {
+            let l = z[i];
+            assert_eq!(&s[0..l], &s[i..(i + l)]);
+            if i + l < s.len() {
+                assert!(s[l..(l + 1)] != s[(i + l)..(i + l + 1)]);
+            }
+        }
+    }
+
+    #[test]
+    fn test_z_algorithm() {
+        let s =b"xkevvvwnqswzyanzdptrcvwcokjkdmlrbbxdwycoeyrlboklgukinxkhrxzfeakjkshqpurjntnrretcqmpvupjiskdagpxubdpjxkevvvwnqswzyanzdptrcvwcokjkdmlrbbxdwycoeyrlboklgukinxkhrxzfeakjkshqpurjntnrretcqmpvupjiskdagpxubdpj";
+        check(s);
+        let s = b"mgdimasxapolbeewjltejnwnqyhmisbquatxqszeuwlxieqwwumgdimasxapolbeewjltejnwnqyhmisbquatxqszeuwlxieqwwu";
+        check(s);
+        let s = "eqjxcaarubgfbjiwazubmkyujgjcgegjqzfeqjxcaarubgfbjiwazubmkyujgjcgegjqzf";
+        check(s.as_bytes());
+    }
 }

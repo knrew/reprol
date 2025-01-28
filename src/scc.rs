@@ -117,3 +117,21 @@ fn rev_dfs(
     }
     order.push(v);
 }
+
+// TODO: 詳細なテストを書く
+#[cfg(test)]
+mod tests {
+    use super::Scc;
+
+    #[test]
+    fn test_scc() {
+        let n = 5;
+        let edges = vec![(0, 1), (1, 2), (2, 0), (1, 3), (3, 4)];
+        let mut scc = Scc::new(n);
+        for &(u, v) in &edges {
+            scc.add_edge(u, v);
+        }
+        scc.build();
+        assert_eq!(scc.num_components(), 3);
+    }
+}
