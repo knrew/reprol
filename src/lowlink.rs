@@ -32,18 +32,16 @@ impl LowLink {
     // 辺(u, v)を追加する
     // 辺(v, u)も自動的に追加される
     pub fn add_edge(&mut self, u: usize, v: usize) {
-        debug_assert!(u < self.len);
-        debug_assert!(v < self.len);
         self.graph[u].push(v);
         self.graph[v].push(u);
         self.has_built = false;
     }
 
     /// 辺(u, v)が橋かどうかを判定する
-    /// build()を読んでから使う
-    /// TODO: uとvを結ぶ辺がないときの挙動が不明
+    /// buildしてから使う
+    /// NOTE: uとvを結ぶ辺がないときの挙動が不明
     pub fn is_bridge(&self, mut u: usize, mut v: usize) -> bool {
-        debug_assert!(self.has_built);
+        assert!(self.has_built);
         if self.order[u] > self.order[v] {
             swap(&mut u, &mut v);
         }
@@ -101,5 +99,43 @@ impl LowLink {
         if is_articulation {
             self.articulations.push(v);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::LowLink;
+
+    #[test]
+    fn test_lowlink() {
+        let n = 8;
+        let edges = vec![
+            (0, 2),
+            (0, 1),
+            (6, 5),
+            (6, 7),
+            (3, 5),
+            (3, 4),
+            (2, 3),
+            (1, 2),
+            (4, 5),
+        ];
+
+        let mut lowlink = LowLink::new(n);
+        for &(u, v) in &edges {
+            lowlink.add_edge(u, v);
+        }
+
+        lowlink.build();
+
+        assert_eq!(lowlink.is_bridge(0, 2), false);
+        assert_eq!(lowlink.is_bridge(0, 1), false);
+        assert_eq!(lowlink.is_bridge(6, 5), true);
+        assert_eq!(lowlink.is_bridge(6, 7), true);
+        assert_eq!(lowlink.is_bridge(3, 5), false);
+        assert_eq!(lowlink.is_bridge(3, 4), false);
+        assert_eq!(lowlink.is_bridge(2, 3), true);
+        assert_eq!(lowlink.is_bridge(1, 2), false);
+        assert_eq!(lowlink.is_bridge(4, 5), false);
     }
 }
