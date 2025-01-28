@@ -8,9 +8,9 @@ macro_rules! impl_integer {
         impl PowMod for $ty {
             #[allow(unused_comparisons)]
             fn pow_mod(self, mut exp: Self, p: Self) -> Self {
-                debug_assert!(self >= 0);
-                debug_assert!(exp >= 0);
-                debug_assert!(p >= 0);
+                assert!(self >= 0);
+                assert!(exp >= 0);
+                assert!(p > 0);
 
                 if p == 1 {
                     return 0;
