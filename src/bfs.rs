@@ -86,7 +86,7 @@ where
         &self.costs[(self.to_index)(&v)]
     }
 
-    /// 頂点endへの最短経路を構築する
+    /// 頂点endへ到達可能ならばendまでの最短経路を構築する
     /// startとendを含む
     pub fn costruct_path(&self, end: &V) -> Option<Vec<V>> {
         if self.costs[(self.to_index)(end)].is_none() {
@@ -123,10 +123,9 @@ pub fn bfs_adjacencies(
     )
 }
 
-// TODO: パス復元のテストを書く
 #[cfg(test)]
 mod tests {
-    use super::bfs_adjacencies;
+    use super::{bfs_adjacencies, Bfs};
 
     #[test]
     fn test_bfs() {
@@ -137,6 +136,7 @@ mod tests {
         for v in 0..graph.len() {
             assert_eq!(*bfs.cost(&v), expected[v]);
         }
+        assert_eq!(bfs.costruct_path(&3), Some(vec![0, 1, 2, 3]));
 
         let start = 0;
         let graph = vec![vec![1], vec![2], vec![], vec![4], vec![]];
@@ -169,5 +169,50 @@ mod tests {
         for v in 0..graph.len() {
             assert_eq!(*bfs.cost(&v), expected[v]);
         }
+        assert_eq!(bfs.costruct_path(&4), Some(vec![0, 2, 4]));
+    }
+
+    #[test]
+    fn test_bfs_grid() {
+        const DIJ: [[usize; 2]; 4] = [
+            [1, 0],
+            [0, 1],
+            [1usize.wrapping_neg(), 0],
+            [0, 1usize.wrapping_neg()],
+        ];
+
+        let h = 7;
+        let w = 8;
+        let grid = vec![
+            b"########",
+            b"#....#.#",
+            b"#.######",
+            b"#..#...#",
+            b"#..##..#",
+            b"##.....#",
+            b"########",
+        ];
+
+        let bfs = Bfs::new(
+            h * w,
+            &[1, 1],
+            &0,
+            &1,
+            |[i, j]| i * w + j,
+            |&[i, j]| {
+                DIJ.iter()
+                    .map(move |&[di, dj]| [i.wrapping_add(di), j.wrapping_add(dj)])
+                    .filter(|&[ni, nj]| ni < h && nj < w && grid[ni][nj] == b'.')
+            },
+        );
+
+        assert_eq!(bfs.cost(&[1, 1]), &Some(0));
+        assert_eq!(bfs.cost(&[1, 2]), &Some(1));
+        assert_eq!(bfs.cost(&[1, 4]), &Some(3));
+        assert_eq!(bfs.cost(&[4, 5]), &Some(9));
+        assert_eq!(bfs.cost(&[3, 4]), &Some(11));
+        assert_eq!(bfs.cost(&[1, 6]), &None);
+        assert_eq!(bfs.cost(&[0, 0]), &None);
+        assert_eq!(bfs.cost(&[6, 7]), &None);
     }
 }
