@@ -59,3 +59,64 @@ where
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{ChangeMinMax, ChangeMinMaxOrSet};
+
+    #[test]
+    fn test_change_min() {
+        let mut x = 5;
+        let f = x.change_min(10);
+        assert!(!f);
+        assert_eq!(x, 5);
+        let f = x.change_min(3);
+        assert!(f);
+        assert_eq!(x, 3);
+        let f = x.change_min(3);
+        assert!(!f);
+        assert_eq!(x, 3);
+    }
+
+    #[test]
+    fn test_change_max() {
+        let mut x = 5;
+        let f = x.change_max(2);
+        assert!(!f);
+        assert_eq!(x, 5);
+        let f = x.change_max(10);
+        assert!(f);
+        assert_eq!(x, 10);
+        let f = x.change_max(10);
+        assert!(!f);
+        assert_eq!(x, 10);
+    }
+
+    #[test]
+    fn test_change_min_or_set() {
+        let mut x = None;
+        let f = x.change_min_or_set(10);
+        assert!(f);
+        assert_eq!(x, Some(10));
+        let f = x.change_min_or_set(3);
+        assert!(f);
+        assert_eq!(x, Some(3));
+        let f = x.change_min_or_set(20);
+        assert!(!f);
+        assert_eq!(x, Some(3));
+    }
+
+    #[test]
+    fn test_change_max_or_set() {
+        let mut x = None;
+        let f = x.change_max_or_set(10);
+        assert!(f);
+        assert_eq!(x, Some(10));
+        let f = x.change_max_or_set(20);
+        assert!(f);
+        assert_eq!(x, Some(20));
+        let f = x.change_max_or_set(2);
+        assert!(!f);
+        assert_eq!(x, Some(20));
+    }
+}
