@@ -153,9 +153,9 @@ mod tests {
 
     #[test]
     fn test_cumulative_min() {
-        let v = vec![8, 10, 4, 2, 3];
-        let test_cases = vec![(1, 8), (2, 8), (3, 4), (4, 2), (5, 2)];
-        let cum = CumulativeProduct::<OpMin<i32>>::from(v);
+        let v = vec![8, 10, -4, 2, 11];
+        let test_cases = vec![(1, 8), (2, 8), (3, -4), (4, -4), (5, -4)];
+        let cum = CumulativeProduct::<OpMin<i32>>::from(&v);
         for (r, expected) in test_cases {
             assert_eq!(cum.get(r), &expected);
         }
