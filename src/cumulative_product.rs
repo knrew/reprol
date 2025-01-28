@@ -1,92 +1,104 @@
 use std::ops::{Range, RangeBounds};
 
-use crate::{group::Group, ops::op_add::OpAdd, range::to_open_range};
+use crate::{group::Group, monoid::Monoid, ops::op_add::OpAdd, range::to_open_range};
 
-#[derive(Clone)]
-pub struct CumulativeProduct<G: Group> {
+pub struct CumulativeProduct<O: Monoid> {
     len: usize,
-    data: Vec<G::Value>,
-    group: G,
+    data: Vec<O::Value>,
+    op: O,
 }
 
-impl<G> CumulativeProduct<G>
+impl<O> CumulativeProduct<O>
 where
-    G: Group,
-    G::Value: Clone,
+    O: Monoid,
+    O::Value: Clone,
 {
-    pub fn new(v: Vec<G::Value>) -> Self
+    /// 配列vの累積積(累積和)を計算する
+    pub fn new(v: Vec<O::Value>) -> Self
     where
-        G: Default,
+        O: Default,
     {
         assert!(!v.is_empty());
-        Self::new_by(v.len(), G::default(), |i| v[i].clone())
+        Self::from(v)
     }
 
-    /// 演算(群)を引数で指定
-    pub fn with_op(v: Vec<G::Value>, group: G) -> Self {
+    /// 演算を引数で指定
+    pub fn with_op(v: Vec<O::Value>, op: O) -> Self {
         assert!(!v.is_empty());
-        Self::new_by(v.len(), group, |i| v[i].clone())
+        Self::new_by(v.len(), op, |i| v[i].clone())
     }
 
     /// i番目の値を関数で指定
-    pub fn new_by(len: usize, group: G, mut f: impl FnMut(usize) -> G::Value) -> Self {
-        let mut cum = vec![group.identity(); len + 1];
+    pub fn new_by(len: usize, op: O, mut f: impl FnMut(usize) -> O::Value) -> Self {
+        let mut cum = vec![op.identity(); len + 1];
         for i in 0..len {
-            cum[i + 1] = group.op(&cum[i], &f(i));
+            cum[i + 1] = op.op(&cum[i], &f(i));
         }
-        Self {
-            len,
-            data: cum,
-            group,
-        }
+        Self { len, data: cum, op }
     }
 
-    /// 区間積を計算する
-    /// a[l]+ ... + a[r-1]
-    pub fn product(&self, range: impl RangeBounds<usize>) -> G::Value {
+    /// [0, r)の累積を取得する
+    /// e.g. cum.get(n)で総積(総和)
+    pub fn get(&self, r: usize) -> &O::Value {
+        assert!(r <= self.len);
+        &self.data[r]
+    }
+}
+
+impl<O> CumulativeProduct<O>
+where
+    O: Group,
+{
+    /// 区間積(区間和)を計算する
+    /// $a_l \cdot \ldots \cdot a_{r-1}$
+    pub fn product(&self, range: impl RangeBounds<usize>) -> O::Value {
         let Range { start: l, end: r } = to_open_range(range, self.len);
         assert!(l <= r);
-        self.group.op(&self.data[r], &self.group.inv(&self.data[l]))
+        self.op.op(&self.data[r], &self.op.inv(&self.data[l]))
     }
 }
 
-impl<G> From<Vec<G::Value>> for CumulativeProduct<G>
+impl<O> From<Vec<O::Value>> for CumulativeProduct<O>
 where
-    G: Group + Default,
-    G::Value: Clone,
+    O: Monoid + Default,
+    O::Value: Clone,
 {
-    fn from(v: Vec<G::Value>) -> Self {
-        CumulativeProduct::new(v)
+    fn from(v: Vec<O::Value>) -> Self {
+        CumulativeProduct::from(&v)
     }
 }
 
-impl<G> From<&Vec<G::Value>> for CumulativeProduct<G>
+impl<O> From<&Vec<O::Value>> for CumulativeProduct<O>
 where
-    G: Group + Default,
-    G::Value: Clone,
+    O: Monoid + Default,
+    O::Value: Clone,
 {
-    fn from(v: &Vec<G::Value>) -> Self {
-        CumulativeProduct::new(v.clone())
+    fn from(v: &Vec<O::Value>) -> Self {
+        CumulativeProduct::new_by(v.len(), O::default(), |i| v[i].clone())
     }
 }
 
-impl<G> From<&[G::Value]> for CumulativeProduct<G>
+impl<O> From<&[O::Value]> for CumulativeProduct<O>
 where
-    G: Group + Default,
-    G::Value: Clone,
+    O: Monoid + Default,
+    O::Value: Clone,
 {
-    fn from(v: &[G::Value]) -> Self {
-        CumulativeProduct::new(v.to_vec())
+    fn from(v: &[O::Value]) -> Self {
+        CumulativeProduct::new_by(v.len(), O::default(), |i| v[i].clone())
     }
 }
 
-impl<G> FromIterator<G::Value> for CumulativeProduct<G>
+impl<O> Clone for CumulativeProduct<O>
 where
-    G: Group + Default,
-    G::Value: Clone,
+    O: Monoid + Clone,
+    O::Value: Clone,
 {
-    fn from_iter<T: IntoIterator<Item = G::Value>>(iter: T) -> Self {
-        Self::from(iter.into_iter().collect::<Vec<_>>())
+    fn clone(&self) -> Self {
+        Self {
+            len: self.len,
+            data: self.data.clone(),
+            op: self.op.clone(),
+        }
     }
 }
 
@@ -97,7 +109,7 @@ mod tests {
     use crate::{cumulative_product::CumulativeSum, ops::op_add::OpAdd};
 
     #[test]
-    fn test_cumulative_sum_1d() {
+    fn test_cumulative_sum() {
         let v = vec![1, 2, 3, 4, 5];
         let test_cases = vec![
             ((0, 5), 15),
@@ -115,7 +127,7 @@ mod tests {
             assert_eq!(cum.product(l..r), expected);
         }
 
-        let cum = CumulativeSum::new_by(5, OpAdd::<i64>::default(), |i| i as i64 + 1);
+        let cum = CumulativeSum::new_by(5, OpAdd::default(), |i| i as i64 + 1);
         let test_cases = vec![
             ((0, 5), 15),
             ((0, 1), 1),
@@ -126,7 +138,6 @@ mod tests {
             ((4, 5), 5),
             ((0, 4), 10),
         ];
-
         for ((l, r), expected) in test_cases {
             assert_eq!(cum.product(l..r), expected);
         }
