@@ -1,11 +1,11 @@
 use std::ops::{Range, RangeBounds};
 
-use crate::{action::Action, monoid::Monoid, range::to_open_range};
+use crate::{action::MonoidAction, monoid::Monoid, range::to_open_range};
 
 pub struct LazySegmentTree<M, A>
 where
     M: Monoid,
-    A: Action<M>,
+    A: MonoidAction<M>,
 {
     len: usize,
     offset: usize,
@@ -20,7 +20,7 @@ impl<M, A> LazySegmentTree<M, A>
 where
     M: Monoid,
     M::Value: Clone,
-    A: Action<M>,
+    A: MonoidAction<M>,
     A::Value: Clone + PartialEq,
 {
     pub fn new(v: Vec<M::Value>) -> Self
@@ -288,7 +288,7 @@ impl<M, A> From<Vec<M::Value>> for LazySegmentTree<M, A>
 where
     M: Monoid + Default,
     M::Value: Clone,
-    A: Action<M> + Default,
+    A: MonoidAction<M> + Default,
     A::Value: Clone + PartialEq,
 {
     fn from(v: Vec<M::Value>) -> Self {
@@ -310,7 +310,7 @@ impl<M, A> From<&Vec<M::Value>> for LazySegmentTree<M, A>
 where
     M: Monoid + Default,
     M::Value: Clone,
-    A: Action<M> + Default,
+    A: MonoidAction<M> + Default,
     A::Value: Clone + PartialEq,
 {
     fn from(v: &Vec<M::Value>) -> Self {
@@ -322,7 +322,7 @@ impl<M, A> From<&[M::Value]> for LazySegmentTree<M, A>
 where
     M: Monoid + Default,
     M::Value: Clone,
-    A: Action<M> + Default,
+    A: MonoidAction<M> + Default,
     A::Value: Clone + PartialEq,
 {
     fn from(v: &[M::Value]) -> Self {
@@ -334,7 +334,7 @@ impl<M, A> FromIterator<M::Value> for LazySegmentTree<M, A>
 where
     M: Monoid + Default,
     M::Value: Clone,
-    A: Action<M> + Default,
+    A: MonoidAction<M> + Default,
     A::Value: Clone + PartialEq,
 {
     fn from_iter<T: IntoIterator<Item = M::Value>>(iter: T) -> Self {
@@ -344,7 +344,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::{Action, LazySegmentTree, Monoid};
+    use super::{MonoidAction, LazySegmentTree, Monoid};
 
     #[derive(Default)]
     struct Op;
@@ -376,7 +376,7 @@ mod tests {
         }
     }
 
-    impl Action<Op> for Act {
+    impl MonoidAction<Op> for Act {
         fn act(&self, f: &Self::Value, x: &<Op as Monoid>::Value) -> <Op as Monoid>::Value {
             x + f
         }

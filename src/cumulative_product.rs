@@ -102,6 +102,7 @@ where
     }
 }
 
+/// NOTE: u64などのunsignedには非対応
 pub type CumulativeSum<T> = CumulativeProduct<OpAdd<T>>;
 
 #[cfg(test)]

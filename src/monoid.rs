@@ -4,9 +4,9 @@ pub trait Monoid {
     type Value;
 
     /// 単位元eを返す
-    /// 任意のxに対して，op(x, e)=op(e, x)=x
+    /// 任意のxに対して，$x \cdot e = e \cdot x = x$
     fn identity(&self) -> Self::Value;
 
     /// 演算
-    fn op(&self, x: &Self::Value, y: &Self::Value) -> Self::Value;
+    fn op(&self, lhs: &Self::Value, rhs: &Self::Value) -> Self::Value;
 }

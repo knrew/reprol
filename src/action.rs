@@ -1,11 +1,11 @@
 use crate::monoid::Monoid;
 
 /// モノイドに対する作用
-pub trait Action<Operand>: Monoid
+pub trait MonoidAction<Operand>: Monoid
 where
     Operand: Monoid,
 {
     // f: M -> M
     // xにfを作用させる(f(x)をする)
-    fn act(&self, f: &<Self as Monoid>::Value, x: &Operand::Value) -> Operand::Value;
+    fn act(&self, f: &Self::Value, x: &Operand::Value) -> Operand::Value;
 }

@@ -27,8 +27,8 @@ where
         T::zero()
     }
 
-    fn op(&self, &x: &Self::Value, &y: &Self::Value) -> Self::Value {
-        x + y
+    fn op(&self, &lhs: &Self::Value, &rhs: &Self::Value) -> Self::Value {
+        lhs + rhs
     }
 }
 
@@ -36,7 +36,7 @@ impl<T> Group for OpAdd<T>
 where
     T: Copy + Add<Output = T> + Neg<Output = T> + Zero,
 {
-    fn inv(&self, &x: &<Self as Monoid>::Value) -> Self::Value {
+    fn inv(&self, &x: &Self::Value) -> Self::Value {
         -x
     }
 }
