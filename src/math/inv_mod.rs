@@ -7,8 +7,8 @@ macro_rules! impl_signed {
     ($($ty:ident),*) => {$(
         impl InvMod for $ty {
             fn inv_mod(self, p: Self) -> Self {
-                debug_assert!(self > 0);
-                debug_assert!(p > 0);
+                assert!(self > 0);
+                assert!(p > 0);
                 if self == 1 {
                     return 1;
                 }

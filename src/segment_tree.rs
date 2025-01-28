@@ -64,6 +64,7 @@ where
         &self.nodes[index + self.offset]
     }
 
+    /// 区間積を取得する
     pub fn product(&self, range: impl RangeBounds<usize>) -> M::Value {
         let Range { start: l, end: r } = to_open_range(range, self.len);
 

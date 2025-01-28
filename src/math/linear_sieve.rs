@@ -45,7 +45,6 @@ impl LinearSieve {
     where
         T: Integer,
     {
-        debug_assert!(x.as_usize() < self.lpf.len());
         if x <= T::one() {
             false
         } else {
@@ -58,8 +57,7 @@ impl LinearSieve {
     where
         T: 'a + Integer,
     {
-        debug_assert!(x >= T::zero());
-        debug_assert!(x.as_usize() < self.lpf.len());
+        assert!(x >= T::zero());
 
         let mut x = x.as_usize();
 
@@ -82,8 +80,7 @@ impl LinearSieve {
     where
         T: 'a + Integer,
     {
-        debug_assert!(x >= T::zero());
-        debug_assert!(x.as_usize() < self.lpf.len());
+        assert!(x >= T::zero());
 
         let mut divisors = vec![T::one()];
 

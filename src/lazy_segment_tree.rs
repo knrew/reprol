@@ -71,6 +71,7 @@ where
         self.pull(index);
     }
 
+    /// 区間内の要素すべてにfを作用させる
     pub fn apply(&mut self, range: impl RangeBounds<usize>, f: &A::Value) {
         let Range { start: l, end: r } = to_open_range(range, self.len);
 
@@ -120,6 +121,7 @@ where
         }
     }
 
+    /// 区間積を取得する
     pub fn product(&mut self, range: impl RangeBounds<usize>) -> M::Value {
         let Range { start: l, end: r } = to_open_range(range, self.len);
 
@@ -292,17 +294,7 @@ where
     A::Value: Clone + PartialEq,
 {
     fn from(v: Vec<M::Value>) -> Self {
-        let mut res = Self::with_op(v.len(), M::default(), A::default());
-
-        for i in 0..res.len {
-            res.nodes[i + res.offset] = v[i].clone();
-        }
-
-        for i in (1..res.offset).rev() {
-            res.pull_node(i)
-        }
-
-        res
+        Self::from(v.as_slice())
     }
 }
 
@@ -314,7 +306,7 @@ where
     A::Value: Clone + PartialEq,
 {
     fn from(v: &Vec<M::Value>) -> Self {
-        Self::from(v.clone())
+        Self::from(v.as_slice())
     }
 }
 
@@ -326,7 +318,17 @@ where
     A::Value: Clone + PartialEq,
 {
     fn from(v: &[M::Value]) -> Self {
-        Self::from(v.to_vec())
+        let mut res = Self::with_op(v.len(), M::default(), A::default());
+
+        for i in 0..res.len {
+            res.nodes[i + res.offset] = v[i].clone();
+        }
+
+        for i in (1..res.offset).rev() {
+            res.pull_node(i)
+        }
+
+        res
     }
 }
 
@@ -344,7 +346,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::{MonoidAction, LazySegmentTree, Monoid};
+    use super::{LazySegmentTree, Monoid, MonoidAction};
 
     #[derive(Default)]
     struct Op;
@@ -383,7 +385,7 @@ mod tests {
     }
 
     #[test]
-    fn test_lazyseg() {
+    fn test_lazy_segment_tree() {
         let v = vec![4, 4, 4, 4, 4];
         let mut seg = LazySegmentTree::<Op, Act>::from(&v);
         seg.apply(1..4, &2);

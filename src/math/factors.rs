@@ -1,3 +1,4 @@
+/// NOTE: イテレータまわりはrustのバージョンアップデート後に修正する
 pub trait Factors: Sized {
     type Output: Iterator<Item = (Self, u32)>;
 
@@ -11,6 +12,7 @@ macro_rules! impl_integer {
             type Output = <Vec<(Self, u32)> as IntoIterator>::IntoIter;
 
             fn factors(self) -> Self::Output {
+                assert!(self > 0);
                 let mut n = self;
 
                 let mut factors = vec![];

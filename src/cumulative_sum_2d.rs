@@ -2,7 +2,7 @@ use std::ops::{Add, Range, RangeBounds, Sub};
 
 use crate::range::to_open_range;
 
-// TODO: Refactor
+// TODO: CumulativeProductに倣って書き換える
 pub struct CumulativeSum2d<T>(Vec<Vec<T>>);
 
 impl<T> CumulativeSum2d<T>

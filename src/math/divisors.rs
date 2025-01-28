@@ -1,3 +1,4 @@
+/// NOTE: イテレータまわりはrustのバージョンアップデート後に修正する
 pub trait Divisors: Sized {
     type Output: Iterator<Item = Self>;
 

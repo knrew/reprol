@@ -2,6 +2,7 @@ use std::ops::{Range, RangeBounds};
 
 use crate::{group::Group, range::to_open_range};
 
+/// 要素の1点更新と区間積(和)の取得が行えるデータ構造
 pub struct FenwickTree<G: Group> {
     len: usize,
     nodes: Vec<G::Value>,
@@ -29,6 +30,7 @@ where
         }
     }
 
+    /// v[index]<-v[index]+value
     pub fn add(&mut self, mut index: usize, value: G::Value) {
         assert!(index < self.len);
         index += 1;
@@ -38,6 +40,7 @@ where
         }
     }
 
+    /// [l, r)の区間積(和)を取得する
     pub fn product(&self, range: impl RangeBounds<usize>) -> G::Value {
         let Range { start: l, end: r } = to_open_range(range, self.len);
         assert!(l <= r);

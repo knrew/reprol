@@ -51,11 +51,11 @@ where
     /// xが属するグループとyが属するグループを統合する
     /// potential[u]+w=potential[v]となるように頂点にポテンシャルを置く
     /// 既存のポテンシャルと矛盾があれば，もとのポテンシャルを維持して返り値としてfalseを返す
-    pub fn merge(&mut self, u: usize, v: usize, w: G::Value) -> bool {
+    pub fn merge(&mut self, u: usize, v: usize, d: G::Value) -> bool {
         let mut w = {
             let pu = self.potential(u);
             let pv = self.potential(v);
-            self.group.op(&self.group.op(&w, &pu), &self.group.inv(&pv))
+            self.group.op(&self.group.op(&d, &pu), &self.group.inv(&pv))
         };
 
         let mut u = self.find(u);

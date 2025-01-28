@@ -147,3 +147,5 @@ where
         (0..self.len).any(|v| self.costs[v][v].unwrap() < self.zero)
     }
 }
+
+// TODO:テストを書く

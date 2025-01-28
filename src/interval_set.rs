@@ -1,7 +1,6 @@
-//! 区間をsetで管理するやつ
-
 use std::{collections::BTreeSet, ops::RangeInclusive};
 
+/// 区間をsetで管理するやつ
 pub struct IntervalSet<T>(BTreeSet<(T, T)>);
 
 impl<T> IntervalSet<T>

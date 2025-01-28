@@ -1,5 +1,5 @@
 /// ランレングス圧縮(run-length encodeing)
-/// TODO: イテレータにする
+/// NOTE: イテレータにする？
 pub trait RunLengthEncoding {
     type Output;
 
