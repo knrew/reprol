@@ -2,16 +2,9 @@ use std::marker::PhantomData;
 
 use crate::monoid::Monoid;
 
+#[derive(Default, Clone)]
 pub struct OpMax<T> {
     _phantom: PhantomData<T>,
-}
-
-impl<T> Default for OpMax<T> {
-    fn default() -> Self {
-        Self {
-            _phantom: PhantomData,
-        }
-    }
 }
 
 impl<T> Monoid for OpMax<T>

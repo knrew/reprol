@@ -5,16 +5,9 @@ use std::{
 
 use crate::{group::Group, math::modint::ModInt, monoid::Monoid};
 
+#[derive(Default, Clone)]
 pub struct OpAdd<T> {
     _phantom: PhantomData<T>,
-}
-
-impl<T> Default for OpAdd<T> {
-    fn default() -> Self {
-        Self {
-            _phantom: PhantomData,
-        }
-    }
 }
 
 impl<T> Monoid for OpAdd<T>

@@ -2,16 +2,9 @@ use std::marker::PhantomData;
 
 use crate::monoid::Monoid;
 
+#[derive(Default, Clone)]
 pub struct OpMin<T> {
     _phantom: PhantomData<T>,
-}
-
-impl<T> Default for OpMin<T> {
-    fn default() -> Self {
-        Self {
-            _phantom: PhantomData,
-        }
-    }
 }
 
 impl<T> Monoid for OpMin<T>
