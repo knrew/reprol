@@ -40,7 +40,6 @@ where
     /// [0, r)の累積を取得する
     /// e.g. cum.get(n)で総積(総和)
     pub fn get(&self, r: usize) -> &O::Value {
-        assert!(r > 0);
         assert!(r <= self.len);
         &self.data[r]
     }

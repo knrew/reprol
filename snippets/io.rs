@@ -10,7 +10,7 @@ fn main() {
     let mut stdout = std::io::BufWriter::new(std::io::stdout().lock());
 
     let n = read::<usize>(&mut stdin);
-    writeln!(stdout, "{}", n).ok();
+    writeln!(stdout, "{}", n).unwrap();
 }
 
 #[inline]
