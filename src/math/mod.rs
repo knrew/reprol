@@ -1,5 +1,6 @@
 pub mod digit;
 pub mod div_ceil;
+pub mod div_floor;
 pub mod divisors;
 pub mod factorial_mod;
 pub mod factors;
