@@ -1,7 +1,6 @@
 use crate::math::modint::ModInt;
 
-/// 法Pのもとで階乗(やそれに関連する値)を計算する
-/// 二項係数など
+/// 法Pのもとで階乗や二項係数を計算する
 pub struct ModFactorial<const P: u64> {
     /// 階乗
     factorial: Vec<ModInt<P>>,
