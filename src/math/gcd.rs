@@ -25,7 +25,7 @@ macro_rules! impl_unsigned {
                 if rhs == 0 {
                     self
                 } else {
-                    Self::gcd(rhs, self % rhs)
+                    rhs.gcd(self % rhs)
                 }
             }
         }

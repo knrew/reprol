@@ -2,7 +2,7 @@ use crate::math::modint::ModInt;
 
 /// 法Pのもとで階乗(やそれに関連する値)を計算する
 /// 二項係数など
-pub struct FactorialMod<const P: u64> {
+pub struct ModFactorial<const P: u64> {
     /// 階乗
     factorial: Vec<ModInt<P>>,
 
@@ -10,15 +10,16 @@ pub struct FactorialMod<const P: u64> {
     factorial_inv: Vec<ModInt<P>>,
 }
 
-impl<const P: u64> FactorialMod<P> {
-    pub fn new(len: usize) -> Self {
-        let mut factorial = vec![ModInt::new(1); len + 1];
-        let mut factorial_inv = vec![ModInt::new(1); len + 1];
-        for i in 1..=len {
+impl<const P: u64> ModFactorial<P> {
+    /// $0!$から$n!$までの階乗を前計算する
+    pub fn new(n: usize) -> Self {
+        let mut factorial = vec![ModInt::new(1); n + 1];
+        let mut factorial_inv = vec![ModInt::new(1); n + 1];
+        for i in 1..=n {
             factorial[i] = factorial[i - 1] * i.into();
         }
-        factorial_inv[len] = factorial[len].inv();
-        for i in (1..=len).rev() {
+        factorial_inv[n] = factorial[n].inv();
+        for i in (1..=n).rev() {
             factorial_inv[i - 1] = factorial_inv[i] * i.into();
         }
         Self {
@@ -47,16 +48,16 @@ impl<const P: u64> FactorialMod<P> {
     }
 }
 
-pub type FactorialMod998244353 = FactorialMod<998244353>;
-pub type FactorialMod1000000007 = FactorialMod<1000000007>;
+pub type ModFactorial998244353 = ModFactorial<998244353>;
+pub type ModFactorial1000000007 = ModFactorial<1000000007>;
 
 #[cfg(test)]
 mod tests {
-    use super::FactorialMod998244353;
+    use super::ModFactorial998244353;
 
     #[test]
     fn test_factorial() {
-        let f = FactorialMod998244353::new(20);
+        let f = ModFactorial998244353::new(20);
         assert_eq!(f.factorial(0).value(), 1);
         assert_eq!(f.factorial(1).value(), 1);
         assert_eq!(f.factorial(2).value(), 2);
@@ -68,7 +69,7 @@ mod tests {
 
     #[test]
     fn test_factorial_inv() {
-        let f = FactorialMod998244353::new(20);
+        let f = ModFactorial998244353::new(20);
         assert_eq!(f.factorial_inv(0).value(), 1);
         assert_eq!(f.factorial_inv(1).value(), 1);
         assert_eq!(f.factorial_inv(2).value(), 499122177);
@@ -78,7 +79,7 @@ mod tests {
 
     #[test]
     fn test_binomial() {
-        let f = FactorialMod998244353::new(10);
+        let f = ModFactorial998244353::new(10);
         assert_eq!(f.binomial(0, 0).value(), 1);
         assert_eq!(f.binomial(6, 0).value(), 1);
         assert_eq!(f.binomial(7, 7).value(), 1);
