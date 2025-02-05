@@ -7,7 +7,7 @@ use std::{
 
 use crate::math::{inv_mod::InvMod, pow_mod::PowMod};
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Default, Clone, Copy, PartialEq, Eq)]
 pub struct ModInt<const P: u64> {
     value: u64,
 }
