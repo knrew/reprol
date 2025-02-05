@@ -1,4 +1,4 @@
-use std::ops::{Range, RangeBounds};
+use std::ops::{Index, Range, RangeBounds};
 
 use crate::{group::Group, monoid::Monoid, ops::op_add::OpAdd, range::to_open_range};
 
@@ -39,9 +39,8 @@ where
 
     /// [0, r)の累積を取得する
     /// e.g. cum.get(n)で総積(総和)
-    pub fn get(&self, r: usize) -> &O::Value {
-        assert!(r <= self.len);
-        &self.data[r]
+    pub fn get(&self, index: usize) -> &O::Value {
+        &self.data[index]
     }
 }
 
@@ -99,6 +98,16 @@ where
             data: self.data.clone(),
             op: self.op.clone(),
         }
+    }
+}
+
+impl<O> Index<usize> for CumulativeProduct<O>
+where
+    O: Monoid,
+{
+    type Output = O::Value;
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.data[index]
     }
 }
 
