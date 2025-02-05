@@ -14,7 +14,7 @@ impl TopologicalSort for Vec<Vec<usize>> {
     }
 }
 
-impl TopologicalSort for &[Vec<usize>] {
+impl TopologicalSort for [Vec<usize>] {
     fn topological_sort(&self) -> Option<Vec<usize>> {
         topological_sort(self)
     }
