@@ -1,61 +1,68 @@
 use std::ops::{Range, RangeBounds};
 
-use crate::{group::Group, range::to_open_range};
+use crate::{group::Group, monoid::Monoid, range::to_open_range};
 
 /// 要素の1点更新と区間積(和)の取得が行えるデータ構造
-pub struct FenwickTree<G: Group> {
+pub struct FenwickTree<O: Monoid> {
     len: usize,
-    nodes: Vec<G::Value>,
-    group: G,
+    nodes: Vec<O::Value>,
+    op: O,
 }
 
-impl<G> FenwickTree<G>
+impl<O> FenwickTree<O>
 where
-    G: Group,
-    G::Value: Clone,
+    O: Monoid,
 {
     pub fn new(n: usize) -> Self
     where
-        G: Default,
+        O: Default,
+        O::Value: Clone,
     {
-        Self::with_op(n, G::default())
+        Self::with_op(n, O::default())
     }
 
-    /// 演算(群)を引数で指定
-    pub fn with_op(n: usize, group: G) -> Self {
+    /// 演算を引数で指定
+    pub fn with_op(n: usize, op: O) -> Self
+    where
+        O::Value: Clone,
+    {
         Self {
             len: n,
-            nodes: vec![group.identity(); n],
-            group,
+            nodes: vec![op.identity(); n],
+            op,
         }
     }
 
     /// v[index]<-v[index]+value
-    pub fn add(&mut self, mut index: usize, value: G::Value) {
+    pub fn add(&mut self, mut index: usize, value: O::Value) {
         assert!(index < self.len);
         index += 1;
         while index <= self.len {
-            self.nodes[index - 1] = self.group.op(&self.nodes[index - 1], &value);
+            self.nodes[index - 1] = self.op.op(&self.nodes[index - 1], &value);
             index += index & index.wrapping_neg();
         }
     }
 
-    /// [l, r)の区間積(和)を取得する
-    pub fn product(&self, range: impl RangeBounds<usize>) -> G::Value {
-        let Range { start: l, end: r } = to_open_range(range, self.len);
-        assert!(l <= r);
-        let cl = self.cum(l);
-        let cr = self.cum(r);
-        self.group.op(&cr, &self.group.inv(&cl))
-    }
-
-    fn cum(&self, mut r: usize) -> G::Value {
-        let mut res = self.group.identity();
+    // [0, r)の累積
+    pub fn get(&self, mut r: usize) -> O::Value {
+        let mut res = self.op.identity();
         while r > 0 {
-            res = self.group.op(&res, &self.nodes[r - 1]);
+            res = self.op.op(&res, &self.nodes[r - 1]);
             r -= r & r.wrapping_neg();
         }
         res
+    }
+
+    /// [l, r)の区間積(和)を取得する
+    pub fn product(&self, range: impl RangeBounds<usize>) -> O::Value
+    where
+        O: Group,
+    {
+        let Range { start: l, end: r } = to_open_range(range, self.len);
+        assert!(l <= r);
+        let cl = self.get(l);
+        let cr = self.get(r);
+        self.op.op(&cr, &self.op.inv(&cl))
     }
 }
 

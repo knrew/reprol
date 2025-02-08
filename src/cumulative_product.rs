@@ -11,25 +11,31 @@ pub struct CumulativeProduct<O: Monoid> {
 impl<O> CumulativeProduct<O>
 where
     O: Monoid,
-    O::Value: Clone,
 {
     /// 配列vの累積積(累積和)を計算する
     pub fn new(v: Vec<O::Value>) -> Self
     where
         O: Default,
+        O::Value: Clone,
     {
         assert!(!v.is_empty());
         Self::from(v)
     }
 
     /// 演算を引数で指定
-    pub fn with_op(v: Vec<O::Value>, op: O) -> Self {
+    pub fn with_op(v: Vec<O::Value>, op: O) -> Self
+    where
+        O::Value: Clone,
+    {
         assert!(!v.is_empty());
         Self::new_by(v.len(), op, |i| v[i].clone())
     }
 
     /// i番目の値を関数で指定
-    pub fn new_by(len: usize, op: O, mut f: impl FnMut(usize) -> O::Value) -> Self {
+    pub fn new_by(len: usize, op: O, mut f: impl FnMut(usize) -> O::Value) -> Self
+    where
+        O::Value: Clone,
+    {
         let mut cum = vec![op.identity(); len + 1];
         for i in 0..len {
             cum[i + 1] = op.op(&cum[i], &f(i));
