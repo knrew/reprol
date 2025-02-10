@@ -1,7 +1,4 @@
-use std::{
-    marker::PhantomData,
-    ops::{Add, Neg},
-};
+use std::{marker::PhantomData, ops::Add};
 
 use crate::{group::Group, math::modint::ModInt, monoid::Monoid};
 
@@ -21,23 +18,23 @@ where
     }
 
     fn op(&self, &lhs: &Self::Value, &rhs: &Self::Value) -> Self::Value {
-        lhs.opadd(rhs)
+        lhs.add_alt(rhs)
     }
 }
 
 impl<T> Group for OpAdd<T>
 where
-    T: Copy + Add<Output = T> + Neg<Output = T> + OpAddInteger,
+    T: Copy + Add<Output = T> + OpAddInteger,
 {
     fn inv(&self, &x: &Self::Value) -> Self::Value {
-        x.opneg()
+        x.neg_alt()
     }
 }
 
 pub trait OpAddInteger {
     fn zero() -> Self;
-    fn opadd(self, rhs: Self) -> Self;
-    fn opneg(self) -> Self;
+    fn add_alt(self, rhs: Self) -> Self;
+    fn neg_alt(self) -> Self;
 }
 
 macro_rules! impl_unsigned {
@@ -48,11 +45,11 @@ macro_rules! impl_unsigned {
                 0
             }
             #[inline]
-            fn opadd(self, rhs: Self) -> Self {
+            fn add_alt(self, rhs: Self) -> Self {
                 self + rhs
             }
             #[inline]
-            fn opneg(self) -> Self{
+            fn neg_alt(self) -> Self{
                 -self
             }
         }
@@ -69,11 +66,11 @@ macro_rules! impl_signed {
                 0
             }
             #[inline]
-            fn opadd(self, rhs: Self) -> Self {
+            fn add_alt(self, rhs: Self) -> Self {
                 self.wrapping_add(rhs)
             }
             #[inline]
-            fn opneg(self) -> Self{
+            fn neg_alt(self) -> Self{
                 self.wrapping_neg()
             }
         }
@@ -88,11 +85,11 @@ impl<const P: u64> OpAddInteger for ModInt<P> {
         0.into()
     }
     #[inline]
-    fn opadd(self, rhs: Self) -> Self {
+    fn add_alt(self, rhs: Self) -> Self {
         self + rhs
     }
     #[inline]
-    fn opneg(self) -> Self {
+    fn neg_alt(self) -> Self {
         -self
     }
 }
