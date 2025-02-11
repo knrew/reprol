@@ -59,7 +59,7 @@ impl ToplogicalSort {
 
     /// 隣接リスト表現のグラフをトポロジカルソートする
     /// 複数のトポロジカル順序が存在する場合でも辞書順を保証しない
-    pub fn new_without_lexical_order(graph: &[Vec<usize>]) -> Self {
+    pub fn new_unstable(graph: &[Vec<usize>]) -> Self {
         let mut indegrees = vec![0; graph.len()];
 
         for v in graph {
