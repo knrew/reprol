@@ -6,7 +6,7 @@ use std::{cmp::Reverse, collections::BinaryHeap, ops::Add};
 /// I: 頂点からインデックスへの写像
 pub struct Dijkstra<V, C, I> {
     /// 頂点数(状態数)
-    size: usize,
+    n: usize,
 
     /// 始点頂点
     start: V,
@@ -48,29 +48,31 @@ where
         heap.push(Reverse((zero.clone(), start.clone())));
 
         while let Some(Reverse((cost, v))) = heap.pop() {
-            if let Some(min_distance) = &costs[to_index(&v)] {
-                if min_distance < &cost {
+            let index_v = to_index(&v);
+            match &costs[index_v] {
+                Some(cost_v) if cost_v < &cost => {
                     continue;
                 }
+                _ => {}
             }
 
             for (nv, dcost) in neighbors(&v) {
-                let new_cost = cost.clone() + dcost;
+                let index_nv = to_index(&nv);
+                let new_cost_nv = cost.clone() + dcost;
 
-                if let Some(min_cost) = &costs[to_index(&nv)] {
-                    if min_cost <= &new_cost {
-                        continue;
+                match &costs[index_nv] {
+                    Some(cost_nv) if cost_nv <= &new_cost_nv => {}
+                    _ => {
+                        costs[index_nv] = Some(new_cost_nv.clone());
+                        previous_vertices[index_nv] = Some(v.clone());
+                        heap.push(Reverse((new_cost_nv, nv)))
                     }
                 }
-
-                costs[to_index(&nv)] = Some(new_cost.clone());
-                previous_vertices[to_index(&nv)] = Some(v.clone());
-                heap.push(Reverse((new_cost, nv)));
             }
         }
 
         Self {
-            size: n,
+            n,
             start: start.clone(),
             to_index,
             costs,
@@ -79,7 +81,7 @@ where
     }
 
     pub fn size(&self) -> usize {
-        self.size
+        self.n
     }
 
     pub fn start(&self) -> &V {
@@ -118,18 +120,37 @@ where
 }
 
 /// 隣接リスト表現のグラフからダイクストラによって最短経路を計算する
-pub fn dijkstra_adjacencies(
-    g: &[Vec<(usize, u64)>],
+pub fn dijkstra_adjacencies<T>(
+    g: &[Vec<(usize, T)>],
     start: usize,
-) -> Dijkstra<usize, u64, impl Fn(&usize) -> usize> {
+) -> Dijkstra<usize, T, impl Fn(&usize) -> usize>
+where
+    T: Clone + Ord + Add<Output = T> + Zero,
+{
     Dijkstra::new(
         g.len(),
         &start,
-        &0,
+        &T::zero(),
         |&v: &usize| v,
         |&v| g[v].iter().cloned(),
     )
 }
+
+pub trait Zero {
+    fn zero() -> Self;
+}
+
+macro_rules! impl_integer {
+    ($($ty:ident),*) => {$(
+        impl Zero for $ty {
+            fn zero() -> Self {
+                0
+            }
+        }
+    )*};
+}
+
+impl_integer! { u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize }
 
 // TODO: パス復元のテストを書く
 #[cfg(test)]
