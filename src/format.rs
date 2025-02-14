@@ -1,11 +1,16 @@
+//! 出力時に便利な関数など
+
 use std::fmt::{Display, Write};
 
-/// 出力時に便利な関数など
-pub trait Format {
+pub trait IteratorFormater {
     fn join_with(&mut self, sep: &str) -> String;
 }
 
-impl<I> Format for I
+pub trait VecFormater {
+    fn join_with(&self, sep: &str) -> String;
+}
+
+impl<I> IteratorFormater for I
 where
     I: Iterator,
     I::Item: Display,
@@ -22,13 +27,23 @@ where
     }
 }
 
+impl<T> VecFormater for Vec<T>
+where
+    T: Display,
+{
+    fn join_with(&self, sep: &str) -> String {
+        self.iter().join_with(sep)
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::Format;
+    use super::{IteratorFormater, VecFormater};
 
     #[test]
     fn test_join() {
         let v = vec![1, 2, 3, 4, 5];
         assert_eq!(v.iter().join_with(" "), "1 2 3 4 5");
+        assert_eq!(v.join_with(" "), "1 2 3 4 5");
     }
 }
