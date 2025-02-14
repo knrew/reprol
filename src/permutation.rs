@@ -1,10 +1,22 @@
-pub fn next_permutation<T: PartialOrd>(v: &mut [T]) -> bool {
+use std::cmp::Ordering;
+
+pub fn next_permutation<T: Ord>(v: &mut [T]) -> bool {
+    next_permutation_by(v, |x, y| x.cmp(y))
+}
+
+pub fn next_permutation_by<T, F>(v: &mut [T], mut f: F) -> bool
+where
+    F: FnMut(&T, &T) -> Ordering,
+{
     if v.len() < 2 {
         return false;
     }
 
-    if let Some(i) = v.windows(2).rposition(|w| w[0] < w[1]) {
-        if let Some(j) = v.iter().rposition(|x| x > &v[i]) {
+    if let Some(i) = v
+        .windows(2)
+        .rposition(|w| f(&w[0], &w[1]) == Ordering::Less)
+    {
+        if let Some(j) = v.iter().rposition(|x| f(&x, &v[i]) == Ordering::Greater) {
             v.swap(i, j);
             v[i + 1..].reverse();
             return true;
@@ -12,6 +24,14 @@ pub fn next_permutation<T: PartialOrd>(v: &mut [T]) -> bool {
     }
 
     false
+}
+
+pub fn next_permutation_by_key<T, F, K>(v: &mut [T], mut f: F) -> bool
+where
+    F: FnMut(&T) -> K,
+    K: Ord,
+{
+    next_permutation_by(v, |x, y| f(x).cmp(&f(y)))
 }
 
 #[cfg(test)]
