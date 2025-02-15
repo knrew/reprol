@@ -53,7 +53,7 @@ impl LinearSieve {
         }
     }
 
-    pub fn factors<'a, T>(&self, x: T) -> impl Iterator<Item = (T, u32)> + 'a
+    pub fn factors<'a, T>(&self, x: T) -> impl DoubleEndedIterator<Item = (T, u32)> + 'a
     where
         T: 'a + Integer,
     {
@@ -76,7 +76,8 @@ impl LinearSieve {
         factors.into_iter()
     }
 
-    pub fn divisors<'a, T>(&self, x: T) -> impl Iterator<Item = T> + 'a
+    /// NOTE: ソートされていない
+    pub fn divisors<'a, T>(&self, x: T) -> impl DoubleEndedIterator<Item = T> + 'a
     where
         T: 'a + Integer,
     {
