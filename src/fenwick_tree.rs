@@ -34,7 +34,7 @@ where
     }
 
     /// v[index]<-v[index]+value
-    pub fn add(&mut self, mut index: usize, value: O::Value) {
+    pub fn mul(&mut self, mut index: usize, value: O::Value) {
         assert!(index < self.len);
         index += 1;
         while index <= self.len {
@@ -75,16 +75,16 @@ mod tests {
     #[test]
     fn test_fenwick_tree() {
         let mut ft = FenwickTree::<OpAdd<i64>>::new(10);
-        ft.add(0, 5);
-        ft.add(2, 10);
-        ft.add(6, 20);
+        ft.mul(0, 5);
+        ft.mul(2, 10);
+        ft.mul(6, 20);
         assert_eq!(ft.product(..1), 5);
         assert_eq!(ft.product(..3), 15);
         assert_eq!(ft.product(..7), 35);
         assert_eq!(ft.product(..), 35);
         assert_eq!(ft.product(0..3), 15);
         assert_eq!(ft.product(3..=6), 20);
-        ft.add(9, 10);
+        ft.mul(9, 10);
         assert_eq!(ft.product(0..10), 45);
     }
 }
