@@ -6,10 +6,6 @@ pub trait IteratorFormater {
     fn join_with(&mut self, sep: &str) -> String;
 }
 
-pub trait VecFormater {
-    fn join_with(&self, sep: &str) -> String;
-}
-
 impl<I> IteratorFormater for I
 where
     I: Iterator,
@@ -27,6 +23,10 @@ where
     }
 }
 
+pub trait VecFormater {
+    fn join_with(&self, sep: &str) -> String;
+}
+
 impl<T> VecFormater for Vec<T>
 where
     T: Display,
@@ -36,8 +36,26 @@ where
     }
 }
 
+pub trait ToString {
+    fn to_string(&self) -> String;
+}
+
+impl ToString for [char] {
+    fn to_string(&self) -> String {
+        self.iter().collect::<String>()
+    }
+}
+
+impl ToString for [u8] {
+    fn to_string(&self) -> String {
+        self.iter().map(|&c| c as char).collect::<String>()
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use crate::format::ToString;
+
     use super::{IteratorFormater, VecFormater};
 
     #[test]
@@ -45,5 +63,14 @@ mod tests {
         let v = vec![1, 2, 3, 4, 5];
         assert_eq!(v.iter().join_with(" "), "1 2 3 4 5");
         assert_eq!(v.join_with(" "), "1 2 3 4 5");
+    }
+
+    #[test]
+    fn test_to_string() {
+        assert_eq!(vec!['A', 'B', 'C'].to_string(), String::from("ABC"));
+        assert_eq!(['d', 'e', 'f'].to_string(), String::from("def"));
+        assert_eq!(vec!['1', '2', '3'].to_string(), String::from("123"));
+        assert_eq!(vec![b'A', b'B', b'C'].to_string(), String::from("ABC"));
+        assert_eq!(b"def".to_string(), String::from("def"));
     }
 }
