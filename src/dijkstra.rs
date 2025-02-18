@@ -90,14 +90,14 @@ where
 
     /// start->vの最小コスト
     /// startからvへ到達不可能であればNone
-    pub fn cost(&self, v: &V) -> &Option<C> {
-        &self.costs[(self.to_index)(v)]
+    pub fn cost(&self, v: &V) -> Option<&C> {
+        self.costs[(self.to_index)(v)].as_ref()
     }
 
     /// startからの最短経路においてvの直前に訪れる頂点
     /// そのような頂点が存在しなければNone
-    pub fn previous(&self, v: &V) -> &Option<V> {
-        &self.previous_vertices[(self.to_index)(v)]
+    pub fn previous(&self, v: &V) -> Option<&V> {
+        self.previous_vertices[(self.to_index)(v)].as_ref()
     }
 
     /// 頂点endへの最短経路を構築する
@@ -131,7 +131,7 @@ where
         g.len(),
         &start,
         &T::zero(),
-        |&v: &usize| v,
+        |&v| v,
         |&v| g[v].iter().cloned(),
     )
 }
@@ -161,7 +161,9 @@ mod tests {
     fn test_dijkstra() {
         fn costs(g: &[Vec<(usize, u64)>], start: usize) -> Vec<Option<u64>> {
             let dijkstra = dijkstra_adjacencies(&g, start);
-            (0..g.len()).map(|v| dijkstra.cost(&v).clone()).collect()
+            (0..g.len())
+                .map(|v| dijkstra.cost(&v).map(|&c| c))
+                .collect()
         }
 
         // (graph, start, expected)

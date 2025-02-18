@@ -26,6 +26,7 @@ impl<V, I> Bfs<V, I>
 where
     I: Fn(&V) -> usize,
 {
+    /// BFS
     /// to_index: 状態からインデックスへの写像
     /// neighbors: 頂点から1ステップで到達できる頂点のイテレータ
     pub fn new<E>(n: usize, start: &V, to_index: I, mut neighbors: impl FnMut(&V) -> E) -> Self
@@ -131,6 +132,12 @@ where
     /// startからvへ到達不可能であればNone
     pub fn cost(&self, v: &V) -> Option<usize> {
         self.costs[(self.to_index)(&v)]
+    }
+
+    /// startからの最短経路においてvの直前に訪れる頂点
+    /// そのような頂点が存在しなければNone
+    pub fn previous(&self, v: &V) -> Option<&V> {
+        self.previous_vertices[(self.to_index)(v)].as_ref()
     }
 
     /// 頂点endへ到達可能ならばendまでの最短経路を構築する
