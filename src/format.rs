@@ -54,9 +54,7 @@ impl ToString for [u8] {
 
 #[cfg(test)]
 mod tests {
-    use crate::format::ToString;
-
-    use super::{IteratorFormater, VecFormater};
+    use super::{IteratorFormater, ToString, VecFormater};
 
     #[test]
     fn test_join() {
