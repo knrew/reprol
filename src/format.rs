@@ -2,11 +2,11 @@
 
 use std::fmt::{Display, Write};
 
-pub trait IteratorFormater {
+pub trait IteratorFormatter {
     fn join_with(&mut self, sep: &str) -> String;
 }
 
-impl<I> IteratorFormater for I
+impl<I> IteratorFormatter for I
 where
     I: Iterator,
     I::Item: Display,
@@ -23,11 +23,11 @@ where
     }
 }
 
-pub trait VecFormater {
+pub trait VecFormatter {
     fn join_with(&self, sep: &str) -> String;
 }
 
-impl<T> VecFormater for Vec<T>
+impl<T> VecFormatter for Vec<T>
 where
     T: Display,
 {
@@ -36,17 +36,17 @@ where
     }
 }
 
-pub trait ToString {
+pub trait AsString {
     fn to_string(&self) -> String;
 }
 
-impl ToString for [char] {
+impl AsString for [char] {
     fn to_string(&self) -> String {
         self.iter().collect::<String>()
     }
 }
 
-impl ToString for [u8] {
+impl AsString for [u8] {
     fn to_string(&self) -> String {
         self.iter().map(|&c| c as char).collect::<String>()
     }
@@ -54,7 +54,7 @@ impl ToString for [u8] {
 
 #[cfg(test)]
 mod tests {
-    use super::{IteratorFormater, ToString, VecFormater};
+    use super::{IteratorFormatter, AsString, VecFormatter};
 
     #[test]
     fn test_join() {
