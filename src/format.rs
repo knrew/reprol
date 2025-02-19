@@ -2,22 +2,22 @@
 
 use std::fmt::{Display, Write};
 
-pub trait JoinForIterator {
-    fn join_with(&mut self, sep: &str) -> String;
-    fn join_with_space(&mut self) -> String {
-        self.join_with(" ")
+pub trait AsStringIterator {
+    fn as_string_with(&mut self, sep: &str) -> String;
+    fn as_string_with_space(&mut self) -> String {
+        self.as_string_with(" ")
     }
-    fn join_with_newline(&mut self) -> String {
-        self.join_with("\n")
+    fn as_string_with_newline(&mut self) -> String {
+        self.as_string_with("\n")
     }
 }
 
-impl<I> JoinForIterator for I
+impl<I> AsStringIterator for I
 where
     I: Iterator,
     I::Item: Display,
 {
-    fn join_with(&mut self, sep: &str) -> String {
+    fn as_string_with(&mut self, sep: &str) -> String {
         let mut res = String::new();
         if let Some(item) = self.next() {
             write!(&mut res, "{}", item).unwrap();
@@ -29,22 +29,27 @@ where
     }
 }
 
-pub trait JoinForSlice {
-    fn join_with(&self, sep: &str) -> String;
-    fn join_with_space(&mut self) -> String {
-        self.join_with(" ")
+pub trait AsStringSlice {
+    /// 配列をsep区切りで文字列に変換する
+    fn as_string_with(&self, sep: &str) -> String;
+
+    /// 配列をスペース区切りで文字列に変換する
+    fn as_string_with_space(&self) -> String {
+        self.as_string_with(" ")
     }
-    fn join_with_newline(&mut self) -> String {
-        self.join_with("\n")
+
+    /// 配列を改行区切りで文字列に変換する
+    fn as_string_with_newline(&self) -> String {
+        self.as_string_with("\n")
     }
 }
 
-impl<T> JoinForSlice for [T]
+impl<T> AsStringSlice for [T]
 where
     T: Display,
 {
-    fn join_with(&self, sep: &str) -> String {
-        self.iter().join_with(sep)
+    fn as_string_with(&self, sep: &str) -> String {
+        self.iter().as_string_with(sep)
     }
 }
 
@@ -66,13 +71,13 @@ impl AsString for [u8] {
 
 #[cfg(test)]
 mod tests {
-    use super::{AsString, JoinForIterator, JoinForSlice};
+    use super::{AsString, AsStringIterator, AsStringSlice};
 
     #[test]
     fn test_join() {
         let v = vec![1, 2, 3, 4, 5];
-        assert_eq!(v.iter().join_with(" "), "1 2 3 4 5");
-        assert_eq!(v.join_with(" "), "1 2 3 4 5");
+        assert_eq!(v.iter().as_string_with(" "), "1 2 3 4 5");
+        assert_eq!(v.as_string_with(" "), "1 2 3 4 5");
     }
 
     #[test]
