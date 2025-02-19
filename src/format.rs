@@ -2,11 +2,17 @@
 
 use std::fmt::{Display, Write};
 
-pub trait IteratorFormatter {
+pub trait JoinForIterator {
     fn join_with(&mut self, sep: &str) -> String;
+    fn join_with_space(&mut self) -> String {
+        self.join_with(" ")
+    }
+    fn join_with_newline(&mut self) -> String {
+        self.join_with("\n")
+    }
 }
 
-impl<I> IteratorFormatter for I
+impl<I> JoinForIterator for I
 where
     I: Iterator,
     I::Item: Display,
@@ -23,11 +29,17 @@ where
     }
 }
 
-pub trait VecFormatter {
+pub trait JoinForSlice {
     fn join_with(&self, sep: &str) -> String;
+    fn join_with_space(&mut self) -> String {
+        self.join_with(" ")
+    }
+    fn join_with_newline(&mut self) -> String {
+        self.join_with("\n")
+    }
 }
 
-impl<T> VecFormatter for Vec<T>
+impl<T> JoinForSlice for [T]
 where
     T: Display,
 {
@@ -37,24 +49,24 @@ where
 }
 
 pub trait AsString {
-    fn to_string(&self) -> String;
+    fn as_string(&self) -> String;
 }
 
 impl AsString for [char] {
-    fn to_string(&self) -> String {
+    fn as_string(&self) -> String {
         self.iter().collect::<String>()
     }
 }
 
 impl AsString for [u8] {
-    fn to_string(&self) -> String {
+    fn as_string(&self) -> String {
         self.iter().map(|&c| c as char).collect::<String>()
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{IteratorFormatter, AsString, VecFormatter};
+    use super::{AsString, JoinForIterator, JoinForSlice};
 
     #[test]
     fn test_join() {
@@ -65,10 +77,10 @@ mod tests {
 
     #[test]
     fn test_to_string() {
-        assert_eq!(vec!['A', 'B', 'C'].to_string(), String::from("ABC"));
-        assert_eq!(['d', 'e', 'f'].to_string(), String::from("def"));
-        assert_eq!(vec!['1', '2', '3'].to_string(), String::from("123"));
-        assert_eq!(vec![b'A', b'B', b'C'].to_string(), String::from("ABC"));
-        assert_eq!(b"def".to_string(), String::from("def"));
+        assert_eq!(vec!['A', 'B', 'C'].as_string(), String::from("ABC"));
+        assert_eq!(['d', 'e', 'f'].as_string(), String::from("def"));
+        assert_eq!(vec!['1', '2', '3'].as_string(), String::from("123"));
+        assert_eq!(vec![b'A', b'B', b'C'].as_string(), String::from("ABC"));
+        assert_eq!(b"def".as_string(), String::from("def"));
     }
 }

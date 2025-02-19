@@ -36,11 +36,11 @@ where
     where
         O::Value: Clone,
     {
-        let mut cum = vec![op.identity(); len + 1];
+        let mut data = vec![op.identity(); len + 1];
         for i in 0..len {
-            cum[i + 1] = op.op(&cum[i], &f(i));
+            data[i + 1] = op.op(&data[i], &f(i));
         }
-        Self { len, data: cum, op }
+        Self { len, data, op }
     }
 
     /// [0, r)の累積を取得する
@@ -117,7 +117,6 @@ where
     }
 }
 
-/// NOTE: u64などのunsignedには非対応
 pub type CumulativeSum<T> = CumulativeProduct<OpAdd<T>>;
 
 #[cfg(test)]
