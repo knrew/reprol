@@ -7,7 +7,7 @@ pub trait RunLengthEncoding {
     fn rle(&self) -> Self::Output;
 }
 
-impl<T> RunLengthEncoding for Vec<T>
+impl<T> RunLengthEncoding for [T]
 where
     T: Clone + PartialEq,
 {
@@ -28,17 +28,6 @@ where
         }
 
         res
-    }
-}
-
-impl<T> RunLengthEncoding for &[T]
-where
-    T: Clone + PartialEq,
-{
-    type Output = Vec<(T, usize)>;
-
-    fn rle(&self) -> Self::Output {
-        self.to_vec().rle()
     }
 }
 
