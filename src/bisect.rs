@@ -166,4 +166,64 @@ mod tests {
         assert_eq!(v.upper_bound(&3), 0);
         assert_eq!(v.upper_bound(&5), 5);
     }
+
+    #[test]
+    fn test_lower_bound_by_key() {
+        let v: Vec<(i32, i32)> = vec![];
+        assert_eq!(v.lower_bound_by_key(&10, |&(x, _)| x), 0);
+
+        let v = vec![(5, 100)];
+        assert_eq!(v.lower_bound_by_key(&5, |&(x, _)| x), 0);
+        assert_eq!(v.lower_bound_by_key(&3, |&(x, _)| x), 0);
+        assert_eq!(v.lower_bound_by_key(&10, |&(x, _)| x), 1);
+
+        let v = vec![(1, 10), (3, 20), (5, 30), (7, 40)];
+        assert_eq!(v.lower_bound_by_key(&0, |&(x, _)| x), 0);
+        assert_eq!(v.lower_bound_by_key(&1, |&(x, _)| x), 0);
+        assert_eq!(v.lower_bound_by_key(&2, |&(x, _)| x), 1);
+        assert_eq!(v.lower_bound_by_key(&3, |&(x, _)| x), 1);
+        assert_eq!(v.lower_bound_by_key(&6, |&(x, _)| x), 3);
+        assert_eq!(v.lower_bound_by_key(&7, |&(x, _)| x), 3);
+        assert_eq!(v.lower_bound_by_key(&8, |&(x, _)| x), 4);
+
+        let v = vec![(2, 10), (2, 20), (2, 30), (4, 40), (6, 50)];
+        assert_eq!(v.lower_bound_by_key(&2, |&(x, _)| x), 0);
+        assert_eq!(v.lower_bound_by_key(&3, |&(x, _)| x), 3);
+        assert_eq!(v.lower_bound_by_key(&4, |&(x, _)| x), 3);
+        assert_eq!(v.lower_bound_by_key(&5, |&(x, _)| x), 4);
+        assert_eq!(v.lower_bound_by_key(&20, |&(_, y)| y), 1);
+        assert_eq!(v.lower_bound_by_key(&25, |&(_, y)| y), 2);
+        assert_eq!(v.lower_bound_by_key(&30, |&(_, y)| y), 2);
+        assert_eq!(v.lower_bound_by_key(&35, |&(_, y)| y), 3);
+    }
+
+    #[test]
+    fn test_upper_bound_by_key() {
+        let v: Vec<(i32, i32)> = vec![];
+        assert_eq!(v.upper_bound_by_key(&10, |&(x, _)| x), 0);
+
+        let v = vec![(5, 100)];
+        assert_eq!(v.upper_bound_by_key(&5, |&(x, _)| x), 1);
+        assert_eq!(v.upper_bound_by_key(&3, |&(x, _)| x), 0);
+        assert_eq!(v.upper_bound_by_key(&10, |&(x, _)| x), 1);
+
+        let v = vec![(1, 10), (3, 20), (5, 30), (7, 40)];
+        assert_eq!(v.upper_bound_by_key(&0, |&(x, _)| x), 0);
+        assert_eq!(v.upper_bound_by_key(&1, |&(x, _)| x), 1);
+        assert_eq!(v.upper_bound_by_key(&2, |&(x, _)| x), 1);
+        assert_eq!(v.upper_bound_by_key(&3, |&(x, _)| x), 2);
+        assert_eq!(v.upper_bound_by_key(&6, |&(x, _)| x), 3);
+        assert_eq!(v.upper_bound_by_key(&7, |&(x, _)| x), 4);
+        assert_eq!(v.upper_bound_by_key(&8, |&(x, _)| x), 4);
+
+        let v = vec![(2, 10), (2, 20), (2, 30), (4, 40), (6, 50)];
+        assert_eq!(v.upper_bound_by_key(&2, |&(x, _)| x), 3);
+        assert_eq!(v.upper_bound_by_key(&3, |&(x, _)| x), 3);
+        assert_eq!(v.upper_bound_by_key(&4, |&(x, _)| x), 4);
+        assert_eq!(v.upper_bound_by_key(&5, |&(x, _)| x), 4);
+        assert_eq!(v.upper_bound_by_key(&20, |&(_, y)| y), 2);
+        assert_eq!(v.upper_bound_by_key(&25, |&(_, y)| y), 2);
+        assert_eq!(v.upper_bound_by_key(&30, |&(_, y)| y), 3);
+        assert_eq!(v.upper_bound_by_key(&35, |&(_, y)| y), 3);
+    }
 }
