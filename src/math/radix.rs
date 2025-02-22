@@ -54,7 +54,7 @@ impl FromRadix for &str {
 /// n進法の数(桁数d)のn^iの位の数が(d-i)番目の要素として格納されている配列に対して
 /// 10進法に変換した値を返す
 /// Bytesをそのまま突っ込むものではないので注意
-impl FromRadix for Vec<u32> {
+impl FromRadix for [u32] {
     type Output = u64;
     fn from_radix(&self, n: u32) -> Self::Output {
         let n = n as u64;

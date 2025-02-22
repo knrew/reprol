@@ -22,8 +22,7 @@ where
 
         assert!(!v.is_empty());
         assert!(!v[0].is_empty());
-        #[cfg(debug_assertions)]
-        assert!(v.iter().all(|vi| vi.len() == v[0].len()));
+        debug_assert!(v.iter().all(|vi| vi.len() == v[0].len()));
 
         let monoid = M::default();
         let h = v.len();
@@ -69,8 +68,7 @@ where
     {
         assert!(!v.is_empty());
         assert!(!v[0].is_empty());
-        #[cfg(debug_assertions)]
-        assert!(v.iter().all(|vi| vi.len() == v[0].len()));
+        debug_assert!(v.iter().all(|vi| vi.len() == v[0].len()));
 
         let h = v.len();
         let w = v[0].len();
@@ -111,18 +109,18 @@ where
 
     pub fn product(
         &self,
-        x_range: impl RangeBounds<usize>,
-        y_range: impl RangeBounds<usize>,
+        row_range: impl RangeBounds<usize>,
+        col_range: impl RangeBounds<usize>,
     ) -> M::Value {
-        let Range { start: xl, end: xr } = to_open_range(x_range, self.h);
-        let Range { start: yl, end: yr } = to_open_range(y_range, self.w);
-        if xl >= xr {
+        let Range { start: il, end: ir } = to_open_range(row_range, self.h);
+        let Range { start: jl, end: jr } = to_open_range(col_range, self.w);
+        if il >= ir {
             return self.monoid.identity();
         }
-        let k = (xr - xl + 1).next_power_of_two().trailing_zeros() as usize - 1;
+        let k = (ir - il + 1).next_power_of_two().trailing_zeros() as usize - 1;
         self.monoid.op(
-            &self.nodes[k][xl].product(yl..yr),
-            &self.nodes[k][xr - (1 << k)].product(yl..yr),
+            &self.nodes[k][il].product(jl..jr),
+            &self.nodes[k][ir - (1 << k)].product(jl..jr),
         )
     }
 }
