@@ -1,4 +1,7 @@
-use std::ops::{Range, RangeInclusive};
+use std::{
+    cmp::Ordering,
+    ops::{Range, RangeInclusive},
+};
 
 /// x \in [l, r)の範囲を探索
 /// !f(x)となる最小のxを返す(f(x-1)==true,  f(x)==false)
@@ -47,39 +50,55 @@ macro_rules! impl_integer {
 
 impl_integer! { u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize }
 
-pub trait LowerBound {
+pub trait Bounds {
     type Item: Ord;
+
     fn lower_bound(&self, x: &Self::Item) -> usize;
-}
+    fn lower_bound_by(&self, f: impl FnMut(&Self::Item) -> Ordering) -> usize;
+    fn lower_bound_by_key<K: Ord>(&self, k: &K, f: impl FnMut(&Self::Item) -> K) -> usize;
 
-impl<T: Ord> LowerBound for [T] {
-    type Item = T;
-    fn lower_bound(&self, x: &Self::Item) -> usize {
-        if self.is_empty() {
-            return 0;
-        }
-        (0..self.len()).bisect(|&i| &self[i] < x)
-    }
-}
-
-pub trait UpperBound {
-    type Item: Ord;
     fn upper_bound(&self, x: &Self::Item) -> usize;
+    fn upper_bound_by(&self, f: impl FnMut(&Self::Item) -> Ordering) -> usize;
+    fn upper_bound_by_key<K: Ord>(&self, k: &K, f: impl FnMut(&Self::Item) -> K) -> usize;
 }
 
-impl<T: Ord> UpperBound for [T] {
+impl<T: Ord> Bounds for [T] {
     type Item = T;
-    fn upper_bound(&self, x: &Self::Item) -> usize {
+
+    fn lower_bound(&self, x: &Self::Item) -> usize {
+        self.lower_bound_by(|y| y.cmp(x))
+    }
+
+    fn lower_bound_by(&self, mut f: impl FnMut(&Self::Item) -> Ordering) -> usize {
         if self.is_empty() {
             return 0;
         }
-        (0..self.len()).bisect(|&i| &self[i] <= x)
+        (0..self.len()).bisect(|&i| f(&self[i]) == Ordering::Less)
+    }
+
+    fn lower_bound_by_key<K: Ord>(&self, k: &K, mut f: impl FnMut(&Self::Item) -> K) -> usize {
+        self.lower_bound_by(|x| f(x).cmp(k))
+    }
+
+    fn upper_bound(&self, x: &Self::Item) -> usize {
+        self.upper_bound_by(|y| y.cmp(x))
+    }
+
+    fn upper_bound_by(&self, mut f: impl FnMut(&Self::Item) -> Ordering) -> usize {
+        if self.is_empty() {
+            return 0;
+        }
+        (0..self.len()).bisect(|&i| f(&self[i]) != Ordering::Greater)
+    }
+
+    fn upper_bound_by_key<K: Ord>(&self, k: &K, mut f: impl FnMut(&Self::Item) -> K) -> usize {
+        self.upper_bound_by(|x| f(x).cmp(k))
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{LowerBound, UpperBound};
+    use super::Bounds;
 
     #[test]
     fn test_lower_bound() {
