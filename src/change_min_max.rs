@@ -41,7 +41,7 @@ where
 
     fn change_min_or_set(&mut self, rhs: Self::Item) -> bool {
         match self {
-            Some(lhs) if *lhs < rhs => false,
+            Some(lhs) if *lhs <= rhs => false,
             _ => {
                 *self = Some(rhs);
                 true
@@ -51,7 +51,7 @@ where
 
     fn change_max_or_set(&mut self, rhs: Self::Item) -> bool {
         match self {
-            Some(lhs) if *lhs > rhs => false,
+            Some(lhs) if *lhs >= rhs => false,
             _ => {
                 *self = Some(rhs);
                 true
