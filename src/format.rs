@@ -1,23 +1,19 @@
 //! 出力時に便利な関数など
+//! NOTE: 命名が微妙
 
 use std::fmt::{Display, Write};
 
-pub trait AsStringIterator {
-    fn as_string_with(&mut self, sep: &str) -> String;
-    fn as_string_with_space(&mut self) -> String {
-        self.as_string_with(" ")
-    }
-    fn as_string_with_newline(&mut self) -> String {
-        self.as_string_with("\n")
-    }
+pub trait IterFormatter {
+    /// イテレータをsep区切りで文字列に変換する
+    fn to_string(&mut self, sep: &str) -> String;
 }
 
-impl<I> AsStringIterator for I
+impl<I> IterFormatter for I
 where
     I: Iterator,
     I::Item: Display,
 {
-    fn as_string_with(&mut self, sep: &str) -> String {
+    fn to_string(&mut self, sep: &str) -> String {
         let mut res = String::new();
         if let Some(item) = self.next() {
             write!(&mut res, "{}", item).unwrap();
@@ -29,41 +25,41 @@ where
     }
 }
 
-pub trait AsStringSlice {
+pub trait ArrayFormatter {
     /// 配列をsep区切りで文字列に変換する
-    fn as_string_with(&self, sep: &str) -> String;
-
-    /// 配列をスペース区切りで文字列に変換する
-    fn as_string_with_space(&self) -> String {
-        self.as_string_with(" ")
-    }
-
-    /// 配列を改行区切りで文字列に変換する
-    fn as_string_with_newline(&self) -> String {
-        self.as_string_with("\n")
-    }
+    fn to_string(&self, sep: &str) -> String;
 }
 
-impl<T> AsStringSlice for [T]
+impl<T> ArrayFormatter for [T]
 where
     T: Display,
 {
-    fn as_string_with(&self, sep: &str) -> String {
-        self.iter().as_string_with(sep)
+    fn to_string(&self, sep: &str) -> String {
+        self.iter().to_string(sep)
     }
 }
 
-pub trait AsString {
+pub trait Usize1ArrayFormatter {
+    fn to_string_usize1(&self, sep: &str) -> String;
+}
+
+impl Usize1ArrayFormatter for [usize] {
+    fn to_string_usize1(&self, sep: &str) -> String {
+        self.iter().map(|i| i + 1).to_string(sep)
+    }
+}
+
+pub trait CharsFormatter {
     fn as_string(&self) -> String;
 }
 
-impl AsString for [char] {
+impl CharsFormatter for [char] {
     fn as_string(&self) -> String {
         self.iter().collect::<String>()
     }
 }
 
-impl AsString for [u8] {
+impl CharsFormatter for [u8] {
     fn as_string(&self) -> String {
         self.iter().map(|&c| c as char).collect::<String>()
     }
@@ -71,13 +67,13 @@ impl AsString for [u8] {
 
 #[cfg(test)]
 mod tests {
-    use super::{AsString, AsStringIterator, AsStringSlice};
+    use super::{ArrayFormatter, CharsFormatter, IterFormatter};
 
     #[test]
-    fn test_join() {
+    fn test_as_string() {
         let v = vec![1, 2, 3, 4, 5];
-        assert_eq!(v.iter().as_string_with(" "), "1 2 3 4 5");
-        assert_eq!(v.as_string_with(" "), "1 2 3 4 5");
+        assert_eq!(v.iter().to_string(" "), "1 2 3 4 5");
+        assert_eq!(v.to_string(" "), "1 2 3 4 5");
     }
 
     #[test]
