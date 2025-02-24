@@ -142,7 +142,7 @@ where
 
     /// 頂点endへ到達可能ならばendまでの最短経路を構築する
     /// startとendを含む
-    pub fn costruct_path(&self, end: &V) -> Option<Vec<V>>
+    pub fn path(&self, end: &V) -> Option<Vec<V>>
     where
         V: Clone,
     {
@@ -180,11 +180,10 @@ mod tests {
         let graph = vec![vec![1], vec![2], vec![3], vec![]];
         let expected = vec![Some(0), Some(1), Some(2), Some(3)];
         let bfs = bfs_adjacencies(&graph, start);
-        // let bfs = Bfs::from_adjacencies(&graph, start);
         for v in 0..graph.len() {
             assert_eq!(bfs.cost(&v), expected[v]);
         }
-        assert_eq!(bfs.costruct_path(&3), Some(vec![0, 1, 2, 3]));
+        assert_eq!(bfs.path(&3), Some(vec![0, 1, 2, 3]));
 
         let start = 0;
         let graph = vec![vec![1], vec![2], vec![], vec![4], vec![]];
@@ -217,7 +216,7 @@ mod tests {
         for v in 0..graph.len() {
             assert_eq!(bfs.cost(&v), expected[v]);
         }
-        assert_eq!(bfs.costruct_path(&4), Some(vec![0, 2, 4]));
+        assert_eq!(bfs.path(&4), Some(vec![0, 2, 4]));
     }
 
     #[test]
