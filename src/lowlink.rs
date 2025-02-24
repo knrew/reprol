@@ -48,6 +48,11 @@ impl LowLink {
         self.order[u] < self.lowlink[v]
     }
 
+    pub fn articulations(&self) -> impl DoubleEndedIterator<Item = usize> + '_ {
+        assert!(self.has_built);
+        self.articulations.iter().cloned()
+    }
+
     pub fn build(&mut self) {
         self.order = vec![0; self.len];
         self.lowlink = vec![0; self.len];

@@ -8,8 +8,8 @@ pub struct WarshallFloyd<T> {
     /// cost[u][v]: u->vの最小コスト
     costs: Vec<Vec<Option<T>>>,
 
-    /// 0
-    zero: T,
+    /// 負の閉路が存在するか
+    has_negative_cycle: bool,
 }
 
 impl<T> WarshallFloyd<T>
@@ -55,7 +55,13 @@ where
             }
         }
 
-        Self { n, costs, zero }
+        let has_negative_cycle = (0..n).any(|v| costs[v][v].as_ref().unwrap() < &zero);
+
+        Self {
+            n,
+            costs,
+            has_negative_cycle,
+        }
     }
 
     pub fn len(&self) -> usize {
@@ -69,7 +75,7 @@ where
 
     /// 負の閉路が存在するか
     pub fn has_negative_cycle(&self) -> bool {
-        (0..self.n).any(|v| self.costs[v][v].as_ref().unwrap() < &self.zero)
+        self.has_negative_cycle
     }
 }
 

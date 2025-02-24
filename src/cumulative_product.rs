@@ -121,17 +121,14 @@ pub type CumulativeSum<T> = CumulativeProduct<OpAdd<T>>;
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        cumulative_product::CumulativeSum,
-        ops::{op_add::OpAdd, op_min::OpMin},
-    };
+    use crate::ops::{op_add::OpAdd, op_min::OpMin};
 
-    use super::CumulativeProduct;
+    use super::{CumulativeProduct, CumulativeSum};
 
     #[test]
     fn test_cumulative_sum() {
         let v = vec![1, 2, 3, 4, 5];
-        let test_cases = vec![
+        let testcases = vec![
             ((0, 5), 15),
             ((0, 1), 1),
             ((1, 3), 5),
@@ -144,12 +141,12 @@ mod tests {
         let cum = CumulativeSum::<i64>::from(v);
         assert_eq!(cum.product(..), 15);
         assert_eq!(cum.get(5), &15);
-        for ((l, r), expected) in test_cases {
+        for ((l, r), expected) in testcases {
             assert_eq!(cum.product(l..r), expected);
         }
 
         let cum = CumulativeSum::new_by(5, OpAdd::default(), |i| i as i64 + 1);
-        let test_cases = vec![
+        let testcases = vec![
             ((0, 5), 15),
             ((0, 1), 1),
             ((1, 3), 5),
@@ -159,7 +156,7 @@ mod tests {
             ((4, 5), 5),
             ((0, 4), 10),
         ];
-        for ((l, r), expected) in test_cases {
+        for ((l, r), expected) in testcases {
             assert_eq!(cum.product(l..r), expected);
         }
     }
@@ -167,9 +164,9 @@ mod tests {
     #[test]
     fn test_cumulative_min() {
         let v = vec![8, 10, -4, 2, 11];
-        let test_cases = vec![(1, 8), (2, 8), (3, -4), (4, -4), (5, -4)];
+        let testcases = vec![(1, 8), (2, 8), (3, -4), (4, -4), (5, -4)];
         let cum = CumulativeProduct::<OpMin<i32>>::from(&v);
-        for (r, expected) in test_cases {
+        for (r, expected) in testcases {
             assert_eq!(cum.get(r), &expected);
         }
     }
