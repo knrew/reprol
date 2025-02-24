@@ -78,8 +78,8 @@ mod tests {
             (0, 5, 0),
             (0, -5, 0),
         ];
-        for &(x, y, ans) in &test_cases {
-            assert_eq!(x.div_ceil_(y), ans);
+        for (lhs, rhs, ans) in test_cases {
+            assert_eq!(lhs.div_ceil_(rhs), ans);
         }
     }
 
@@ -100,8 +100,8 @@ mod tests {
             (u32::MAX, u32::MAX, 1),
             (u32::MAX, 1, u32::MAX),
         ];
-        for &(x, y, ans) in &test_cases {
-            assert_eq!(x.div_ceil_(y), ans);
+        for (lhs, rhs, ans) in test_cases {
+            assert_eq!(lhs.div_ceil_(rhs), ans);
         }
     }
 
@@ -122,8 +122,8 @@ mod tests {
             (i64::MAX, i64::MAX, 1),
             (i64::MAX, 1, i64::MAX),
         ];
-        for &(x, y, ans) in &test_cases {
-            assert_eq!(x.div_ceil_(y), ans);
+        for (lhs, rhs, ans) in test_cases {
+            assert_eq!(lhs.div_ceil_(rhs), ans);
         }
     }
 
@@ -144,8 +144,8 @@ mod tests {
             (u64::MAX, u64::MAX, 1),
             (u64::MAX, 1, u64::MAX),
         ];
-        for &(x, y, ans) in &test_cases {
-            assert_eq!(x.div_ceil_(y), ans);
+        for (lhs, rhs, ans) in test_cases {
+            assert_eq!(lhs.div_ceil_(rhs), ans);
         }
     }
 }

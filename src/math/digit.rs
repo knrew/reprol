@@ -36,6 +36,7 @@ mod tests {
             0,
             1,
             14,
+            43,
             132,
             3245,
             325235,
@@ -72,5 +73,11 @@ mod tests {
         for x in &test_cases_u128 {
             assert_eq!(x.digit(), x.to_string().len());
         }
+    }
+
+    #[test]
+    #[should_panic]
+    fn test() {
+        let _ = (-5).digit();
     }
 }

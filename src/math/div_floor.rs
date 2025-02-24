@@ -28,9 +28,9 @@ mod tests {
     use super::DivFloor;
 
     #[test]
-    fn test_div_floor() {
-        let testcases = vec![
-            ((10i32, 3), 3),
+    fn test_div_floor_i32() {
+        let testcases: Vec<((i32, i32), i32)> = vec![
+            ((10, 3), 3),
             ((9, 3), 3),
             ((8, 3), 2),
             ((-10, 3), -4),
@@ -50,20 +50,23 @@ mod tests {
             ((-10, -1), 10),
         ];
 
-        for ((x, y), expected) in testcases {
-            assert_eq!(x.div_floor_(y), expected);
+        for ((lhs, rhs), expected) in testcases {
+            assert_eq!(lhs.div_floor_(rhs), expected);
         }
+    }
 
-        let testcases = vec![
-            ((10u64, 3), 3),
+    #[test]
+    fn test_div_floor_u64() {
+        let testcases: Vec<((u64, u64), u64)> = vec![
+            ((10, 3), 3),
             ((9, 3), 3),
             ((8, 3), 2),
             ((0, 3), 0),
             ((10, 1), 10),
         ];
 
-        for ((x, y), expected) in testcases {
-            assert_eq!(x.div_floor_(y), expected);
+        for ((lhs, rhs), expected) in testcases {
+            assert_eq!(lhs.div_floor_(rhs), expected);
         }
     }
 }
