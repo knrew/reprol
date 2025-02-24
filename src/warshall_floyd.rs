@@ -73,4 +73,84 @@ where
     }
 }
 
-// TODO:テストを書く
+#[cfg(test)]
+mod tests {
+    use super::WarshallFloyd;
+
+    #[test]
+    fn test_warshall_floyd() {
+        // case 1: 連結
+        {
+            let n = 3;
+            // (u, v, c): u->vのコストがc
+            let edges: Vec<(usize, usize, i32)> = vec![(0, 1, 1), (1, 0, 2), (1, 2, 3), (2, 0, 4)];
+            let g = {
+                let mut g = vec![vec![]; n];
+                for &(u, v, c) in &edges {
+                    g[u].push((v, c));
+                }
+                g
+            };
+            let wf = WarshallFloyd::new(&g, 0);
+            assert!(!wf.has_negative_cycle());
+            assert_eq!(wf.cost(0, 0), Some(&0));
+            assert_eq!(wf.cost(0, 1), Some(&1));
+            assert_eq!(wf.cost(0, 2), Some(&4));
+            assert_eq!(wf.cost(1, 0), Some(&2));
+            assert_eq!(wf.cost(1, 1), Some(&0));
+            assert_eq!(wf.cost(1, 2), Some(&3));
+            assert_eq!(wf.cost(2, 0), Some(&4));
+            assert_eq!(wf.cost(2, 1), Some(&5));
+            assert_eq!(wf.cost(2, 2), Some(&0));
+        }
+
+        // case 2
+        {
+            let n = 5;
+            let edges: Vec<(usize, usize, i64)> =
+                vec![(0, 1, 4), (1, 2, 5), (0, 2, -10), (3, 4, 8), (4, 3, 12)];
+            let g = {
+                let mut g = vec![vec![]; n];
+                for &(u, v, c) in &edges {
+                    g[u].push((v, c));
+                }
+                g
+            };
+            let wf = WarshallFloyd::new(&g, 0);
+            assert!(!wf.has_negative_cycle());
+            assert_eq!(wf.cost(0, 0), Some(&0));
+            assert_eq!(wf.cost(0, 1), Some(&4));
+            assert_eq!(wf.cost(0, 2), Some(&-10));
+            assert_eq!(wf.cost(0, 3), None);
+            assert_eq!(wf.cost(0, 4), None);
+            assert_eq!(wf.cost(1, 0), None);
+            assert_eq!(wf.cost(1, 1), Some(&0));
+            assert_eq!(wf.cost(1, 2), Some(&5));
+            assert_eq!(wf.cost(3, 2), None);
+            assert_eq!(wf.cost(3, 4), Some(&8));
+            assert_eq!(wf.cost(4, 3), Some(&12));
+        }
+
+        // case 3: 負の閉路あり
+        {
+            let n = 4;
+            let edges: Vec<(usize, usize, i64)> = vec![
+                (0, 1, 1),
+                (0, 2, 5),
+                (1, 2, 2),
+                (1, 3, 4),
+                (2, 3, 1),
+                (3, 2, -7),
+            ];
+            let g = {
+                let mut g = vec![vec![]; n];
+                for &(u, v, c) in &edges {
+                    g[u].push((v, c));
+                }
+                g
+            };
+            let wf = WarshallFloyd::new(&g, 0);
+            assert!(wf.has_negative_cycle());
+        }
+    }
+}
