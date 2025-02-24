@@ -45,9 +45,9 @@ where
         let mut heap = BinaryHeap::new();
 
         costs[to_index(&start)] = Some(zero.clone());
-        heap.push(Reverse((zero.clone(), start.clone())));
+        heap.push((Reverse(zero.clone()), start.clone()));
 
-        while let Some(Reverse((cost, v))) = heap.pop() {
+        while let Some((Reverse(cost), v)) = heap.pop() {
             let index_v = to_index(&v);
             match &costs[index_v] {
                 Some(cost_v) if cost_v < &cost => {
@@ -65,7 +65,7 @@ where
                     _ => {
                         costs[index_nv] = Some(new_cost_nv.clone());
                         previous_vertices[index_nv] = Some(v.clone());
-                        heap.push(Reverse((new_cost_nv, nv)))
+                        heap.push((Reverse(new_cost_nv), nv));
                     }
                 }
             }
@@ -102,7 +102,7 @@ where
 
     /// 頂点endへの最短経路を構築する
     /// startとendを含む
-    pub fn construct_path(&self, end: &V) -> Option<Vec<V>> {
+    pub fn path(&self, end: &V) -> Option<Vec<V>> {
         if self.costs[(self.to_index)(end)].is_none() {
             return None;
         }
@@ -131,134 +131,162 @@ where
     Dijkstra::new(g.len(), &start, &zero, |&v| v, |&v| g[v].iter().cloned())
 }
 
-// TODO: パス復元のテストを書く
 #[cfg(test)]
 mod tests {
+    use std::{fmt::Debug, ops::Add};
+
     use super::dijkstra_adjacencies;
 
+    struct CostTestCase<'a, T> {
+        graph: Vec<Vec<(usize, T)>>,
+        start: usize,
+        expected_costs: Vec<Option<&'a T>>,
+    }
+
+    impl<'a, T> CostTestCase<'a, T>
+    where
+        T: Debug + Clone + Ord + Add<Output = T>,
+    {
+        fn test(&self, zero: T) {
+            assert_eq!(self.graph.len(), self.expected_costs.len());
+            let dijkstra = dijkstra_adjacencies(&self.graph, self.start, zero);
+            for v in 0..self.graph.len() {
+                assert_eq!(dijkstra.cost(&v), self.expected_costs[v]);
+            }
+        }
+    }
+
     #[test]
-    fn test_dijkstra() {
-        fn costs(g: &[Vec<(usize, u64)>], start: usize) -> Vec<Option<u64>> {
-            let dijkstra = dijkstra_adjacencies(&g, start, 0);
-            (0..g.len())
-                .map(|v| dijkstra.cost(&v).map(|&c| c))
-                .collect()
+    fn test_dijkstra_cost() {
+        // case1:
+        CostTestCase {
+            graph: vec![
+                vec![(1, 2)],
+                vec![(2, 3), (4, 9)],
+                vec![(4, 4)],
+                vec![(0, 1)],
+                vec![],
+            ],
+            start: 0,
+            expected_costs: vec![Some(&0), Some(&2), Some(&5), None, Some(&9)],
         }
+        .test(0i32);
 
-        // (graph, start, expected)
-        // test 6-10: グラフは同じ．startが異なる
-        let testcases = vec![
-            // test 1
-            (
-                vec![
-                    vec![(1, 2)],
-                    vec![(2, 3), (4, 9)],
-                    vec![(4, 4)],
-                    vec![(0, 1)],
-                    vec![],
-                ],
-                0,
-                vec![Some(0), Some(2), Some(5), None, Some(9)],
-            ),
-            // test 2
-            (
-                vec![vec![(1, 2)], vec![(2, 3)], vec![], vec![(4, 1)], vec![]],
-                0,
-                vec![Some(0), Some(2), Some(5), None, None],
-            ),
-            // test 3
-            (
-                vec![
-                    vec![(1, 10), (2, 1)],
-                    vec![(3, 2)],
-                    vec![(1, 1), (3, 4)],
-                    vec![],
-                ],
-                0,
-                vec![Some(0), Some(2), Some(1), Some(4)],
-            ),
-            // test 4
-            (
-                vec![vec![(1, 1)], vec![(2, 1)], vec![(0, 1)]],
-                0,
-                vec![Some(0), Some(1), Some(2)],
-            ),
-            // test 5
-            (
-                vec![
-                    vec![(1, 2), (2, 5)],
-                    vec![(2, 2), (3, 1)],
-                    vec![(3, 3), (4, 1)],
-                    vec![(4, 2)],
-                    vec![],
-                ],
-                0,
-                vec![Some(0), Some(2), Some(4), Some(3), Some(5)],
-            ),
-            // test 6
-            (
-                vec![
-                    vec![(1, 2)],
-                    vec![(2, 3), (4, 9)],
-                    vec![(4, 4)],
-                    vec![(0, 1)],
-                    vec![],
-                ],
-                0,
-                vec![Some(0), Some(2), Some(5), None, Some(9)],
-            ),
-            // test 7
-            (
-                vec![
-                    vec![(1, 2)],
-                    vec![(2, 3), (4, 9)],
-                    vec![(4, 4)],
-                    vec![(0, 1)],
-                    vec![],
-                ],
-                1,
-                vec![None, Some(0), Some(3), None, Some(7)],
-            ),
-            // test 8
-            (
-                vec![
-                    vec![(1, 2)],
-                    vec![(2, 3), (4, 9)],
-                    vec![(4, 4)],
-                    vec![(0, 1)],
-                    vec![],
-                ],
-                2,
-                vec![None, None, Some(0), None, Some(4)],
-            ),
-            // test 9
-            (
-                vec![
-                    vec![(1, 2)],
-                    vec![(2, 3), (4, 9)],
-                    vec![(4, 4)],
-                    vec![(0, 1)],
-                    vec![],
-                ],
-                3,
-                vec![Some(1), Some(3), Some(6), Some(0), Some(10)],
-            ),
-            // test 10
-            (
-                vec![
-                    vec![(1, 2)],
-                    vec![(2, 3), (4, 9)],
-                    vec![(4, 4)],
-                    vec![(0, 1)],
-                    vec![],
-                ],
-                4,
-                vec![None, None, None, None, Some(0)],
-            ),
+        // case 2: case 1と同じグラフ
+        CostTestCase {
+            graph: vec![
+                vec![(1, 2)],
+                vec![(2, 3), (4, 9)],
+                vec![(4, 4)],
+                vec![(0, 1)],
+                vec![],
+            ],
+            start: 1,
+            expected_costs: vec![None, Some(&0), Some(&3), None, Some(&7)],
+        }
+        .test(0i32);
+
+        // case 3:
+        CostTestCase {
+            graph: vec![
+                vec![(1, 2)],
+                vec![(2, 3), (2, 7)],
+                vec![(2, 2)],
+                vec![(4, 1)],
+                vec![],
+            ],
+            start: 0,
+            expected_costs: vec![Some(&0), Some(&2), Some(&5), None, None],
+        }
+        .test(0u32);
+
+        // case 4:
+        CostTestCase {
+            graph: vec![
+                vec![(1, 10), (2, 1)],
+                vec![(3, 2)],
+                vec![(1, 1), (3, 4)],
+                vec![],
+            ],
+            start: 0,
+            expected_costs: vec![Some(&0), Some(&2), Some(&1), Some(&4)],
+        }
+        .test(0u64);
+
+        // case 5:
+        CostTestCase {
+            graph: vec![vec![(1, 1)], vec![(2, 1)], vec![(0, 1)]],
+            start: 0,
+            expected_costs: vec![Some(&0), Some(&1), Some(&2)],
+        }
+        .test(0u64);
+
+        // case 6:
+        CostTestCase {
+            graph: vec![
+                vec![(1, 2), (2, 5)],
+                vec![(2, 2), (3, 1)],
+                vec![(3, 3), (4, 1)],
+                vec![(4, 2)],
+                vec![],
+            ],
+            start: 0,
+            expected_costs: vec![Some(&0), Some(&2), Some(&4), Some(&3), Some(&5)],
+        }
+        .test(0i64);
+
+        // case 7:
+        CostTestCase {
+            graph: vec![
+                vec![(1, 2)],
+                vec![(2, 3), (4, 9)],
+                vec![(4, 4)],
+                vec![(0, 1)],
+                vec![],
+            ],
+            start: 2,
+            expected_costs: vec![None, None, Some(&0), None, Some(&4)],
+        }
+        .test(0i64);
+
+        // case 8: case 7と同じグラフ
+        CostTestCase {
+            graph: vec![
+                vec![(1, 2)],
+                vec![(2, 3), (4, 9)],
+                vec![(4, 4)],
+                vec![(0, 1)],
+                vec![],
+            ],
+            start: 3,
+            expected_costs: vec![Some(&1), Some(&3), Some(&6), Some(&0), Some(&10)],
+        }
+        .test(0i64);
+    }
+
+    #[test]
+    fn test_dijkstra_path() {
+        let graph = vec![
+            vec![(1, 2)],
+            vec![(2, 3), (4, 9)],
+            vec![(4, 4)],
+            vec![(0, 1)],
+            vec![],
         ];
+        let start = 0;
+        let dijkstra = dijkstra_adjacencies(&graph, start, 0i32);
+        assert_eq!(dijkstra.path(&4), Some(vec![0, 1, 2, 4]));
+        assert_eq!(dijkstra.path(&3), None);
 
-        for (g, start, expected) in testcases {
-            assert_eq!(costs(&g, start), expected);
-        }
+        let graph = vec![
+            vec![(1, 2)],
+            vec![(2, 3), (4, 9)],
+            vec![(4, 4)],
+            vec![(0, 1)],
+            vec![],
+        ];
+        let start = 3;
+        let dijkstra = dijkstra_adjacencies(&graph, start, 0i32);
+        assert_eq!(dijkstra.path(&4), Some(vec![3, 0, 1, 2, 4]));
     }
 }
