@@ -123,34 +123,13 @@ where
 pub fn dijkstra_adjacencies<T>(
     g: &[Vec<(usize, T)>],
     start: usize,
+    zero: T,
 ) -> Dijkstra<usize, T, impl Fn(&usize) -> usize>
 where
-    T: Clone + Ord + Add<Output = T> + Zero,
+    T: Clone + Ord + Add<Output = T>,
 {
-    Dijkstra::new(
-        g.len(),
-        &start,
-        &T::zero(),
-        |&v| v,
-        |&v| g[v].iter().cloned(),
-    )
+    Dijkstra::new(g.len(), &start, &zero, |&v| v, |&v| g[v].iter().cloned())
 }
-
-pub trait Zero {
-    fn zero() -> Self;
-}
-
-macro_rules! impl_integer {
-    ($($ty:ident),*) => {$(
-        impl Zero for $ty {
-            fn zero() -> Self {
-                0
-            }
-        }
-    )*};
-}
-
-impl_integer! { u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize }
 
 // TODO: パス復元のテストを書く
 #[cfg(test)]
@@ -160,7 +139,7 @@ mod tests {
     #[test]
     fn test_dijkstra() {
         fn costs(g: &[Vec<(usize, u64)>], start: usize) -> Vec<Option<u64>> {
-            let dijkstra = dijkstra_adjacencies(&g, start);
+            let dijkstra = dijkstra_adjacencies(&g, start, 0);
             (0..g.len())
                 .map(|v| dijkstra.cost(&v).map(|&c| c))
                 .collect()
