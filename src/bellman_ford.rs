@@ -64,7 +64,7 @@ where
             }
         }
 
-        let has_negative_cycle = is_negative.iter().any(|&f| f);
+        let has_negative_cycle = is_negative.into_iter().any(|f| f);
 
         Self {
             n,

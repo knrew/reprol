@@ -104,8 +104,9 @@ impl ToplogicalSort {
         Self { order, is_unique }
     }
 
-    pub fn order(&self) -> &Option<Vec<usize>> {
-        &self.order
+    /// トポロジカル順序
+    pub fn order(&self) -> Option<&Vec<usize>> {
+        self.order.as_ref()
     }
 
     /// トポロジカル順序が一意かどうか
@@ -123,22 +124,12 @@ mod tests {
     fn test_topological_sort() {
         // TODO: is_uniqueのテスト
 
-        let test_cases = vec![
-            // test 1
-            (
-                vec![vec![1], vec![2], vec![], vec![1, 4], vec![5], vec![2]],
-                Some(vec![0, 3, 1, 4, 5, 2]),
-            ),
-            // test 2: 閉路が存在する場合
-            (
-                vec![vec![1], vec![2], vec![3], vec![1, 4], vec![5], vec![2]],
-                None,
-            ),
-        ];
+        let g = vec![vec![1], vec![2], vec![], vec![1, 4], vec![5], vec![2]];
+        let t = ToplogicalSort::new(&g);
+        assert_eq!(t.order(), Some(&vec![0, 3, 1, 4, 5, 2]));
 
-        for (g, expected) in test_cases {
-            let t = ToplogicalSort::new(&g);
-            assert_eq!(t.order(), &expected);
-        }
+        let g = vec![vec![1], vec![2], vec![3], vec![1, 4], vec![5], vec![2]];
+        let t = ToplogicalSort::new(&g);
+        assert_eq!(t.order(), None);
     }
 }
