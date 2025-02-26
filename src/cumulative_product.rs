@@ -11,7 +11,7 @@ pub struct CumulativeProduct<O: Monoid> {
 }
 
 impl<O: Monoid> CumulativeProduct<O> {
-    /// 配列vの累積積(累積和)を計算する
+    /// 配列vの累積積を計算する
     pub fn new(v: Vec<O::Value>) -> Self
     where
         O: Default,
@@ -21,7 +21,7 @@ impl<O: Monoid> CumulativeProduct<O> {
         Self::construct(v.len(), |i| v[i].clone())
     }
 
-    /// i番目の要素がf(i)であるような累積積(累積和)を計算する
+    /// i番目の要素がf(i)であるような累積積を計算する
     pub fn construct(len: usize, f: impl FnMut(usize) -> O::Value) -> Self
     where
         O: Default,
@@ -30,8 +30,7 @@ impl<O: Monoid> CumulativeProduct<O> {
         Self::construct_with_op(len, O::default(), f)
     }
 
-    /// 配列vの累積積(累積和)を計算する
-    /// 演算を引数で指定する
+    /// 演算を指定して配列vの累積積を計算する
     pub fn with_op(v: Vec<O::Value>, op: O) -> Self
     where
         O::Value: Clone,
@@ -40,8 +39,7 @@ impl<O: Monoid> CumulativeProduct<O> {
         Self::construct_with_op(v.len(), op, |i| v[i].clone())
     }
 
-    /// i番目の要素がf(i)であるような累積積(累積和)を計算する
-    /// 演算を引数で指定する
+    /// 演算を指定してi番目の要素がf(i)であるような累積積を計算する
     pub fn construct_with_op(len: usize, op: O, mut f: impl FnMut(usize) -> O::Value) -> Self
     where
         O::Value: Clone,
@@ -53,13 +51,13 @@ impl<O: Monoid> CumulativeProduct<O> {
         Self { data, op }
     }
 
-    /// [0, r)の累積を取得する
+    /// [0, r)の累積積を取得する
     pub fn get(&self, r: usize) -> &O::Value {
         &self.data[r]
     }
 
-    /// 区間積(区間和)を計算する
-    /// $a_l \cdot \ldots \cdot a_{r-1}$
+    /// [l, r)の区間積を計算する
+    /// c.g.) `cum.product(l..r)`
     pub fn product(&self, range: impl RangeBounds<usize>) -> O::Value
     where
         O: Group,
