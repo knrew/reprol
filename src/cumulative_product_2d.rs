@@ -11,7 +11,7 @@ pub struct CumulativeProduct2d<O: Monoid> {
 }
 
 impl<O: Monoid> CumulativeProduct2d<O> {
-    /// 2次元配列から累積和を計算する
+    /// 2次元配列の累積積を計算する
     pub fn new(v: Vec<Vec<O::Value>>) -> Self
     where
         O: Group + Default,
@@ -21,7 +21,7 @@ impl<O: Monoid> CumulativeProduct2d<O> {
         Self::with_op(v, O::default())
     }
 
-    /// 要素(i, j)の値ががf(i, j)であるような2次元累積和を計算する
+    /// 要素(i, j)の値がf(i, j)であるような2次元累積和を計算する
     pub fn construct(
         row_len: usize,
         col_len: usize,
@@ -34,8 +34,7 @@ impl<O: Monoid> CumulativeProduct2d<O> {
         Self::construct_with_op(row_len, col_len, O::default(), f)
     }
 
-    /// 2次元累積和を計算する
-    /// 演算を引数で指定する
+    /// 演算を指定して2次元配列の累積積を計算する
     pub fn with_op(v: Vec<Vec<O::Value>>, op: O) -> Self
     where
         O: Group,
@@ -47,8 +46,7 @@ impl<O: Monoid> CumulativeProduct2d<O> {
         Self::construct_with_op(v.len(), v[0].len(), op, |i, j| v[i][j].clone())
     }
 
-    /// 要素(i, j)の値ががf(i, j)であるような2次元累積和を計算する
-    /// 演算を引数で指定する
+    /// 演算を指定して要素(i, j)の値がf(i, j)であるような2次元累積積を計算する
     pub fn construct_with_op(
         row_len: usize,
         col_len: usize,
@@ -76,14 +74,12 @@ impl<O: Monoid> CumulativeProduct2d<O> {
         Self { data, op }
     }
 
-    /// [0, i) \times [0, j)の累積和をを取得
+    /// [0, i) \times [0, j)の累積積を取得
     pub fn get(&self, i: usize, j: usize) -> &O::Value {
         &self.data[i][j]
     }
 
-    /// [il, ir) \times [jl, jr)の累積和を計算する
-    /// row_range: [il, ir)
-    /// col_range: [jl, jr)
+    /// `cum.product(il..ir, jl..jr)`で [il, ir) \times [jl, jr)の累積積を計算する
     pub fn product(
         &self,
         row_range: impl RangeBounds<usize>,

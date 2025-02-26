@@ -56,8 +56,7 @@ impl<O: Monoid> CumulativeProduct<O> {
         &self.data[r]
     }
 
-    /// [l, r)の区間積を計算する
-    /// c.g.) `cum.product(l..r)`
+    /// `cum.product(l..r)`で [l, r)の区間積を計算する
     pub fn product(&self, range: impl RangeBounds<usize>) -> O::Value
     where
         O: Group,
@@ -165,7 +164,7 @@ pub type CumulativeSum<T> = CumulativeProduct<OpAdd<T>>;
 
 #[cfg(test)]
 mod tests {
-    use crate::ops::{op_add::OpAdd, op_min::OpMin};
+    use crate::ops::op_min::OpMin;
 
     use super::{CumulativeProduct, CumulativeSum};
 
@@ -189,7 +188,7 @@ mod tests {
             assert_eq!(cum.product(l..r), expected);
         }
 
-        let cum = CumulativeSum::construct_with_op(5, OpAdd::default(), |i| i as i64 + 1);
+        let cum = CumulativeSum::construct(5, |i| i as i64 + 1);
         let testcases = vec![
             ((0, 5), 15),
             ((0, 1), 1),
