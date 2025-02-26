@@ -72,7 +72,7 @@ where
     }
 
     /// 区間内の要素すべてにfを作用させる
-    pub fn apply(&mut self, range: impl RangeBounds<usize>, f: &A::Value) {
+    pub fn act(&mut self, range: impl RangeBounds<usize>, f: &A::Value) {
         let Range { start: l, end: r } = to_open_range(range, self.len);
 
         assert!(r <= self.len);
@@ -164,12 +164,15 @@ where
         self.monoid.op(&sum_left, &sum_right)
     }
 
-    /// f(op(a[l], a[l + 1], ..., a[r - 1])) = true となる最大のr
+    /// 区間[l, n)内のrでf(a[i])がfalseとなる最初のrを返す(存在しなければn)
+    /// f(x)が単調なら
+    /// l \leq i < rのとき，f(a[i])=true
+    /// r \leq i < nのとき，f(a[i])=false
+    /// となるようなr
     pub fn max_right(&mut self, l: usize, mut f: impl FnMut(&M::Value) -> bool) -> usize {
         assert!(l <= self.len);
 
-        #[cfg(debug_assertions)]
-        assert!(f(&self.monoid.identity()));
+        debug_assert!(f(&self.monoid.identity()));
 
         if l == self.len {
             return self.len;
@@ -209,12 +212,15 @@ where
         self.len
     }
 
-    /// f(op(a[l], a[l + 1], ..., a[r - 1])) = true となる最小のl
+    /// 区間[0, r)内を降順に見てf(a[l-1])がfalseとなる最初のlを返す(存在しなければ0)
+    /// fが単調なら
+    /// 0 \leq i < lのとき，f(a[i])=false
+    /// l \leq i < rのとき，f(a[i])=true
+    /// となるようなl
     pub fn min_left(&mut self, r: usize, mut f: impl FnMut(&M::Value) -> bool) -> usize {
         assert!(r <= self.len);
 
-        #[cfg(debug_assertions)]
-        assert!(f(&self.monoid.identity()));
+        debug_assert!(f(&self.monoid.identity()));
 
         if r == 0 {
             return 0;
@@ -388,13 +394,13 @@ mod tests {
     fn test_lazy_segment_tree() {
         let v = vec![4, 4, 4, 4, 4];
         let mut seg = LazySegmentTree::<Op, Act>::from(&v);
-        seg.apply(1..4, &2);
+        seg.act(1..4, &2);
         assert_eq!(
             (0..5).map(|i| *seg.get(i)).collect::<Vec<_>>(),
             vec![4, 6, 6, 6, 4]
         );
         assert_eq!(seg.product(0..=2), 6);
-        seg.apply(0..5, &(-1));
+        seg.act(0..5, &(-1));
         assert_eq!(
             (0..5).map(|i| *seg.get(i)).collect::<Vec<_>>(),
             vec![3, 5, 5, 5, 3]

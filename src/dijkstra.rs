@@ -1,4 +1,4 @@
-use std::{cmp::Reverse, collections::BinaryHeap, ops::Add};
+use std::{cmp::Reverse, collections::BinaryHeap, fmt::Debug, ops::Add};
 
 /// ダイクストラで最小コストを計算する
 /// V: 頂点の型
@@ -102,20 +102,34 @@ where
 
     /// 頂点endへの最短経路を構築する
     /// startとendを含む
-    pub fn path(&self, end: &V) -> Option<Vec<V>> {
+    pub fn path(&self, end: &V) -> Option<Vec<V>>
+    where
+        V: Clone,
+    {
         if self.costs[(self.to_index)(end)].is_none() {
             return None;
         }
 
-        let mut res = vec![end.clone()];
+        let mut res = vec![end];
 
-        while let Some(p) = &self.previous_vertices[(self.to_index)(res.last().unwrap())] {
-            res.push(p.clone());
+        while let Some(pv) = self.previous(res.last().unwrap()) {
+            res.push(pv);
         }
 
-        res.reverse();
+        Some(res.into_iter().rev().cloned().collect())
+    }
+}
 
-        Some(res)
+impl<V, C, I> Debug for Dijkstra<V, C, I>
+where
+    V: Debug,
+    C: Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Dijkstra")
+            .field("start", &self.start)
+            .field("costs", &self.costs)
+            .finish()
     }
 }
 

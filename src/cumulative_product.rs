@@ -10,10 +10,7 @@ pub struct CumulativeProduct<O: Monoid> {
     op: O,
 }
 
-impl<O> CumulativeProduct<O>
-where
-    O: Monoid,
-{
+impl<O: Monoid> CumulativeProduct<O> {
     /// 配列vの累積積(累積和)を計算する
     pub fn new(v: Vec<O::Value>) -> Self
     where
@@ -60,18 +57,36 @@ where
     pub fn get(&self, r: usize) -> &O::Value {
         &self.data[r]
     }
-}
 
-impl<O> CumulativeProduct<O>
-where
-    O: Group,
-{
     /// 区間積(区間和)を計算する
     /// $a_l \cdot \ldots \cdot a_{r-1}$
-    pub fn product(&self, range: impl RangeBounds<usize>) -> O::Value {
+    pub fn product(&self, range: impl RangeBounds<usize>) -> O::Value
+    where
+        O: Group,
+    {
         let Range { start: l, end: r } = to_open_range(range, self.data.len() - 1);
         assert!(l <= r);
         self.op.op(&self.data[r], &self.op.inv(&self.data[l]))
+    }
+}
+
+impl<O> From<(Vec<O::Value>, O)> for CumulativeProduct<O>
+where
+    O: Monoid,
+    O::Value: Clone,
+{
+    fn from((v, op): (Vec<O::Value>, O)) -> Self {
+        CumulativeProduct::with_op(v, op)
+    }
+}
+
+impl<O, const N: usize> From<([O::Value; N], O)> for CumulativeProduct<O>
+where
+    O: Monoid,
+    O::Value: Clone,
+{
+    fn from((v, op): ([O::Value; N], O)) -> Self {
+        CumulativeProduct::construct_with_op(v.len(), op, |i| v[i].clone())
     }
 }
 

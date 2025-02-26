@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::{collections::VecDeque, fmt::Debug};
 
 /// BFSで最小コストを計算する
 /// V: 頂点の型
@@ -157,6 +157,18 @@ where
         }
 
         Some(res.into_iter().rev().cloned().collect())
+    }
+}
+
+impl<V, I> Debug for Bfs<V, I>
+where
+    V: Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Bfs")
+            .field("start", &self.start)
+            .field("costs", &self.costs)
+            .finish()
     }
 }
 

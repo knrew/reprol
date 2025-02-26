@@ -10,14 +10,11 @@ pub struct CumulativeProduct2d<O: Monoid> {
     op: O,
 }
 
-impl<O> CumulativeProduct2d<O>
-where
-    O: Group,
-{
+impl<O: Monoid> CumulativeProduct2d<O> {
     /// 2次元配列から累積和を計算する
     pub fn new(v: Vec<Vec<O::Value>>) -> Self
     where
-        O: Default,
+        O: Group + Default,
         O::Value: Clone,
     {
         assert!(!v.is_empty());
@@ -31,7 +28,7 @@ where
         f: impl FnMut(usize, usize) -> O::Value,
     ) -> Self
     where
-        O: Default,
+        O: Group + Default,
         O::Value: Clone,
     {
         Self::construct_with_op(row_len, col_len, O::default(), f)
@@ -41,6 +38,7 @@ where
     /// 演算を引数で指定する
     pub fn with_op(v: Vec<Vec<O::Value>>, op: O) -> Self
     where
+        O: Group,
         O::Value: Clone,
     {
         assert!(!v.is_empty());
@@ -58,6 +56,7 @@ where
         mut f: impl FnMut(usize, usize) -> O::Value,
     ) -> Self
     where
+        O: Group,
         O::Value: Clone,
     {
         assert!(row_len > 0);
@@ -89,7 +88,10 @@ where
         &self,
         row_range: impl RangeBounds<usize>,
         col_range: impl RangeBounds<usize>,
-    ) -> O::Value {
+    ) -> O::Value
+    where
+        O: Group,
+    {
         let Range { start: il, end: ir } = to_open_range(row_range, self.data.len() - 1);
         let Range { start: jl, end: jr } = to_open_range(col_range, self.data[0].len() - 1);
         assert!(il <= ir);
@@ -98,6 +100,16 @@ where
         res = self.op.op(&res, &self.op.inv(&self.data[il][jr]));
         res = self.op.op(&res, &self.op.inv(&self.data[ir][jl]));
         res
+    }
+}
+
+impl<O> From<(Vec<Vec<O::Value>>, O)> for CumulativeProduct2d<O>
+where
+    O: Group,
+    O::Value: Clone,
+{
+    fn from((v, op): (Vec<Vec<O::Value>>, O)) -> Self {
+        CumulativeProduct2d::with_op(v, op)
     }
 }
 
