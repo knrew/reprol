@@ -29,10 +29,9 @@ where
         let mut data = Vec::with_capacity(h);
         data.push((0..n).map(|_| op.identity()).collect());
 
-        for k in 1..h {
+        for w in (1..h).map(|k| 1 << k) {
             let mut datum = (0..n).map(|_| op.identity()).collect::<Vec<_>>();
 
-            let w = 1 << k;
             for i in (w..n).step_by(w * 2) {
                 for j in (i - w + 1..i).rev() {
                     datum[j - 1] = op.op(&v[j - 1], &datum[j]);
@@ -66,7 +65,8 @@ where
         assert!(l <= r);
         assert!(r <= self.len);
         r += 1;
-        let datum = &self.data[(((l ^ r) + 1).next_power_of_two().trailing_zeros() - 1) as usize];
+        let i = ((l ^ r) + 1).next_power_of_two().trailing_zeros() - 1;
+        let datum = &self.data[i as usize];
         self.op.op(&datum[l], &datum[r])
     }
 }
