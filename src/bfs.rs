@@ -131,7 +131,7 @@ where
     /// start->vの最小コスト
     /// startからvへ到達不可能であればNone
     pub fn cost(&self, v: &V) -> Option<usize> {
-        self.costs[(self.to_index)(&v)]
+        self.costs[(self.to_index)(v)]
     }
 
     /// startからの最短経路においてvの直前に訪れる頂点
@@ -150,18 +150,13 @@ where
             return None;
         }
 
-        let mut res = vec![end.clone()];
+        let mut res = vec![end];
 
-        while let Some(p) = {
-            let id = (self.to_index)(res.last().unwrap());
-            &self.previous_vertices[id]
-        } {
-            res.push(p.clone());
+        while let Some(pv) = self.previous(res.last().unwrap()) {
+            res.push(pv);
         }
 
-        res.reverse();
-
-        Some(res)
+        Some(res.into_iter().rev().cloned().collect())
     }
 }
 
