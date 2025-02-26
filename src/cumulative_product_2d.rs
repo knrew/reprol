@@ -1,10 +1,11 @@
-use std::ops::{Index, Range, RangeBounds};
+use std::{
+    fmt::Debug,
+    ops::{Index, Range, RangeBounds},
+};
 
 use crate::{group::Group, monoid::Monoid, ops::op_add::OpAdd, range::to_open_range};
 
 pub struct CumulativeProduct2d<O: Monoid> {
-    row_len: usize,
-    col_len: usize,
     data: Vec<Vec<O::Value>>,
     op: O,
 }
@@ -13,7 +14,7 @@ impl<O> CumulativeProduct2d<O>
 where
     O: Group,
 {
-    /// 2次元配列から累積積を構築する
+    /// 2次元配列から累積和を計算する
     pub fn new(v: Vec<Vec<O::Value>>) -> Self
     where
         O: Default,
@@ -23,18 +24,34 @@ where
         Self::with_op(v, O::default())
     }
 
-    /// 演算を引数で指定
+    /// 要素(i, j)の値ががf(i, j)であるような2次元累積和を計算する
+    pub fn construct(
+        row_len: usize,
+        col_len: usize,
+        f: impl FnMut(usize, usize) -> O::Value,
+    ) -> Self
+    where
+        O: Default,
+        O::Value: Clone,
+    {
+        Self::construct_with_op(row_len, col_len, O::default(), f)
+    }
+
+    /// 2次元累積和を計算する
+    /// 演算を引数で指定する
     pub fn with_op(v: Vec<Vec<O::Value>>, op: O) -> Self
     where
         O::Value: Clone,
     {
         assert!(!v.is_empty());
+        assert!(!v[0].is_empty());
         debug_assert!(v.iter().all(|vi| vi.len() == v[0].len()));
-        Self::new_by(v.len(), v[0].len(), op, |i, j| v[i][j].clone())
+        Self::construct_with_op(v.len(), v[0].len(), op, |i, j| v[i][j].clone())
     }
 
-    /// i番目の値を関数で指定
-    pub fn new_by(
+    /// 要素(i, j)の値ががf(i, j)であるような2次元累積和を計算する
+    /// 演算を引数で指定する
+    pub fn construct_with_op(
         row_len: usize,
         col_len: usize,
         op: O,
@@ -43,6 +60,9 @@ where
     where
         O::Value: Clone,
     {
+        assert!(row_len > 0);
+        assert!(col_len > 0);
+
         let mut data = vec![vec![op.identity(); col_len + 1]; row_len + 1];
 
         for i in 0..row_len {
@@ -54,26 +74,24 @@ where
             }
         }
 
-        Self {
-            row_len,
-            col_len,
-            data,
-            op,
-        }
+        Self { data, op }
     }
 
+    /// [0, i) \times [0, j)の累積和をを取得
     pub fn get(&self, i: usize, j: usize) -> &O::Value {
         &self.data[i][j]
     }
 
-    /// 区間積(区間和)を計算する
+    /// [il, ir) \times [jl, jr)の累積和を計算する
+    /// row_range: [il, ir)
+    /// col_range: [jl, jr)
     pub fn product(
         &self,
         row_range: impl RangeBounds<usize>,
         col_range: impl RangeBounds<usize>,
     ) -> O::Value {
-        let Range { start: il, end: ir } = to_open_range(row_range, self.row_len);
-        let Range { start: jl, end: jr } = to_open_range(col_range, self.col_len);
+        let Range { start: il, end: ir } = to_open_range(row_range, self.data.len() - 1);
+        let Range { start: jl, end: jr } = to_open_range(col_range, self.data[0].len() - 1);
         assert!(il <= ir);
         assert!(jl <= jr);
         let mut res = self.op.op(&self.data[ir][jr], &self.data[il][jl]);
@@ -100,8 +118,9 @@ where
 {
     fn from(v: &Vec<Vec<O::Value>>) -> Self {
         assert!(!v.is_empty());
+        assert!(!v[0].is_empty());
         debug_assert!(v.iter().all(|vi| vi.len() == v[0].len()));
-        Self::new_by(v.len(), v[0].len(), O::default(), |i, j| v[i][j].clone())
+        Self::construct(v.len(), v[0].len(), |i, j| v[i][j].clone())
     }
 }
 
@@ -112,8 +131,9 @@ where
 {
     fn from(v: &[Vec<O::Value>]) -> Self {
         assert!(!v.is_empty());
+        assert!(!v[0].is_empty());
         debug_assert!(v.iter().all(|vi| vi.len() == v[0].len()));
-        Self::new_by(v.len(), v[0].len(), O::default(), |i, j| v[i][j].clone())
+        Self::construct(v.len(), v[0].len(), |i, j| v[i][j].clone())
     }
 }
 
@@ -124,8 +144,6 @@ where
 {
     fn clone(&self) -> Self {
         Self {
-            row_len: self.row_len,
-            col_len: self.col_len,
             data: self.data.clone(),
             op: self.op.clone(),
         }
@@ -149,6 +167,16 @@ where
     type Output = O::Value;
     fn index(&self, (i, j): (usize, usize)) -> &Self::Output {
         &self.data[i][j]
+    }
+}
+
+impl<O> Debug for CumulativeProduct2d<O>
+where
+    O: Monoid,
+    O::Value: Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_list().entries(self.data.iter()).finish()
     }
 }
 
