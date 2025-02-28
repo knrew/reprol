@@ -1,3 +1,5 @@
+//! 行列計算
+
 /// 正方行列mに対してm^expを計算する
 fn pow<T>(m: &[Vec<T>], mut exp: u64) -> Vec<Vec<T>>
 where

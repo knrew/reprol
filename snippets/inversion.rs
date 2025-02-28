@@ -1,3 +1,4 @@
+/// 転倒数を求める
 fn inversion(v: &[usize]) -> usize {
     let (m, v) = {
         let mut mp = BTreeMap::new();
