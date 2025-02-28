@@ -47,20 +47,26 @@ impl<O: Monoid, A: MonoidAction<O>> LazySegmentTree<O, A> {
         }
     }
 
-    pub fn get(&mut self, index: usize) -> &O::Value {
+    pub fn get(&mut self, index: usize) -> &O::Value
+    where
+        A::Value: PartialEq,
+    {
         assert!(index < self.len);
         let index = index + self.nodes.len() / 2;
         for i in (1..=self.log).rev() {
-            self.push(index >> i);
+            self.propagate(index >> i);
         }
         &self.nodes[index]
     }
 
-    pub fn set(&mut self, index: usize, value: O::Value) {
+    pub fn set(&mut self, index: usize, value: O::Value)
+    where
+        A::Value: PartialEq,
+    {
         assert!(index < self.len);
         let index = index + self.nodes.len() / 2;
         for i in (1..=self.log).rev() {
-            self.push(index >> i);
+            self.propagate(index >> i);
         }
         self.nodes[index] = value;
         for i in (1..=self.log).rev() {
@@ -70,7 +76,10 @@ impl<O: Monoid, A: MonoidAction<O>> LazySegmentTree<O, A> {
     }
 
     /// `seg.act(l..r, f)`: 区間[l, r)にfを作用させる
-    pub fn act(&mut self, range: impl RangeBounds<usize>, f: &A::Value) {
+    pub fn act(&mut self, range: impl RangeBounds<usize>, f: &A::Value)
+    where
+        A::Value: PartialEq,
+    {
         let Range { start: l, end: r } = to_open_range(range, self.len);
         assert!(r <= self.len);
         if l >= r {
@@ -83,10 +92,10 @@ impl<O: Monoid, A: MonoidAction<O>> LazySegmentTree<O, A> {
 
         for i in (1..=self.log).rev() {
             if ((l >> i) << i) != l {
-                self.push(l >> i);
+                self.propagate(l >> i);
             }
             if ((r >> i) << i) != r {
-                self.push((r - 1) >> i);
+                self.propagate((r - 1) >> i);
             }
         }
 
@@ -121,7 +130,10 @@ impl<O: Monoid, A: MonoidAction<O>> LazySegmentTree<O, A> {
     }
 
     /// `seg.prod(l..r)`で区間[l, r)の区間積を求める
-    pub fn product(&mut self, range: impl RangeBounds<usize>) -> O::Value {
+    pub fn product(&mut self, range: impl RangeBounds<usize>) -> O::Value
+    where
+        A::Value: PartialEq,
+    {
         let Range { start: l, end: r } = to_open_range(range, self.len);
         assert!(l < r);
         assert!(r <= self.len);
@@ -132,10 +144,10 @@ impl<O: Monoid, A: MonoidAction<O>> LazySegmentTree<O, A> {
 
         for i in (1..=self.log).rev() {
             if ((l >> i) << i) != l {
-                self.push(l >> i);
+                self.propagate(l >> i);
             }
             if ((r >> i) << i) != r {
-                self.push((r - 1) >> i);
+                self.propagate((r - 1) >> i);
             }
         }
 
@@ -162,7 +174,10 @@ impl<O: Monoid, A: MonoidAction<O>> LazySegmentTree<O, A> {
     /// l以降でf(v[r])=falseを満たす最小のrを求める
     /// すなわち，[f(v[l]), f(v[l+1]), \ldots, f(v[r-1])]がすべてtrueかつf(v[r])=falseとなるrを求める
     /// すべてのi \in [l, n)でf(v[i])=trueならばnを返す
-    pub fn bisect_right(&mut self, l: usize, mut f: impl FnMut(&O::Value) -> bool) -> usize {
+    pub fn bisect_right(&mut self, l: usize, mut f: impl FnMut(&O::Value) -> bool) -> usize
+    where
+        A::Value: PartialEq,
+    {
         assert!(l <= self.len);
         debug_assert!(f(&self.op.identity()));
 
@@ -174,7 +189,7 @@ impl<O: Monoid, A: MonoidAction<O>> LazySegmentTree<O, A> {
         let mut l = l + offset;
 
         for i in (1..=self.log).rev() {
-            self.push(l >> i);
+            self.propagate(l >> i);
         }
 
         let mut prod = self.op.identity();
@@ -187,7 +202,7 @@ impl<O: Monoid, A: MonoidAction<O>> LazySegmentTree<O, A> {
             let tmp = self.op.op(&prod, &self.nodes[l]);
             if !f(&tmp) {
                 while l < offset {
-                    self.push(l);
+                    self.propagate(l);
                     l *= 2;
 
                     let tmp = self.op.op(&prod, &self.nodes[l]);
@@ -214,7 +229,10 @@ impl<O: Monoid, A: MonoidAction<O>> LazySegmentTree<O, A> {
     /// rより前でf(v[l-1])=falseを満たす最小のlを求める
     /// すなわち，f(v[l-1])=falseかつ[f(v[l]), f(v[l+2]), \ldots, f(v[r-1])]がすべてtrueとなるlを求める
     /// すべてのi \in [0, r)でf(v[i])=trueならば0を返す
-    pub fn bisect_left(&mut self, r: usize, mut f: impl FnMut(&O::Value) -> bool) -> usize {
+    pub fn bisect_left(&mut self, r: usize, mut f: impl FnMut(&O::Value) -> bool) -> usize
+    where
+        A::Value: PartialEq,
+    {
         assert!(r <= self.len);
         debug_assert!(f(&self.op.identity()));
 
@@ -225,7 +243,7 @@ impl<O: Monoid, A: MonoidAction<O>> LazySegmentTree<O, A> {
         let offset = self.nodes.len() / 2;
         let mut r = r + offset;
         for i in (1..=self.log).rev() {
-            self.push((r - 1) >> i);
+            self.propagate((r - 1) >> i);
         }
 
         let mut prod = self.op.identity();
@@ -239,7 +257,7 @@ impl<O: Monoid, A: MonoidAction<O>> LazySegmentTree<O, A> {
             let tmp = self.op.op(&self.nodes[r], &prod);
             if !f(&tmp) {
                 while r < offset {
-                    self.push(r);
+                    self.propagate(r);
                     r = 2 * r + 1;
                     let tmp = self.op.op(&self.nodes[r], &prod);
                     if f(&tmp) {
@@ -260,13 +278,21 @@ impl<O: Monoid, A: MonoidAction<O>> LazySegmentTree<O, A> {
         0
     }
 
-    pub fn push(&mut self, k: usize) {
+    /// ノードkの遅延作用を子ノードに伝播させる
+    fn propagate(&mut self, k: usize)
+    where
+        A::Value: PartialEq,
+    {
+        if self.lazies[k] == self.action.identity() {
+            return;
+        }
         let lz = replace(&mut self.lazies[k], self.action.identity());
         self.apply(2 * k, &lz);
         self.apply(2 * k + 1, &lz);
     }
 
-    pub fn apply(&mut self, k: usize, f: &A::Value) {
+    /// ノードkにfを作用させる
+    fn apply(&mut self, k: usize, f: &A::Value) {
         self.nodes[k] = self.action.act(f, &self.nodes[k]);
         if k < self.nodes.len() / 2 {
             self.lazies[k] = self.action.op(f, &self.lazies[k]);
