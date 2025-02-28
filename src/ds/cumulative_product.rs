@@ -28,7 +28,6 @@ impl<O: Monoid> CumulativeProduct<O> {
     pub fn construct(len: usize, f: impl FnMut(usize) -> O::Value) -> Self
     where
         O: Default,
-        O::Value: Clone,
     {
         Self::construct_with_op(len, O::default(), f)
     }
@@ -43,11 +42,8 @@ impl<O: Monoid> CumulativeProduct<O> {
     }
 
     /// 演算を指定してi番目の要素がf(i)であるような累積積を計算する
-    pub fn construct_with_op(len: usize, op: O, mut f: impl FnMut(usize) -> O::Value) -> Self
-    where
-        O::Value: Clone,
-    {
-        let mut data = vec![op.identity(); len + 1];
+    pub fn construct_with_op(len: usize, op: O, mut f: impl FnMut(usize) -> O::Value) -> Self {
+        let mut data = (0..len + 1).map(|_| op.identity()).collect::<Vec<_>>();
         for i in 0..len {
             data[i + 1] = op.op(&data[i], &f(i));
         }
