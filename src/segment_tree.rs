@@ -1,130 +1,120 @@
-use std::ops::{Range, RangeBounds};
+use std::ops::{Index, Range, RangeBounds};
 
 use crate::{monoid::Monoid, range::to_open_range};
 
-pub struct SegmentTree<M>
-where
-    M: Monoid,
-{
+/// 要素にモノイドを持つ配列を管理するデータ構造
+/// 要素の1点変更と区間積を$O(\log N)$で行う
+pub struct SegmentTree<O: Monoid> {
+    /// 列の長さ(nodesの長さではない)
     len: usize,
-    offset: usize,
-    log: u32,
-    nodes: Vec<M::Value>,
-    monoid: M,
+
+    /// セグ木を構成するノード
+    nodes: Vec<O::Value>,
+
+    /// 演算(モノイド)
+    op: O,
 }
 
-impl<M> SegmentTree<M>
-where
-    M: Monoid,
-    M::Value: Clone,
-{
-    pub fn new(v: Vec<M::Value>) -> Self
+impl<O: Monoid> SegmentTree<O> {
+    pub fn new(len: usize) -> Self
     where
-        M: Default,
+        O: Default,
     {
-        Self::from(v)
+        Self::with_op(len, O::default())
     }
 
-    pub fn with_len(len: usize) -> Self
-    where
-        M: Default,
-    {
-        Self::with_op(len, M::default())
-    }
-
-    /// 演算(モノイド)を引数で指定
-    pub fn with_op(len: usize, monoid: M) -> Self {
+    pub fn with_op(len: usize, op: O) -> Self {
         let offset = len.next_power_of_two();
-        let log = offset.trailing_zeros();
-        let nodes = vec![monoid.identity(); 2 * offset];
         Self {
             len,
-            offset,
-            log,
-            nodes,
-            monoid,
+            nodes: (0..2 * offset).map(|_| op.identity()).collect(),
+            op,
         }
     }
 
-    fn update(&mut self, k: usize) {
-        self.nodes[k] = self.monoid.op(&self.nodes[k * 2], &self.nodes[k * 2 + 1]);
+    pub fn get(&self, index: usize) -> &O::Value {
+        assert!(index < self.len);
+        &self.nodes[index + self.nodes.len() / 2]
     }
 
-    pub fn set(&mut self, index: usize, value: M::Value) {
+    pub fn set(&mut self, index: usize, value: O::Value) {
         assert!(index < self.len);
-        let index = index + self.offset;
-        self.nodes[index] = value.clone();
-        for i in 1..=self.log {
-            self.update(index >> i)
+        let mut index = index + self.nodes.len() / 2;
+        self.nodes[index] = value;
+        while index > 1 {
+            index /= 2;
+            self.nodes[index] = self
+                .op
+                .op(&self.nodes[2 * index], &self.nodes[2 * index + 1]);
         }
     }
 
-    pub fn get(&self, index: usize) -> &M::Value {
-        assert!(index < self.len);
-        &self.nodes[index + self.offset]
-    }
-
-    /// 区間積を取得する
-    pub fn product(&self, range: impl RangeBounds<usize>) -> M::Value {
+    /// `seg.prod(l..r)`で区間[l, r)の区間積を求める
+    pub fn product(&mut self, range: impl RangeBounds<usize>) -> O::Value {
         let Range { start: l, end: r } = to_open_range(range, self.len);
-
+        assert!(l < r);
         assert!(r <= self.len);
-        assert!(l <= r);
 
-        let (mut l, mut r) = (l + self.offset, r + self.offset);
+        let offset = self.nodes.len() / 2;
+        let mut l = l + offset;
+        let mut r = r + offset;
 
-        let mut vl = self.monoid.identity();
-        let mut vr = self.monoid.identity();
+        let mut res_l = self.op.identity();
+        let mut res_r = self.op.identity();
 
         while l < r {
             if l % 2 == 1 {
-                vl = self.monoid.op(&vl, &self.nodes[l]);
+                res_l = self.op.op(&res_l, &self.nodes[l]);
                 l += 1;
             }
             if r % 2 == 1 {
                 r -= 1;
-                vr = self.monoid.op(&self.nodes[r], &vr);
+                res_r = self.op.op(&self.nodes[r], &res_r);
             }
             l /= 2;
             r /= 2;
         }
 
-        self.monoid.op(&vl, &vr)
+        self.op.op(&res_l, &res_r)
     }
 
-    pub fn max_right(&self, l: usize, mut f: impl FnMut(&M::Value) -> bool) -> usize {
+    /// セグ木上の二分探索(max_right)
+    /// l以降でf(v[r])=falseを満たす最小のrを求める
+    /// すなわち，[f(v[l]), f(v[l+1]), \ldots, f(v[r-1])]がすべてtrueかつf(v[r])=falseとなるrを求める
+    /// すべてのi \in [l, n)でf(v[i])=trueならばnを返す
+    pub fn bisect_right(&self, l: usize, mut f: impl FnMut(&O::Value) -> bool) -> usize {
         assert!(l <= self.len);
-
-        #[cfg(debug_assertions)]
-        assert!(f(&self.monoid.identity()));
+        debug_assert!(f(&self.op.identity()));
 
         if l == self.len {
             return self.len;
         }
 
-        let mut l = l + self.offset;
-        let mut sum = self.monoid.identity();
+        let offset = self.nodes.len() / 2;
+        let mut l = l + offset;
+        let mut prod = self.op.identity();
 
         loop {
             while l % 2 == 0 {
                 l /= 2;
             }
 
-            if !f(&self.monoid.op(&sum, &self.nodes[l])) {
-                while l < self.offset {
+            let tmp = self.op.op(&prod, &self.nodes[l]);
+            if !f(&tmp) {
+                while l < offset {
                     l *= 2;
 
-                    let tmp = self.monoid.op(&sum, &self.nodes[l]);
+                    let tmp = self.op.op(&prod, &self.nodes[l]);
                     if f(&tmp) {
-                        sum = tmp;
+                        prod = tmp;
                         l += 1;
                     }
                 }
 
-                return l - self.offset;
+                return l - offset;
             }
 
-            sum = self.monoid.op(&sum, &self.nodes[l]);
+            prod = tmp;
             l += 1;
 
             if l.is_power_of_two() {
@@ -132,42 +122,46 @@ where
             }
         }
 
-        return self.len;
+        self.len
     }
 
-    pub fn min_left(&self, r: usize, mut f: impl FnMut(&M::Value) -> bool) -> usize {
+    /// セグ木上の二分探索(min_left)
+    /// rより前でf(v[l-1])=falseを満たす最小のlを求める
+    /// すなわち，f(v[l-1])=falseかつ[f(v[l]), f(v[l+2]), \ldots, f(v[r-1])]がすべてtrueとなるlを求める
+    /// すべてのi \in [0, r)でf(v[i])=trueならば0を返す
+    pub fn bisect_left(&self, r: usize, mut f: impl FnMut(&O::Value) -> bool) -> usize {
         assert!(r <= self.len);
-
-        #[cfg(debug_assertions)]
-        assert!(f(&self.monoid.identity()));
+        debug_assert!(f(&self.op.identity()));
 
         if r == 0 {
             return 0;
         }
-        let mut r = r + self.offset;
-        let mut sum = self.monoid.identity();
+
+        let offset = self.nodes.len() / 2;
+        let mut r = r + offset;
+        let mut prod = self.op.identity();
 
         loop {
             r -= 1;
-
             while r > 1 && r % 2 == 1 {
                 r /= 2;
             }
 
-            if !f(&self.monoid.op(&self.nodes[r], &sum)) {
-                while r < self.offset {
+            let tmp = self.op.op(&self.nodes[r], &prod);
+            if !f(&tmp) {
+                while r < offset {
                     r = 2 * r + 1;
-                    let tmp = self.monoid.op(&self.nodes[r], &sum);
+                    let tmp = self.op.op(&self.nodes[r], &prod);
                     if f(&tmp) {
-                        sum = tmp;
+                        prod = tmp;
                         r -= 1;
                     }
                 }
 
-                return r + 1 - self.offset;
+                return r + 1 - offset;
             }
 
-            sum = self.monoid.op(&self.nodes[r], &sum);
+            prod = tmp;
 
             if r.is_power_of_two() {
                 break;
@@ -178,117 +172,112 @@ where
     }
 }
 
-impl<M> From<&[M::Value]> for SegmentTree<M>
+impl<O> From<(Vec<O::Value>, O)> for SegmentTree<O>
 where
-    M: Monoid + Default,
-    M::Value: Clone,
+    O: Monoid,
+    O::Value: Clone,
 {
-    fn from(v: &[M::Value]) -> Self {
-        let mut res = Self::with_op(v.len(), M::default());
+    fn from((v, op): (Vec<O::Value>, O)) -> Self {
+        Self::from((&v, op))
+    }
+}
 
-        for i in 0..res.len {
-            res.nodes[i + res.offset] = v[i].clone();
+impl<O> From<(&Vec<O::Value>, O)> for SegmentTree<O>
+where
+    O: Monoid,
+    O::Value: Clone,
+{
+    fn from((v, op): (&Vec<O::Value>, O)) -> Self {
+        Self::from((v.as_slice(), op))
+    }
+}
+
+impl<O> From<(&[O::Value], O)> for SegmentTree<O>
+where
+    O: Monoid,
+    O::Value: Clone,
+{
+    fn from((v, op): (&[O::Value], O)) -> Self {
+        let len = v.len();
+        let offset = len.next_power_of_two();
+        let mut nodes = vec![op.identity(); 2 * offset];
+
+        nodes[offset..offset + len].clone_from_slice(&v);
+
+        for i in (1..offset).rev() {
+            nodes[i] = op.op(&nodes[2 * i], &nodes[2 * i + 1]);
         }
 
-        for i in (1..res.offset).rev() {
-            res.update(i)
-        }
-
-        res
+        Self { len, nodes, op }
     }
 }
 
-impl<M> From<&Vec<M::Value>> for SegmentTree<M>
+impl<O> From<Vec<O::Value>> for SegmentTree<O>
 where
-    M: Monoid + Default,
-    M::Value: Clone,
+    O: Monoid + Default,
+    O::Value: Clone,
 {
-    fn from(v: &Vec<M::Value>) -> Self {
-        Self::from(v.as_slice())
+    fn from(v: Vec<O::Value>) -> Self {
+        Self::from((v.as_slice(), O::default()))
     }
 }
 
-impl<M> From<Vec<M::Value>> for SegmentTree<M>
+impl<O> From<&Vec<O::Value>> for SegmentTree<O>
 where
-    M: Monoid + Default,
-    M::Value: Clone,
+    O: Monoid + Default,
+    O::Value: Clone,
 {
-    fn from(v: Vec<M::Value>) -> Self {
-        Self::from(v.as_slice())
+    fn from(v: &Vec<O::Value>) -> Self {
+        Self::from((v, O::default()))
     }
 }
 
-impl<M> FromIterator<M::Value> for SegmentTree<M>
+impl<O> From<&[O::Value]> for SegmentTree<O>
 where
-    M: Monoid + Default,
-    M::Value: Clone,
+    O: Monoid + Default,
+    O::Value: Clone,
 {
-    fn from_iter<T: IntoIterator<Item = M::Value>>(iter: T) -> Self {
-        Self::from(iter.into_iter().collect::<Vec<_>>())
+    fn from(v: &[O::Value]) -> Self {
+        Self::from((v, O::default()))
     }
 }
 
-// TODO: min_left, max_rightのテストを書く
+impl<O> Index<usize> for SegmentTree<O>
+where
+    O: Monoid,
+{
+    type Output = O::Value;
+    fn index(&self, index: usize) -> &Self::Output {
+        assert!(index < self.len);
+        &self.nodes[index + self.nodes.len() / 2]
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    mod tests_add {
-        use crate::{monoid::Monoid, segment_tree::SegmentTree};
+    use crate::{ops::op_add::OpAdd, ops::op_min::OpMin, segment_tree::SegmentTree};
 
-        #[derive(Default)]
-        struct Op;
-
-        impl Monoid for Op {
-            type Value = i64;
-
-            fn identity(&self) -> Self::Value {
-                0
-            }
-
-            fn op(&self, x: &Self::Value, y: &Self::Value) -> Self::Value {
-                x + y
-            }
-        }
-
-        #[test]
-        fn test_add() {
-            let v = vec![1, 3, 5, 7, 9, 11];
-            let mut seg = SegmentTree::<Op>::from(&v);
-            assert_eq!(seg.product(0..3), 9);
-            assert_eq!(seg.product(1..=4), 24);
-            assert_eq!(seg.product(..), 36);
-            seg.set(2, 6);
-            assert_eq!(seg.product(0..3), 10);
-        }
+    #[test]
+    fn test_add() {
+        let v = vec![1, 3, 5, 7, 9, 11];
+        let mut seg = SegmentTree::<OpAdd<i64>>::from(v);
+        assert_eq!(seg.product(0..3), 9);
+        assert_eq!(seg.product(1..=4), 24);
+        assert_eq!(seg.product(..), 36);
+        seg.set(2, 6);
+        assert_eq!(seg.product(0..3), 10);
+        assert_eq!(seg[5], 11);
     }
 
-    mod tests_min {
-        use crate::{monoid::Monoid, segment_tree::SegmentTree};
-
-        #[derive(Default)]
-        struct Op;
-
-        impl Monoid for Op {
-            type Value = i64;
-
-            fn identity(&self) -> Self::Value {
-                i64::MAX
-            }
-
-            fn op(&self, x: &Self::Value, y: &Self::Value) -> Self::Value {
-                *x.min(y)
-            }
-        }
-
-        #[test]
-        fn test_min() {
-            let v = vec![5, 2, 6, 3, 7, 1];
-            let mut seg = SegmentTree::<Op>::from(&v);
-            assert_eq!(seg.product(0..4), 2);
-            assert_eq!(seg.product(2..=5), 1);
-            assert_eq!(seg.product(..), 1);
-            assert_eq!(seg.product(..=4), 2);
-            seg.set(3, 0);
-            assert_eq!(seg.product(0..4), 0);
-        }
+    #[test]
+    fn test_min() {
+        let v = vec![5, 2, 6, 3, 7, 1];
+        let mut seg = SegmentTree::<OpMin<i32>>::from(v);
+        assert_eq!(seg.product(0..4), 2);
+        assert_eq!(seg.product(2..=5), 1);
+        assert_eq!(seg.product(..), 1);
+        assert_eq!(seg.product(..=4), 2);
+        seg.set(3, 0);
+        assert_eq!(seg.product(0..4), 0);
     }
 }

@@ -1,95 +1,92 @@
-use std::ops::{Range, RangeBounds};
+use std::{
+    mem::replace,
+    ops::{Range, RangeBounds},
+};
 
 use crate::{action::MonoidAction, monoid::Monoid, range::to_open_range};
 
-pub struct LazySegmentTree<M, A>
-where
-    M: Monoid,
-    A: MonoidAction<M>,
-{
+/// 要素にモノイドを持つ配列を管理するデータ構造
+/// 区間に対する作用と区間積を$O(\log N)$で行う
+pub struct LazySegmentTree<O: Monoid, A: MonoidAction<O>> {
+    /// 列の長さ(nodesの長さではない)
     len: usize,
-    offset: usize,
+
+    /// セグ木を構成するノード
+    nodes: Vec<O::Value>,
+
+    /// 作用の遅延配列
+    lazies: Vec<A::Value>,
+
     log: u32,
-    nodes: Vec<M::Value>,
-    lazy: Vec<A::Value>,
-    monoid: M,
+
+    /// 演算(モノイド)
+    op: O,
+
+    /// モノイドに対する作用
     action: A,
 }
 
-impl<M, A> LazySegmentTree<M, A>
-where
-    M: Monoid,
-    M::Value: Clone,
-    A: MonoidAction<M>,
-    A::Value: Clone + PartialEq,
-{
-    pub fn new(v: Vec<M::Value>) -> Self
+impl<O: Monoid, A: MonoidAction<O>> LazySegmentTree<O, A> {
+    pub fn new(len: usize) -> Self
     where
-        M: Default,
+        O: Default,
         A: Default,
     {
-        Self::from(v)
+        Self::with_op(len, O::default(), A::default())
     }
 
-    pub fn with_len(n: usize) -> Self
-    where
-        M: Default,
-        A: Default,
-    {
-        Self::with_op(n, M::default(), A::default())
-    }
-
-    /// 演算(モノイドと作用)を引数で指定
-    pub fn with_op(n: usize, monoid: M, action: A) -> Self {
-        let offset = n.next_power_of_two();
-        let log = offset.trailing_zeros();
-        let nodes = vec![monoid.identity(); 2 * offset];
-        let lazy = vec![action.identity(); 2 * offset];
+    pub fn with_op(len: usize, op: O, action: A) -> Self {
+        let offset = len.next_power_of_two();
         Self {
-            len: n,
-            offset,
-            log,
-            nodes,
-            lazy,
-            monoid,
+            len,
+            nodes: (0..2 * offset).map(|_| op.identity()).collect(),
+            lazies: (0..2 * offset).map(|_| action.identity()).collect(),
+            log: offset.trailing_zeros(),
+            op,
             action,
         }
     }
 
-    pub fn get(&mut self, index: usize) -> &M::Value {
+    pub fn get(&mut self, index: usize) -> &O::Value {
         assert!(index < self.len);
-        let index = index + self.offset;
-        self.push(index);
+        let index = index + self.nodes.len() / 2;
+        for i in (1..=self.log).rev() {
+            self.push(index >> i);
+        }
         &self.nodes[index]
     }
 
-    pub fn set(&mut self, index: usize, value: M::Value) {
+    pub fn set(&mut self, index: usize, value: O::Value) {
         assert!(index < self.len);
-        let index = index + self.offset;
-        self.push(index);
+        let index = index + self.nodes.len() / 2;
+        for i in (1..=self.log).rev() {
+            self.push(index >> i);
+        }
         self.nodes[index] = value;
-        self.pull(index);
+        for i in (1..=self.log).rev() {
+            let k = index >> i;
+            self.nodes[k] = self.op.op(&self.nodes[2 * k], &self.nodes[2 * k + 1]);
+        }
     }
 
-    /// 区間内の要素すべてにfを作用させる
+    /// `seg.act(l..r, f)`: 区間[l, r)にfを作用させる
     pub fn act(&mut self, range: impl RangeBounds<usize>, f: &A::Value) {
         let Range { start: l, end: r } = to_open_range(range, self.len);
-
         assert!(r <= self.len);
-        assert!(l <= r);
-
-        if l == r {
+        if l >= r {
             return;
         }
 
-        let (l, r) = (l + self.offset, r + self.offset);
+        let offset = self.nodes.len() / 2;
+        let l = l + offset;
+        let r = r + offset;
 
         for i in (1..=self.log).rev() {
             if ((l >> i) << i) != l {
-                self.push_lazy(l >> i);
+                self.push(l >> i);
             }
             if ((r >> i) << i) != r {
-                self.push_lazy((r - 1) >> i);
+                self.push((r - 1) >> i);
             }
         }
 
@@ -99,12 +96,12 @@ where
 
             while l < r {
                 if l & 1 != 0 {
-                    self.apply_lazy(l, &f);
+                    self.apply(l, &f);
                     l += 1;
                 }
                 if r & 1 != 0 {
                     r -= 1;
-                    self.apply_lazy(r, &f);
+                    self.apply(r, &f);
                 }
                 l >>= 1;
                 r >>= 1;
@@ -113,95 +110,96 @@ where
 
         for i in 1..=self.log {
             if ((l >> i) << i) != l {
-                self.pull_node(l >> i);
+                let k = l >> i;
+                self.nodes[k] = self.op.op(&self.nodes[2 * k], &self.nodes[2 * k + 1]);
             }
             if ((r >> i) << i) != r {
-                self.pull_node((r - 1) >> i);
+                let k = (r - 1) >> i;
+                self.nodes[k] = self.op.op(&self.nodes[2 * k], &self.nodes[2 * k + 1]);
             }
         }
     }
 
-    /// 区間積を取得する
-    pub fn product(&mut self, range: impl RangeBounds<usize>) -> M::Value {
+    /// `seg.prod(l..r)`で区間[l, r)の区間積を求める
+    pub fn product(&mut self, range: impl RangeBounds<usize>) -> O::Value {
         let Range { start: l, end: r } = to_open_range(range, self.len);
-
+        assert!(l < r);
         assert!(r <= self.len);
-        assert!(l <= r);
 
-        if l == r {
-            return self.monoid.identity();
-        }
-
-        let (mut l, mut r) = (l + self.offset, r + self.offset);
+        let offset = self.nodes.len() / 2;
+        let mut l = l + offset;
+        let mut r = r + offset;
 
         for i in (1..=self.log).rev() {
             if ((l >> i) << i) != l {
-                self.push_lazy(l >> i);
+                self.push(l >> i);
             }
             if ((r >> i) << i) != r {
-                self.push_lazy((r - 1) >> i);
+                self.push((r - 1) >> i);
             }
         }
 
-        let mut sum_left = self.monoid.identity();
-        let mut sum_right = self.monoid.identity();
+        let mut res_l = self.op.identity();
+        let mut res_r = self.op.identity();
 
         while l < r {
-            if l & 1 != 0 {
-                sum_left = self.monoid.op(&sum_left, &self.nodes[l]);
+            if l % 2 == 1 {
+                res_l = self.op.op(&res_l, &self.nodes[l]);
                 l += 1;
             }
-
-            if r & 1 != 0 {
+            if r % 2 == 1 {
                 r -= 1;
-                sum_right = self.monoid.op(&self.nodes[r], &sum_right)
+                res_r = self.op.op(&self.nodes[r], &res_r);
             }
-
-            l >>= 1;
-            r >>= 1;
+            l /= 2;
+            r /= 2;
         }
 
-        self.monoid.op(&sum_left, &sum_right)
+        self.op.op(&res_l, &res_r)
     }
 
-    /// 区間[l, n)内のrでf(a[i])がfalseとなる最初のrを返す(存在しなければn)
-    /// f(x)が単調なら
-    /// l \leq i < rのとき，f(a[i])=true
-    /// r \leq i < nのとき，f(a[i])=false
-    /// となるようなr
-    pub fn max_right(&mut self, l: usize, mut f: impl FnMut(&M::Value) -> bool) -> usize {
+    /// セグ木上の二分探索(max_right)
+    /// l以降でf(v[r])=falseを満たす最小のrを求める
+    /// すなわち，[f(v[l]), f(v[l+1]), \ldots, f(v[r-1])]がすべてtrueかつf(v[r])=falseとなるrを求める
+    /// すべてのi \in [l, n)でf(v[i])=trueならばnを返す
+    pub fn bisect_right(&mut self, l: usize, mut f: impl FnMut(&O::Value) -> bool) -> usize {
         assert!(l <= self.len);
-
-        debug_assert!(f(&self.monoid.identity()));
+        debug_assert!(f(&self.op.identity()));
 
         if l == self.len {
             return self.len;
         }
 
-        let mut l = l + self.offset;
-        self.push(l);
+        let offset = self.nodes.len() / 2;
+        let mut l = l + offset;
 
-        let mut sum = self.monoid.identity();
+        for i in (1..=self.log).rev() {
+            self.push(l >> i);
+        }
+
+        let mut prod = self.op.identity();
 
         loop {
             while l % 2 == 0 {
-                l >>= 1;
+                l /= 2;
             }
 
-            if !f(&self.monoid.op(&sum, &self.nodes[l])) {
-                while l < self.offset {
-                    self.push_lazy(l);
-                    l = 2 * l;
-                    let tmp = self.monoid.op(&sum, &self.nodes[l]);
+            let tmp = self.op.op(&prod, &self.nodes[l]);
+            if !f(&tmp) {
+                while l < offset {
+                    self.push(l);
+                    l *= 2;
+
+                    let tmp = self.op.op(&prod, &self.nodes[l]);
                     if f(&tmp) {
-                        sum = tmp;
+                        prod = tmp;
                         l += 1;
                     }
                 }
-                return l - self.offset;
+                return l - offset;
             }
 
-            sum = self.monoid.op(&sum, &self.nodes[l]);
+            prod = tmp;
             l += 1;
 
             if l.is_power_of_two() {
@@ -212,43 +210,47 @@ where
         self.len
     }
 
-    /// 区間[0, r)内を降順に見てf(a[l-1])がfalseとなる最初のlを返す(存在しなければ0)
-    /// fが単調なら
-    /// 0 \leq i < lのとき，f(a[i])=false
-    /// l \leq i < rのとき，f(a[i])=true
-    /// となるようなl
-    pub fn min_left(&mut self, r: usize, mut f: impl FnMut(&M::Value) -> bool) -> usize {
+    /// セグ木上の二分探索(min_left)
+    /// rより前でf(v[l-1])=falseを満たす最小のlを求める
+    /// すなわち，f(v[l-1])=falseかつ[f(v[l]), f(v[l+2]), \ldots, f(v[r-1])]がすべてtrueとなるlを求める
+    /// すべてのi \in [0, r)でf(v[i])=trueならば0を返す
+    pub fn bisect_left(&mut self, r: usize, mut f: impl FnMut(&O::Value) -> bool) -> usize {
         assert!(r <= self.len);
-
-        debug_assert!(f(&self.monoid.identity()));
+        debug_assert!(f(&self.op.identity()));
 
         if r == 0 {
             return 0;
         }
 
-        let mut r = r + self.offset;
-        self.push(r - 1);
-        let mut sum = self.monoid.identity();
+        let offset = self.nodes.len() / 2;
+        let mut r = r + offset;
+        for i in (1..=self.log).rev() {
+            self.push((r - 1) >> i);
+        }
+
+        let mut prod = self.op.identity();
 
         loop {
             r -= 1;
-            while r > 1 && (r % 2 == 1) {
-                r >>= 1;
+            while r > 1 && r % 2 == 1 {
+                r /= 2;
             }
-            if !f(&self.monoid.op(&self.nodes[r], &sum)) {
-                while r < self.offset {
-                    self.push_lazy(r);
+
+            let tmp = self.op.op(&self.nodes[r], &prod);
+            if !f(&tmp) {
+                while r < offset {
+                    self.push(r);
                     r = 2 * r + 1;
-                    let tmp = self.monoid.op(&self.nodes[r], &sum);
+                    let tmp = self.op.op(&self.nodes[r], &prod);
                     if f(&tmp) {
-                        sum = tmp;
+                        prod = tmp;
                         r -= 1;
                     }
                 }
-                return r + 1 - self.offset;
+                return r + 1 - offset;
             }
 
-            sum = self.monoid.op(&self.nodes[r], &sum);
+            prod = tmp;
 
             if r.is_power_of_two() {
                 break;
@@ -258,116 +260,117 @@ where
         0
     }
 
-    fn pull_node(&mut self, k: usize) {
-        self.nodes[k] = self.monoid.op(&self.nodes[2 * k], &self.nodes[2 * k + 1]);
+    pub fn push(&mut self, k: usize) {
+        let lz = replace(&mut self.lazies[k], self.action.identity());
+        self.apply(2 * k, &lz);
+        self.apply(2 * k + 1, &lz);
     }
 
-    fn pull(&mut self, k: usize) {
-        for i in 1..=self.log {
-            self.pull_node(k >> i);
-        }
-    }
-
-    fn push_lazy(&mut self, k: usize) {
-        if self.lazy[k] == self.action.identity() {
-            return;
-        }
-        let lzk = self.lazy[k].clone();
-        self.apply_lazy(2 * k, &lzk);
-        self.apply_lazy(2 * k + 1, &lzk);
-        self.lazy[k] = self.action.identity();
-    }
-
-    fn push(&mut self, k: usize) {
-        for i in (1..=self.log).rev() {
-            self.push_lazy(k >> i);
-        }
-    }
-
-    fn apply_lazy(&mut self, k: usize, f: &A::Value) {
+    pub fn apply(&mut self, k: usize, f: &A::Value) {
         self.nodes[k] = self.action.act(f, &self.nodes[k]);
-        if k < self.offset {
-            self.lazy[k] = self.action.op(f, &self.lazy[k]);
+        if k < self.nodes.len() / 2 {
+            self.lazies[k] = self.action.op(f, &self.lazies[k]);
         }
     }
 }
 
-impl<M, A> From<Vec<M::Value>> for LazySegmentTree<M, A>
+impl<O, A> From<(Vec<O::Value>, O, A)> for LazySegmentTree<O, A>
 where
-    M: Monoid + Default,
-    M::Value: Clone,
-    A: MonoidAction<M> + Default,
-    A::Value: Clone + PartialEq,
+    O: Monoid,
+    O::Value: Clone,
+    A: MonoidAction<O>,
+    A::Value: Clone,
 {
-    fn from(v: Vec<M::Value>) -> Self {
-        Self::from(v.as_slice())
+    fn from((v, op, action): (Vec<O::Value>, O, A)) -> Self {
+        Self::from((v.as_slice(), op, action))
     }
 }
 
-impl<M, A> From<&Vec<M::Value>> for LazySegmentTree<M, A>
+impl<O, A> From<(&Vec<O::Value>, O, A)> for LazySegmentTree<O, A>
 where
-    M: Monoid + Default,
-    M::Value: Clone,
-    A: MonoidAction<M> + Default,
-    A::Value: Clone + PartialEq,
+    O: Monoid,
+    O::Value: Clone,
+    A: MonoidAction<O>,
+    A::Value: Clone,
 {
-    fn from(v: &Vec<M::Value>) -> Self {
-        Self::from(v.as_slice())
+    fn from((v, op, action): (&Vec<O::Value>, O, A)) -> Self {
+        Self::from((v.as_slice(), op, action))
     }
 }
 
-impl<M, A> From<&[M::Value]> for LazySegmentTree<M, A>
+impl<O, A> From<(&[O::Value], O, A)> for LazySegmentTree<O, A>
 where
-    M: Monoid + Default,
-    M::Value: Clone,
-    A: MonoidAction<M> + Default,
-    A::Value: Clone + PartialEq,
+    O: Monoid,
+    O::Value: Clone,
+    A: MonoidAction<O>,
+    A::Value: Clone,
 {
-    fn from(v: &[M::Value]) -> Self {
-        let mut res = Self::with_op(v.len(), M::default(), A::default());
+    fn from((v, op, action): (&[O::Value], O, A)) -> Self {
+        let len = v.len();
+        let offset = len.next_power_of_two();
 
-        for i in 0..res.len {
-            res.nodes[i + res.offset] = v[i].clone();
+        let mut nodes = vec![op.identity(); 2 * offset];
+
+        nodes[offset..offset + len].clone_from_slice(v);
+
+        for i in (1..offset).rev() {
+            nodes[i] = op.op(&nodes[2 * i], &nodes[2 * i + 1]);
         }
 
-        for i in (1..res.offset).rev() {
-            res.pull_node(i)
+        Self {
+            len,
+            nodes,
+            lazies: vec![action.identity(); 2 * offset],
+            log: offset.trailing_zeros(),
+            op,
+            action,
         }
-
-        res
     }
 }
 
-impl<M, A> FromIterator<M::Value> for LazySegmentTree<M, A>
+impl<O, A> From<Vec<O::Value>> for LazySegmentTree<O, A>
 where
-    M: Monoid + Default,
-    M::Value: Clone,
-    A: MonoidAction<M> + Default,
-    A::Value: Clone + PartialEq,
+    O: Monoid + Default,
+    O::Value: Clone,
+    A: MonoidAction<O> + Default,
+    A::Value: Clone,
 {
-    fn from_iter<T: IntoIterator<Item = M::Value>>(iter: T) -> Self {
-        Self::from(iter.into_iter().collect::<Vec<_>>())
+    fn from(v: Vec<O::Value>) -> Self {
+        Self::from((v, O::default(), A::default()))
+    }
+}
+
+impl<O, A> From<&Vec<O::Value>> for LazySegmentTree<O, A>
+where
+    O: Monoid + Default,
+    O::Value: Clone,
+    A: MonoidAction<O> + Default,
+    A::Value: Clone,
+{
+    fn from(v: &Vec<O::Value>) -> Self {
+        Self::from((v, O::default(), A::default()))
+    }
+}
+
+impl<O, A> From<&[O::Value]> for LazySegmentTree<O, A>
+where
+    O: Monoid + Default,
+    O::Value: Clone,
+    A: MonoidAction<O> + Default,
+    A::Value: Clone,
+{
+    fn from(v: &[O::Value]) -> Self {
+        Self::from((v, O::default(), A::default()))
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::ops::op_max::OpMax;
+
     use super::{LazySegmentTree, Monoid, MonoidAction};
 
-    #[derive(Default)]
-    struct Op;
-
-    impl Monoid for Op {
-        type Value = i64;
-
-        fn identity(&self) -> Self::Value {
-            0
-        }
-
-        fn op(&self, x: &Self::Value, y: &Self::Value) -> Self::Value {
-            *x.max(y)
-        }
-    }
+    type Op = OpMax<i64>;
 
     #[derive(Default)]
     struct Act;
@@ -393,7 +396,7 @@ mod tests {
     #[test]
     fn test_lazy_segment_tree() {
         let v = vec![4, 4, 4, 4, 4];
-        let mut seg = LazySegmentTree::<Op, Act>::from(&v);
+        let mut seg = LazySegmentTree::<Op, Act>::from(v);
         seg.act(1..4, &2);
         assert_eq!(
             (0..5).map(|i| *seg.get(i)).collect::<Vec<_>>(),
