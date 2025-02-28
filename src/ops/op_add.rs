@@ -1,8 +1,6 @@
 use std::{marker::PhantomData, ops::Add};
 
-use crate::math::modint::ModInt;
-
-use super::{group::Group, monoid::Monoid};
+use crate::{math::modint::ModInt, ops::group::Group, ops::monoid::Monoid};
 
 #[derive(Default, Clone)]
 pub struct OpAdd<T> {
