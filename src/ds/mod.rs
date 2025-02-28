@@ -1,6 +1,7 @@
+//! データ構造(data structure)
+
 pub mod cumulative_product;
 pub mod cumulative_product_2d;
-pub mod cumulative_sum_3d;
 pub mod disjoint_sparse_table;
 pub mod dsu;
 pub mod fenwick_tree;

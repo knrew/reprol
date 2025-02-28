@@ -8,10 +8,7 @@ pub struct DisjointSparseTable<O: Monoid> {
     op: O,
 }
 
-impl<O> DisjointSparseTable<O>
-where
-    O: Monoid,
-{
+impl<O: Monoid> DisjointSparseTable<O> {
     pub fn new(v: Vec<O::Value>) -> Self
     where
         O: Default,

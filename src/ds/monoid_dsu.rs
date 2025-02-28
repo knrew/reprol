@@ -2,27 +2,21 @@ use std::mem::swap;
 
 use crate::ops::monoid::Monoid;
 
-pub struct MonoidDsu<M>
-where
-    M: Monoid,
-{
+pub struct MonoidDsu<O: Monoid> {
     parents: Vec<usize>,
     sizes: Vec<usize>,
-    states: Vec<M::Value>,
+    states: Vec<O::Value>,
     num_components: usize,
-    monoid: M,
+    monoid: O,
 }
 
-impl<M> MonoidDsu<M>
-where
-    M: Monoid,
-    M::Value: Clone,
-{
-    pub fn new(n: usize, initial_states: &[M::Value], monoid: M) -> Self {
+impl<O: Monoid> MonoidDsu<O> {
+    pub fn new(initial_states: Vec<O::Value>, monoid: O) -> Self {
+        let n = initial_states.len();
         Self {
             parents: (0..n).collect(),
             sizes: vec![1; n],
-            states: initial_states.to_vec(),
+            states: initial_states,
             num_components: n,
             monoid,
         }
@@ -42,15 +36,12 @@ where
     }
 
     /// xが属するグループとyが属するグループを統合する
-    pub fn merge(&mut self, u: usize, v: usize) -> bool {
-        debug_assert!(u < self.parents.len());
-        debug_assert!(v < self.parents.len());
-
+    pub fn merge(&mut self, u: usize, v: usize) {
         let mut u = self.find(u);
         let mut v = self.find(v);
 
         if u == v {
-            return true;
+            return;
         }
 
         self.num_components -= 1;
@@ -62,26 +53,20 @@ where
         self.parents[v] = u;
         self.sizes[u] += self.sizes[v];
         self.states[u] = self.monoid.op(&self.states[u], &self.states[v]);
-
-        true
     }
 
     /// xとyが同じグループに属すか
     pub fn connected(&mut self, u: usize, v: usize) -> bool {
-        debug_assert!(u < self.parents.len());
-        debug_assert!(v < self.parents.len());
         self.find(u) == self.find(v)
     }
 
     /// xが属するグループの要素数
     pub fn size(&mut self, v: usize) -> usize {
-        debug_assert!(v < self.parents.len());
         let v = self.find(v);
         self.sizes[v]
     }
 
-    pub fn state(&mut self, v: usize) -> &M::Value {
-        debug_assert!(v < self.parents.len());
+    pub fn state(&mut self, v: usize) -> &O::Value {
         let v = self.find(v);
         &self.states[v]
     }

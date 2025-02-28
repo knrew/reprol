@@ -15,18 +15,14 @@ impl<O: Monoid> FenwickTree<O> {
     pub fn new(n: usize) -> Self
     where
         O: Default,
-        O::Value: Clone,
     {
         Self::with_op(n, O::default())
     }
 
     /// 演算を引数で指定
-    pub fn with_op(n: usize, op: O) -> Self
-    where
-        O::Value: Clone,
-    {
+    pub fn with_op(n: usize, op: O) -> Self {
         Self {
-            nodes: vec![op.identity(); n],
+            nodes: (0..n).map(|_| op.identity()).collect(),
             op,
         }
     }
@@ -43,6 +39,7 @@ impl<O: Monoid> FenwickTree<O> {
 
     /// [0, r)の累積
     pub fn get(&self, mut r: usize) -> O::Value {
+        assert!(r <= self.nodes.len());
         let mut res = self.op.identity();
         while r > 0 {
             res = self.op.op(&res, &self.nodes[r - 1]);
@@ -64,11 +61,7 @@ impl<O: Monoid> FenwickTree<O> {
     }
 }
 
-impl<O> From<(Vec<O::Value>, O)> for FenwickTree<O>
-where
-    O: Monoid,
-    O::Value: Clone,
-{
+impl<O: Monoid> From<(Vec<O::Value>, O)> for FenwickTree<O> {
     fn from((v, op): (Vec<O::Value>, O)) -> Self {
         let mut res = FenwickTree::with_op(v.len(), op);
         v.into_iter()
@@ -81,7 +74,6 @@ where
 impl<O> From<Vec<O::Value>> for FenwickTree<O>
 where
     O: Monoid + Default,
-    O::Value: Clone,
 {
     fn from(v: Vec<O::Value>) -> Self {
         Self::from((v, O::default()))

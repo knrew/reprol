@@ -10,11 +10,7 @@ pub struct PotentializedDsu<O: Group> {
     op: O,
 }
 
-impl<O> PotentializedDsu<O>
-where
-    O: Group,
-    O::Value: Clone + PartialEq,
-{
+impl<O: Group> PotentializedDsu<O> {
     pub fn new(n: usize) -> Self
     where
         O: Default,
@@ -26,7 +22,7 @@ where
         Self {
             parents: (0..n).collect(),
             sizes: vec![1; n],
-            potentials: vec![op.identity(); n],
+            potentials: (0..n).map(|_| op.identity()).collect(),
             num_components: n,
             op,
         }
@@ -50,7 +46,10 @@ where
     /// xが属するグループとyが属するグループを統合する
     /// potential[u]+w=potential[v]となるように頂点にポテンシャルを置く
     /// 既存のポテンシャルと矛盾があれば，もとのポテンシャルを維持して返り値としてfalseを返す
-    pub fn merge(&mut self, u: usize, v: usize, d: O::Value) -> bool {
+    pub fn merge(&mut self, u: usize, v: usize, d: O::Value) -> bool
+    where
+        O::Value: Clone + PartialEq,
+    {
         let mut w = {
             let pu = self.potential(u);
             let pv = self.potential(v);
@@ -90,14 +89,20 @@ where
     }
 
     /// vに置かれたポテンシャル
-    pub fn potential(&mut self, v: usize) -> O::Value {
+    pub fn potential(&mut self, v: usize) -> O::Value
+    where
+        O::Value: Clone,
+    {
         let _ = self.find(v);
         self.potentials[v].clone()
     }
 
     /// uとvのポテンシャルの差
     /// potential[v] - potential[u]
-    pub fn difference_potential(&mut self, u: usize, v: usize) -> O::Value {
+    pub fn difference_potential(&mut self, u: usize, v: usize) -> O::Value
+    where
+        O::Value: Clone,
+    {
         assert!(self.connected(u, v));
         let pv = self.potential(v);
         let pu = self.potential(u);
