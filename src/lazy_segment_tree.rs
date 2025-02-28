@@ -95,16 +95,16 @@ impl<O: Monoid, A: MonoidAction<O>> LazySegmentTree<O, A> {
             let mut r = r;
 
             while l < r {
-                if l & 1 != 0 {
+                if l % 2 == 1 {
                     self.apply(l, &f);
                     l += 1;
                 }
-                if r & 1 != 0 {
+                if r % 2 == 1 {
                     r -= 1;
                     self.apply(r, &f);
                 }
-                l >>= 1;
-                r >>= 1;
+                l /= 2;
+                r /= 2;
             }
         }
 
