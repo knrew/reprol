@@ -8,6 +8,7 @@ pub struct WarshallFloyd<T> {
     /// cost[u][v]: u->vの最小コスト
     costs: Vec<Vec<Option<T>>>,
 
+    // previous: Vec<Vec<Option<usize>>>,
     /// 負の閉路が存在するか
     has_negative_cycle: bool,
 }
@@ -20,17 +21,19 @@ where
     pub fn new(g: &[Vec<(usize, T)>], zero: T) -> Self {
         let n = g.len();
         let mut costs = vec![vec![None; n]; n];
+        // let mut previous = vec![vec![None; n]; n];
 
         for i in 0..n {
             costs[i][i] = Some(zero.clone());
         }
 
-        for u in 0..n {
-            for (v, c) in &g[u] {
-                match &costs[u][*v] {
+        for i in 0..n {
+            for (j, c) in &g[i] {
+                match &costs[i][*j] {
                     Some(x) if x <= c => {}
                     _ => {
-                        costs[u][*v] = Some(c.clone());
+                        costs[i][*j] = Some(c.clone());
+                        // previous[u][*v] = Some(u);
                     }
                 }
             }
@@ -47,6 +50,7 @@ where
                                 Some(cost_ij) if cost_ij <= &new_cost => {}
                                 _ => {
                                     costs[i][j] = Some(new_cost);
+                                    // previous[i][j] = previous[k][j];
                                 }
                             }
                         }
@@ -60,6 +64,7 @@ where
         Self {
             n,
             costs,
+            // previous,
             has_negative_cycle,
         }
     }
@@ -72,6 +77,28 @@ where
     pub fn cost(&self, u: usize, v: usize) -> Option<&T> {
         self.costs[u][v].as_ref()
     }
+
+    /// u->vの最短経路においてvの1個前の頂点
+    // pub fn previous(&self, u: usize, v: usize) -> Option<usize> {
+    //     self.previous[u][v]
+    // }
+
+    /// 頂点uからvへ到達可能ならばその最短経路を構築する
+    /// uとvを含む
+    // pub fn path(&self, u: usize, v: usize) -> Option<Vec<usize>> {
+    //     if self.previous[u][v].is_none() {
+    //         return None;
+    //     }
+
+    //     let mut res = vec![v];
+
+    //     while let Some(x) = self.previous[u][*res.last().unwrap()] {
+    //         res.push(x);
+    //     }
+
+    //     res.reverse();
+    //     Some(res)
+    // }
 
     /// 負の閉路が存在するか
     pub fn has_negative_cycle(&self) -> bool {
