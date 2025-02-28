@@ -1,4 +1,4 @@
-use crate::monoid::Monoid;
+use crate::ops::monoid::Monoid;
 
 /// モノイドに対する作用
 pub trait MonoidAction<Operand>: Monoid

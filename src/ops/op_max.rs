@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use crate::monoid::Monoid;
+use crate::ops::monoid::Monoid;
 
 #[derive(Default, Clone)]
 pub struct OpMax<T> {
@@ -44,7 +44,7 @@ impl_integer! { u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize }
 
 #[cfg(test)]
 mod tests {
-    use crate::monoid::Monoid;
+    use crate::ops::monoid::Monoid;
 
     use super::OpMax;
 

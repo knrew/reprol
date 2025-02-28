@@ -1,4 +1,4 @@
-use crate::monoid::Monoid;
+use crate::ops::monoid::Monoid;
 
 /// 群
 pub trait Group: Monoid {

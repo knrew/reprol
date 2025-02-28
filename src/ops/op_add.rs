@@ -1,6 +1,8 @@
 use std::{marker::PhantomData, ops::Add};
 
-use crate::{group::Group, math::modint::ModInt, monoid::Monoid};
+use crate::math::modint::ModInt;
+
+use super::{group::Group, monoid::Monoid};
 
 #[derive(Default, Clone)]
 pub struct OpAdd<T> {
@@ -96,7 +98,7 @@ impl<const P: u64> OpAddInteger for ModInt<P> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{group::Group, monoid::Monoid};
+    use crate::ops::{group::Group, monoid::Monoid};
 
     use super::OpAdd;
 
