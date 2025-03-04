@@ -34,7 +34,7 @@ where
     O::Value: Copy + Add<Output = O::Value> + Integer,
 {
     fn act(&self, &f: &Self::Value, &x: &<O as Monoid>::Value) -> <O as Monoid>::Value {
-        x + f
+        x.add_(f)
     }
 }
 

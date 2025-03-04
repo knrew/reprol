@@ -12,7 +12,7 @@ pub struct ActSet<T> {
 
 impl<T> Monoid for ActSet<T>
 where
-    T: Clone + PartialEq,
+    T: Clone,
 {
     type Value = Option<T>;
 
@@ -28,7 +28,7 @@ where
 impl<O> MonoidAction<O> for ActSet<O::Value>
 where
     O: Monoid,
-    O::Value: Clone + PartialEq,
+    O::Value: Clone,
 {
     fn act(&self, f: &Self::Value, x: &<O as Monoid>::Value) -> <O as Monoid>::Value {
         if let Some(f) = f { f } else { x }.clone()
