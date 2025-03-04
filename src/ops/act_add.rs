@@ -1,13 +1,19 @@
 use std::{marker::PhantomData, ops::Add};
 
-use crate::{math::modint::ModInt, ops::group::Group, ops::monoid::Monoid};
+use crate::{
+    math::modint::ModInt,
+    ops::{action::MonoidAction, monoid::Monoid},
+};
 
+/// LazySegmentTree用
+/// 値の区間加算を行う作用
+/// `seg.act(l..r, &x)`のように書くと[l, r)の区間にそれぞれxを加算する
 #[derive(Default, Clone)]
-pub struct OpAdd<T> {
+pub struct ActAdd<T> {
     _phantom: PhantomData<T>,
 }
 
-impl<T> Monoid for OpAdd<T>
+impl<T> Monoid for ActAdd<T>
 where
     T: Copy + Add<Output = T> + Integer,
 {
@@ -22,12 +28,13 @@ where
     }
 }
 
-impl<T> Group for OpAdd<T>
+impl<O> MonoidAction<O> for ActAdd<O::Value>
 where
-    T: Copy + Add<Output = T> + Integer,
+    O: Monoid,
+    O::Value: Copy + Add<Output = O::Value> + Integer,
 {
-    fn inv(&self, &x: &Self::Value) -> Self::Value {
-        x.neg_()
+    fn act(&self, &f: &Self::Value, &x: &<O as Monoid>::Value) -> <O as Monoid>::Value {
+        x + f
     }
 }
 
@@ -91,40 +98,5 @@ impl<const P: u64> Integer for ModInt<P> {
     #[inline]
     fn neg_(self) -> Self {
         -self
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::ops::{group::Group, monoid::Monoid};
-
-    use super::OpAdd;
-
-    #[test]
-    fn test_opadd() {
-        let op = OpAdd::<i64>::default();
-        assert_eq!(op.op(&74, &33), 107);
-        assert_eq!(op.op(&18, &65), 83);
-        assert_eq!(op.op(&22, &-4), 18);
-        assert_eq!(op.op(&22, &-33), -11);
-        assert_eq!(op.op(&-7, &10), 3);
-        assert_eq!(op.op(&-8, &12), 4);
-        assert_eq!(op.op(&-8, &-55), -63);
-        assert_eq!(op.op(&op.identity(), &5), 5);
-        assert_eq!(op.op(&3332, &op.identity()), 3332);
-        assert_eq!(op.inv(&111), -111);
-        assert_eq!(op.op(&81, &op.inv(&6)), 75);
-        assert_eq!(op.op(&51, &op.inv(&33)), 18);
-        assert_eq!(op.op(&op.inv(&87), &70), -17);
-        assert_eq!(op.op(&op.inv(&49), &0), -49);
-
-        let op = OpAdd::<u64>::default();
-        assert_eq!(op.op(&74, &33), 107);
-        assert_eq!(op.op(&18, &65), 83);
-        assert_eq!(op.op(&66, &17), 83);
-        assert_eq!(op.op(&24, &3), 27);
-        assert_eq!(op.op(&88, &87), 175);
-        assert_eq!(op.op(&op.identity(), &5), 5);
-        assert_eq!(op.op(&op.identity(), &3332), 3332);
     }
 }

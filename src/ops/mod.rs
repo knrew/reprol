@@ -1,3 +1,5 @@
+pub mod act_add;
+pub mod act_set;
 pub mod action;
 pub mod group;
 pub mod monoid;
