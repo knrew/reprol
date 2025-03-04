@@ -1,4 +1,4 @@
-use std::{marker::PhantomData, ops::Add};
+use std::marker::PhantomData;
 
 use crate::{math::modint::ModInt, ops::group::Group, ops::monoid::Monoid};
 
@@ -9,7 +9,7 @@ pub struct OpAdd<T> {
 
 impl<T> Monoid for OpAdd<T>
 where
-    T: Copy + Add<Output = T> + Integer,
+    T: Copy + Integer,
 {
     type Value = T;
 
@@ -24,7 +24,7 @@ where
 
 impl<T> Group for OpAdd<T>
 where
-    T: Copy + Add<Output = T> + Integer,
+    T: Copy + Integer,
 {
     fn inv(&self, &x: &Self::Value) -> Self::Value {
         x.neg_()

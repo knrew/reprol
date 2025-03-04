@@ -1,4 +1,4 @@
-use std::{marker::PhantomData, ops::Add};
+use std::marker::PhantomData;
 
 use crate::{
     math::modint::ModInt,
@@ -15,7 +15,7 @@ pub struct ActAdd<T> {
 
 impl<T> Monoid for ActAdd<T>
 where
-    T: Copy + Add<Output = T> + Integer,
+    T: Copy + Integer,
 {
     type Value = T;
 
@@ -31,7 +31,7 @@ where
 impl<O> MonoidAction<O> for ActAdd<O::Value>
 where
     O: Monoid,
-    O::Value: Copy + Add<Output = O::Value> + Integer,
+    O::Value: Copy + Integer,
 {
     fn act(&self, &f: &Self::Value, &x: &<O as Monoid>::Value) -> <O as Monoid>::Value {
         x.add_(f)
