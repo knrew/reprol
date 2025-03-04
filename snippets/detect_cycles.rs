@@ -1,15 +1,16 @@
-/// グラフに閉路があればそのうちの1つを返す
-fn detect_cycle(g: &[Vec<usize>], is_edge_minimal: bool) -> Option<Vec<usize>> {
+// グラフのサイクルをすべて検出する
+// is_edge_minimal: 辺素なサイクルのみを検出するかどうか
+fn detect_cycles(g: &[Vec<usize>], is_edge_minimal: bool) -> Vec<Vec<usize>> {
     fn dfs(
         g: &[Vec<usize>],
         is_edge_minimal: bool,
-        seen: &mut [bool],
+        visited: &mut [bool],
         finished: &mut [bool],
         path: &mut Vec<usize>,
         v: usize,
         pv: usize,
     ) -> Option<usize> {
-        seen[v] = true;
+        visited[v] = true;
         path.push(v);
 
         for &nv in &g[v] {
@@ -21,10 +22,10 @@ fn detect_cycle(g: &[Vec<usize>], is_edge_minimal: bool) -> Option<Vec<usize>> {
                 continue;
             }
 
-            if seen[nv] && !finished[nv] {
+            if visited[nv] && !finished[nv] {
                 return Some(nv);
             } else {
-                if let Some(u) = dfs(g, is_edge_minimal, seen, finished, path, nv, v) {
+                if let Some(u) = dfs(g, is_edge_minimal, visited, finished, path, nv, v) {
                     return Some(u);
                 }
             }
@@ -37,11 +38,12 @@ fn detect_cycle(g: &[Vec<usize>], is_edge_minimal: bool) -> Option<Vec<usize>> {
     }
 
     let n = g.len();
-    let mut seen = vec![false; n];
+    let mut visited = vec![false; n];
     let mut finished = vec![false; n];
+    let mut res = vec![];
 
     for v in 0..n {
-        if seen[v] {
+        if visited[v] {
             continue;
         }
 
@@ -49,23 +51,23 @@ fn detect_cycle(g: &[Vec<usize>], is_edge_minimal: bool) -> Option<Vec<usize>> {
         if let Some(v) = dfs(
             &g,
             is_edge_minimal,
-            &mut seen,
+            &mut visited,
             &mut finished,
             &mut path,
             v,
             1usize.wrapping_neg(),
         ) {
-            let mut res = vec![];
+            let mut cycle = vec![];
             while let Some(u) = path.pop() {
-                res.push(u);
+                cycle.push(u);
                 if u == v {
                     break;
                 }
             }
-            res.reverse();
-            return Some(res);
+            cycle.reverse();
+            res.push(cycle);
         }
     }
 
-    None
+    res
 }
