@@ -62,7 +62,7 @@ impl<O: Monoid> FenwickTree<O> {
         O: Group,
     {
         let Range { start: l, end: r } = to_open_range(range, self.nodes.len());
-        assert!(l <= r);
+        assert!(l < r);
         let cl = self.get(l);
         let cr = self.get(r);
         self.op.op(&cr, &self.op.inv(&cl))

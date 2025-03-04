@@ -59,7 +59,7 @@ impl<O: Monoid> DisjointSparseTable<O> {
             start: l,
             end: mut r,
         } = to_open_range(range, self.len);
-        assert!(l <= r);
+        assert!(l < r);
         assert!(r <= self.len);
         r += 1;
         let i = ((l ^ r) + 1).next_power_of_two().trailing_zeros() - 1;

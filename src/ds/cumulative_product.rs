@@ -61,7 +61,7 @@ impl<O: Monoid> CumulativeProduct<O> {
         O: Group,
     {
         let Range { start: l, end: r } = to_open_range(range, self.data.len() - 1);
-        assert!(l <= r);
+        assert!(l < r);
         self.op.op(&self.data[r], &self.op.inv(&self.data[l]))
     }
 }
@@ -176,7 +176,6 @@ mod tests {
             ((1, 3), 5),
             ((3, 5), 9),
             ((2, 4), 7),
-            ((2, 2), 0),
             ((4, 5), 5),
             ((0, 4), 10),
         ];
@@ -194,7 +193,6 @@ mod tests {
             ((1, 3), 5),
             ((3, 5), 9),
             ((2, 4), 7),
-            ((2, 2), 0),
             ((4, 5), 5),
             ((0, 4), 10),
         ];

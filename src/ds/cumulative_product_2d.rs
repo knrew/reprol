@@ -93,8 +93,8 @@ impl<O: Monoid> CumulativeProduct2d<O> {
     {
         let Range { start: il, end: ir } = to_open_range(row_range, self.data.len() - 1);
         let Range { start: jl, end: jr } = to_open_range(col_range, self.data[0].len() - 1);
-        assert!(il <= ir);
-        assert!(jl <= jr);
+        assert!(il < ir);
+        assert!(jl < jr);
         let mut res = self.op.op(&self.data[ir][jr], &self.data[il][jl]);
         res = self.op.op(&res, &self.op.inv(&self.data[il][jr]));
         res = self.op.op(&res, &self.op.inv(&self.data[ir][jl]));
@@ -207,7 +207,7 @@ mod tests {
             ((0, 1, 2, 3), 16),
             ((2, 0, 3, 2), 15),
             ((0, 0, 1, 1), 1),
-            ((0, 0, 0, 0), 0),
+            // ((0, 0, 0, 0), 0),
         ];
         let cum = CumulativeSum2d::new(v);
         assert_eq!(cum.product(.., ..), 45);
@@ -229,7 +229,7 @@ mod tests {
             ((0, 0, 1, 1), 1),
             ((1, 0, 2, 5), 40),
             ((0, 4, 3, 5), 30),
-            ((0, 0, 0, 0), 0),
+            // ((0, 0, 0, 0), 0),
         ];
         let cum = CumulativeSum2d::new(v);
         for ((x1, y1, x2, y2), expected) in test_cases {
