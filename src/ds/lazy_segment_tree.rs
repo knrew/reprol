@@ -43,7 +43,7 @@ impl<O: Monoid, A: MonoidAction<O>> LazySegmentTree<O, A> {
         Self {
             len,
             nodes: (0..2 * offset).map(|_| op.identity()).collect(),
-            lazies: (0..2 * offset).map(|_| action.identity()).collect(),
+            lazies: (0..offset).map(|_| action.identity()).collect(),
             log: offset.trailing_zeros(),
             op,
             action,
@@ -308,7 +308,6 @@ where
     O: Monoid,
     O::Value: Clone,
     A: MonoidAction<O>,
-    A::Value: Clone,
 {
     fn from((v, op, action): (Vec<O::Value>, O, A)) -> Self {
         Self::from((v.as_slice(), op, action))
@@ -320,7 +319,6 @@ where
     O: Monoid,
     O::Value: Clone,
     A: MonoidAction<O>,
-    A::Value: Clone,
 {
     fn from((v, op, action): ([O::Value; N], O, A)) -> Self {
         Self::from((v.as_slice(), op, action))
@@ -332,7 +330,6 @@ where
     O: Monoid,
     O::Value: Clone,
     A: MonoidAction<O>,
-    A::Value: Clone,
 {
     fn from((v, op, action): (&Vec<O::Value>, O, A)) -> Self {
         Self::from((v.as_slice(), op, action))
@@ -344,7 +341,6 @@ where
     O: Monoid,
     O::Value: Clone,
     A: MonoidAction<O>,
-    A::Value: Clone,
 {
     fn from((v, op, action): (&[O::Value], O, A)) -> Self {
         let len = v.len();
@@ -361,7 +357,7 @@ where
         Self {
             len,
             nodes,
-            lazies: vec![action.identity(); 2 * offset],
+            lazies: (0..offset).map(|_| action.identity()).collect(),
             log: offset.trailing_zeros(),
             op,
             action,
@@ -374,7 +370,6 @@ where
     O: Monoid + Default,
     O::Value: Clone,
     A: MonoidAction<O> + Default,
-    A::Value: Clone,
 {
     fn from(v: Vec<O::Value>) -> Self {
         Self::from((v, O::default(), A::default()))
@@ -386,7 +381,6 @@ where
     O: Monoid + Default,
     O::Value: Clone,
     A: MonoidAction<O> + Default,
-    A::Value: Clone,
 {
     fn from(v: [O::Value; N]) -> Self {
         Self::from((v, O::default(), A::default()))
@@ -398,7 +392,6 @@ where
     O: Monoid + Default,
     O::Value: Clone,
     A: MonoidAction<O> + Default,
-    A::Value: Clone,
 {
     fn from(v: &Vec<O::Value>) -> Self {
         Self::from((v, O::default(), A::default()))
@@ -410,7 +403,6 @@ where
     O: Monoid + Default,
     O::Value: Clone,
     A: MonoidAction<O> + Default,
-    A::Value: Clone,
 {
     fn from(v: &[O::Value]) -> Self {
         Self::from((v, O::default(), A::default()))
