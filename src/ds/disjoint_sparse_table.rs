@@ -77,12 +77,32 @@ where
     }
 }
 
+impl<O, const N: usize> From<([O::Value; N], O)> for DisjointSparseTable<O>
+where
+    O: Monoid,
+    O::Value: Clone,
+{
+    fn from((v, op): ([O::Value; N], O)) -> Self {
+        Self::with_op(v.to_vec(), op)
+    }
+}
+
 impl<O> From<Vec<O::Value>> for DisjointSparseTable<O>
 where
     O: Monoid + Default,
 {
     fn from(v: Vec<O::Value>) -> Self {
         Self::new(v)
+    }
+}
+
+impl<O, const N: usize> From<[O::Value; N]> for DisjointSparseTable<O>
+where
+    O: Monoid + Default,
+    O::Value: Clone,
+{
+    fn from(v: [O::Value; N]) -> Self {
+        Self::new(v.to_vec())
     }
 }
 

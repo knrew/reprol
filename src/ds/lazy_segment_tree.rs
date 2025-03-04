@@ -315,6 +315,18 @@ where
     }
 }
 
+impl<O, A, const N: usize> From<([O::Value; N], O, A)> for LazySegmentTree<O, A>
+where
+    O: Monoid,
+    O::Value: Clone,
+    A: MonoidAction<O>,
+    A::Value: Clone,
+{
+    fn from((v, op, action): ([O::Value; N], O, A)) -> Self {
+        Self::from((v.as_slice(), op, action))
+    }
+}
+
 impl<O, A> From<(&Vec<O::Value>, O, A)> for LazySegmentTree<O, A>
 where
     O: Monoid,
@@ -365,6 +377,18 @@ where
     A::Value: Clone,
 {
     fn from(v: Vec<O::Value>) -> Self {
+        Self::from((v, O::default(), A::default()))
+    }
+}
+
+impl<O, A, const N: usize> From<[O::Value; N]> for LazySegmentTree<O, A>
+where
+    O: Monoid + Default,
+    O::Value: Clone,
+    A: MonoidAction<O> + Default,
+    A::Value: Clone,
+{
+    fn from(v: [O::Value; N]) -> Self {
         Self::from((v, O::default(), A::default()))
     }
 }

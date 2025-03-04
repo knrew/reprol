@@ -27,12 +27,20 @@ impl<O: Monoid> FenwickTree<O> {
         }
     }
 
+    fn from_slice(v: &[O::Value], op: O) -> Self {
+        let mut res = Self::with_op(v.len(), op);
+        v.into_iter()
+            .enumerate()
+            .for_each(|(i, rhs)| res.mul(i, rhs));
+        res
+    }
+
     /// i番目の要素v[i]をop(v[i], rhs)で更新する
-    pub fn op(&mut self, mut index: usize, rhs: O::Value) {
+    pub fn mul(&mut self, mut index: usize, rhs: &O::Value) {
         assert!(index < self.nodes.len());
         index += 1;
         while index <= self.nodes.len() {
-            self.nodes[index - 1] = self.op.op(&self.nodes[index - 1], &rhs);
+            self.nodes[index - 1] = self.op.op(&self.nodes[index - 1], rhs);
             index += index & index.wrapping_neg();
         }
     }
@@ -61,13 +69,21 @@ impl<O: Monoid> FenwickTree<O> {
     }
 }
 
-impl<O: Monoid> From<(Vec<O::Value>, O)> for FenwickTree<O> {
+impl<O> From<(Vec<O::Value>, O)> for FenwickTree<O>
+where
+    O: Monoid,
+{
     fn from((v, op): (Vec<O::Value>, O)) -> Self {
-        let mut res = FenwickTree::with_op(v.len(), op);
-        v.into_iter()
-            .enumerate()
-            .for_each(|(i, rhs)| res.op(i, rhs));
-        res
+        Self::from_slice(&v, op)
+    }
+}
+
+impl<O, const N: usize> From<([O::Value; N], O)> for FenwickTree<O>
+where
+    O: Monoid,
+{
+    fn from((v, op): ([O::Value; N], O)) -> Self {
+        Self::from_slice(&v, op)
     }
 }
 
@@ -76,7 +92,16 @@ where
     O: Monoid + Default,
 {
     fn from(v: Vec<O::Value>) -> Self {
-        Self::from((v, O::default()))
+        Self::from_slice(&v, O::default())
+    }
+}
+
+impl<O, const N: usize> From<[O::Value; N]> for FenwickTree<O>
+where
+    O: Monoid + Default,
+{
+    fn from(v: [O::Value; N]) -> Self {
+        Self::from_slice(&v, O::default())
     }
 }
 
@@ -89,16 +114,16 @@ mod tests {
     #[test]
     fn test_fenwick_tree() {
         let mut ft = FenwickTree::<OpAdd<i64>>::new(10);
-        ft.op(0, 5);
-        ft.op(2, 10);
-        ft.op(6, 20);
+        ft.mul(0, &5);
+        ft.mul(2, &10);
+        ft.mul(6, &20);
         assert_eq!(ft.product(..1), 5);
         assert_eq!(ft.product(..3), 15);
         assert_eq!(ft.product(..7), 35);
         assert_eq!(ft.product(..), 35);
         assert_eq!(ft.product(0..3), 15);
         assert_eq!(ft.product(3..=6), 20);
-        ft.op(9, 10);
+        ft.mul(9, &10);
         assert_eq!(ft.product(0..10), 45);
     }
 }
