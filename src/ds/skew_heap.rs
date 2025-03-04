@@ -147,16 +147,16 @@ impl<T: Ord, const N: usize> From<[T; N]> for SkewHeap<T> {
 mod tests {
     use std::cmp::Reverse;
 
-    use super::*;
+    use super::SkewHeap;
 
     #[test]
-    fn test_skew_heap() {
+    fn test_skew_heap_push_pop() {
         let mut heap = SkewHeap::new();
-        assert_eq!(heap.pop(), None);
-        assert_eq!(heap.peek(), None);
+        assert!(heap.is_empty());
         heap.push(5);
         heap.push(3);
         heap.push(7);
+        assert!(!heap.is_empty());
         assert_eq!(heap.peek(), Some(&7));
         assert_eq!(heap.pop(), Some(7));
         heap.push(4);
@@ -168,6 +168,7 @@ mod tests {
         assert_eq!(heap.pop(), Some(3));
         assert_eq!(heap.peek(), None);
         assert_eq!(heap.pop(), None);
+        assert!(heap.is_empty());
 
         let mut heap = SkewHeap::from([Reverse(12), Reverse(3), Reverse(8), Reverse(5)]);
         assert_eq!(heap.peek(), Some(&Reverse(3)));
