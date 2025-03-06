@@ -1,39 +1,6 @@
 use std::mem::{swap, take};
 
 #[derive(Clone)]
-struct Node<T> {
-    value: T,
-    left: Option<Box<Node<T>>>,
-    right: Option<Box<Node<T>>>,
-}
-
-impl<T> Node<T> {
-    fn new(value: T) -> Self {
-        Self {
-            value,
-            left: None,
-            right: None,
-        }
-    }
-}
-
-fn meld<T: Ord>(lhs: Option<Box<Node<T>>>, rhs: Option<Box<Node<T>>>) -> Option<Box<Node<T>>> {
-    match (lhs, rhs) {
-        (Some(mut lhs), Some(mut rhs)) => {
-            if lhs.value < rhs.value {
-                swap(&mut lhs, &mut rhs);
-            }
-            lhs.right = meld(lhs.right, Some(rhs));
-            swap(&mut lhs.left, &mut lhs.right);
-            Some(lhs)
-        }
-        (Some(lhs), None) => Some(lhs),
-        (None, Some(rhs)) => Some(rhs),
-        (None, None) => None,
-    }
-}
-
-#[derive(Clone)]
 pub struct SkewHeap<T> {
     data: Option<Box<Node<T>>>,
 }
@@ -118,30 +85,38 @@ impl<T: Ord, const N: usize> From<[T; N]> for SkewHeap<T> {
     }
 }
 
-// #[derive(Clone)]
-// pub struct IntoIter<T> {
-//     iter: vec::IntoIter<T>,
-// }
+#[derive(Clone)]
+struct Node<T> {
+    value: T,
+    left: Option<Box<Node<T>>>,
+    right: Option<Box<Node<T>>>,
+}
 
-// impl<T> IntoIterator for SkewHeap<T> {
-//     type Item = T;
-//     type IntoIter = IntoIter<T>;
+impl<T> Node<T> {
+    fn new(value: T) -> Self {
+        Self {
+            value,
+            left: None,
+            right: None,
+        }
+    }
+}
 
-//     fn into_iter(self) -> IntoIter<T> {
-//         IntoIter {
-//             iter: self.data.into_iter(),
-//         }
-//     }
-// }
-
-// impl<'a, T> IntoIterator for &'a SkewHeap<T> {
-//     type Item = &'a T;
-//     type IntoIter = Iter<'a, T>;
-
-//     fn into_iter(self) -> Iter<'a, T> {
-//         self.iter()
-//     }
-// }
+fn meld<T: Ord>(lhs: Option<Box<Node<T>>>, rhs: Option<Box<Node<T>>>) -> Option<Box<Node<T>>> {
+    match (lhs, rhs) {
+        (Some(mut lhs), Some(mut rhs)) => {
+            if lhs.value < rhs.value {
+                swap(&mut lhs, &mut rhs);
+            }
+            lhs.right = meld(lhs.right, Some(rhs));
+            swap(&mut lhs.left, &mut lhs.right);
+            Some(lhs)
+        }
+        (Some(lhs), None) => Some(lhs),
+        (None, Some(rhs)) => Some(rhs),
+        (None, None) => None,
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -153,6 +128,8 @@ mod tests {
     fn test_skew_heap_push_pop() {
         let mut heap = SkewHeap::new();
         assert!(heap.is_empty());
+        assert_eq!(heap.peek(), None);
+        assert_eq!(heap.pop(), None);
         heap.push(5);
         heap.push(3);
         heap.push(7);
