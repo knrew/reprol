@@ -59,10 +59,9 @@ impl FromRadix for [u32] {
     fn from_radix(&self, n: u32) -> Self::Output {
         let n = n as u64;
         let mut res = 0;
-        let mut base = 1;
-        for &e in self.iter().rev() {
-            res += e as u64 * base;
-            base *= n;
+        for &e in self.iter() {
+            res *= n;
+            res += e as u64;
         }
         res
     }
