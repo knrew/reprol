@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use crate::ops::{action::MonoidAction, monoid::Monoid};
+use crate::ops::{action::Action, monoid::Monoid};
 
 /// LazySegmentTree用
 /// 値をセット(上書き)する作用
@@ -25,7 +25,7 @@ where
     }
 }
 
-impl<O> MonoidAction<O> for ActSet<O::Value>
+impl<O> Action<O> for ActSet<O::Value>
 where
     O: Monoid,
     O::Value: Clone,

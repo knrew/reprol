@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use crate::{
     math::modint::ModInt,
-    ops::{action::MonoidAction, monoid::Monoid},
+    ops::{action::Action, monoid::Monoid},
 };
 
 /// LazySegmentTree用
@@ -28,7 +28,7 @@ where
     }
 }
 
-impl<O> MonoidAction<O> for ActAdd<O::Value>
+impl<O> Action<O> for ActAdd<O::Value>
 where
     O: Monoid,
     O::Value: Copy + Integer,

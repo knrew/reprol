@@ -4,13 +4,13 @@ use std::{
 };
 
 use crate::{
-    ops::{action::MonoidAction, monoid::Monoid},
+    ops::{action::Action, monoid::Monoid},
     range::to_open_range,
 };
 
 /// 要素にモノイドを持つ配列を管理するデータ構造
 /// 区間に対する作用と区間積を$O(\log N)$で行う
-pub struct LazySegmentTree<O: Monoid, A: MonoidAction<O>> {
+pub struct LazySegmentTree<O: Monoid, A: Action<O>> {
     /// 列の長さ(nodesの長さではない)
     len: usize,
 
@@ -29,7 +29,7 @@ pub struct LazySegmentTree<O: Monoid, A: MonoidAction<O>> {
     action: A,
 }
 
-impl<O: Monoid, A: MonoidAction<O>> LazySegmentTree<O, A> {
+impl<O: Monoid, A: Action<O>> LazySegmentTree<O, A> {
     pub fn new(len: usize) -> Self
     where
         O: Default,
@@ -307,7 +307,7 @@ impl<O, A> From<(Vec<O::Value>, O, A)> for LazySegmentTree<O, A>
 where
     O: Monoid,
     O::Value: Clone,
-    A: MonoidAction<O>,
+    A: Action<O>,
 {
     fn from((v, op, action): (Vec<O::Value>, O, A)) -> Self {
         Self::from((v.as_slice(), op, action))
@@ -318,7 +318,7 @@ impl<O, A, const N: usize> From<([O::Value; N], O, A)> for LazySegmentTree<O, A>
 where
     O: Monoid,
     O::Value: Clone,
-    A: MonoidAction<O>,
+    A: Action<O>,
 {
     fn from((v, op, action): ([O::Value; N], O, A)) -> Self {
         Self::from((v.as_slice(), op, action))
@@ -329,7 +329,7 @@ impl<O, A> From<(&Vec<O::Value>, O, A)> for LazySegmentTree<O, A>
 where
     O: Monoid,
     O::Value: Clone,
-    A: MonoidAction<O>,
+    A: Action<O>,
 {
     fn from((v, op, action): (&Vec<O::Value>, O, A)) -> Self {
         Self::from((v.as_slice(), op, action))
@@ -340,7 +340,7 @@ impl<O, A> From<(&[O::Value], O, A)> for LazySegmentTree<O, A>
 where
     O: Monoid,
     O::Value: Clone,
-    A: MonoidAction<O>,
+    A: Action<O>,
 {
     fn from((v, op, action): (&[O::Value], O, A)) -> Self {
         let len = v.len();
@@ -369,7 +369,7 @@ impl<O, A> From<Vec<O::Value>> for LazySegmentTree<O, A>
 where
     O: Monoid + Default,
     O::Value: Clone,
-    A: MonoidAction<O> + Default,
+    A: Action<O> + Default,
 {
     fn from(v: Vec<O::Value>) -> Self {
         Self::from((v, O::default(), A::default()))
@@ -380,7 +380,7 @@ impl<O, A, const N: usize> From<[O::Value; N]> for LazySegmentTree<O, A>
 where
     O: Monoid + Default,
     O::Value: Clone,
-    A: MonoidAction<O> + Default,
+    A: Action<O> + Default,
 {
     fn from(v: [O::Value; N]) -> Self {
         Self::from((v, O::default(), A::default()))
@@ -391,7 +391,7 @@ impl<O, A> From<&Vec<O::Value>> for LazySegmentTree<O, A>
 where
     O: Monoid + Default,
     O::Value: Clone,
-    A: MonoidAction<O> + Default,
+    A: Action<O> + Default,
 {
     fn from(v: &Vec<O::Value>) -> Self {
         Self::from((v, O::default(), A::default()))
@@ -402,7 +402,7 @@ impl<O, A> From<&[O::Value]> for LazySegmentTree<O, A>
 where
     O: Monoid + Default,
     O::Value: Clone,
-    A: MonoidAction<O> + Default,
+    A: Action<O> + Default,
 {
     fn from(v: &[O::Value]) -> Self {
         Self::from((v, O::default(), A::default()))
@@ -413,7 +413,7 @@ where
 mod tests {
     use crate::ops::op_max::OpMax;
 
-    use super::{LazySegmentTree, Monoid, MonoidAction};
+    use super::{Action, LazySegmentTree, Monoid};
 
     type Op = OpMax<i64>;
 
@@ -432,7 +432,7 @@ mod tests {
         }
     }
 
-    impl MonoidAction<Op> for Act {
+    impl Action<Op> for Act {
         fn act(&self, f: &Self::Value, x: &<Op as Monoid>::Value) -> <Op as Monoid>::Value {
             x + f
         }

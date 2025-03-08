@@ -3,7 +3,7 @@ use crate::ops::monoid::Monoid;
 /// モノイドに対する作用
 /// 作用としてのモノイドの演算`op(g, f)`では合成作用$g \circ f$を計算する
 /// ($h(x)=f(g(x))$となる$h$を求める)
-pub trait MonoidAction<Operand>: Monoid
+pub trait Action<Operand>: Monoid
 where
     Operand: Monoid,
 {
