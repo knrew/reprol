@@ -109,6 +109,17 @@ impl<O: Group> PotentializedDsu<O> {
         self.op.op(&pv, &self.op.inv(&pu))
     }
 
+    /// 連結成分を列挙する
+    pub fn components(&mut self) -> impl Iterator<Item = Vec<usize>> {
+        let n = self.parents.len();
+        let mut components = vec![vec![]; n];
+        for v in 0..n {
+            components[self.find(v)].push(v);
+        }
+        components.retain(|c| !c.is_empty());
+        components.into_iter()
+    }
+
     /// 連結成分の個数
     pub fn num_components(&self) -> usize {
         self.num_components
