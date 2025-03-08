@@ -1,6 +1,7 @@
 use crate::ops::monoid::Monoid;
 
 /// 群
+/// 逆元を持つモノイド
 pub trait Group: Monoid {
     /// 逆元$x^{-1}$を返す
     /// 単位元を$e$として，任意の元$x$に対して，元$x^{-1}$が存在して，
