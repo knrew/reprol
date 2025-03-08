@@ -17,7 +17,6 @@ impl Dsu {
 
     /// xのrootのindexを返す
     pub fn find(&mut self, v: usize) -> usize {
-        assert!(v < self.parents.len());
         if self.parents[v] == v {
             return v;
         }
@@ -28,9 +27,6 @@ impl Dsu {
 
     /// xが属するグループとyが属するグループを統合する
     pub fn merge(&mut self, u: usize, v: usize) {
-        assert!(u < self.parents.len());
-        assert!(v < self.parents.len());
-
         let mut u = self.find(u);
         let mut v = self.find(v);
 
@@ -38,26 +34,22 @@ impl Dsu {
             return;
         }
 
-        self.num_components -= 1;
-
         if self.sizes[u] < self.sizes[v] {
             swap(&mut u, &mut v);
         }
 
         self.sizes[u] += self.sizes[v];
         self.parents[v] = u;
+        self.num_components -= 1;
     }
 
     /// xとyが同じグループに属すか
     pub fn connected(&mut self, u: usize, v: usize) -> bool {
-        assert!(u < self.parents.len());
-        assert!(v < self.parents.len());
         self.find(u) == self.find(v)
     }
 
     /// xが属するグループの要素数
     pub fn size(&mut self, v: usize) -> usize {
-        assert!(v < self.parents.len());
         let v = self.find(v);
         self.sizes[v]
     }

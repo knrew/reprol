@@ -1,3 +1,5 @@
+//! NOTE: potential取得前のfindいらないのでは？　要検証
+
 use std::mem::swap;
 
 use crate::ops::group::Group;
@@ -48,22 +50,22 @@ impl<O: Group> PotentializedDsu<O> {
     /// 既存のポテンシャルと矛盾があれば，もとのポテンシャルを維持して返り値としてfalseを返す
     pub fn merge(&mut self, u: usize, v: usize, d: O::Value) -> bool
     where
-        O::Value: Clone + PartialEq,
+        O::Value: PartialEq,
     {
         let mut w = {
-            let pu = self.potential(u);
-            let pv = self.potential(v);
-            self.op.op(&self.op.op(&d, &pu), &self.op.inv(&pv))
+            let _ = self.find(u);
+            let _ = self.find(v);
+            let pu = &self.potentials[u];
+            let pv = &self.potentials[v];
+            self.op.op(&self.op.op(&d, pu), &self.op.inv(pv))
         };
 
         let mut u = self.find(u);
         let mut v = self.find(v);
 
         if u == v {
-            return self.difference_potential(u, v) == w;
+            return self.diff_potential(u, v) == w;
         }
-
-        self.num_components -= 1;
 
         if self.sizes[u] < self.sizes[v] {
             swap(&mut u, &mut v);
@@ -73,6 +75,7 @@ impl<O: Group> PotentializedDsu<O> {
         self.sizes[u] += self.sizes[v];
         self.parents[v] = u;
         self.potentials[v] = w;
+        self.num_components -= 1;
 
         true
     }
@@ -89,24 +92,20 @@ impl<O: Group> PotentializedDsu<O> {
     }
 
     /// vに置かれたポテンシャル
-    pub fn potential(&mut self, v: usize) -> O::Value
-    where
-        O::Value: Clone,
-    {
+    pub fn potential(&mut self, v: usize) -> &O::Value {
         let _ = self.find(v);
-        self.potentials[v].clone()
+        &self.potentials[v]
     }
 
     /// uとvのポテンシャルの差
     /// potential[v] - potential[u]
-    pub fn difference_potential(&mut self, u: usize, v: usize) -> O::Value
-    where
-        O::Value: Clone,
-    {
+    pub fn diff_potential(&mut self, u: usize, v: usize) -> O::Value {
         assert!(self.connected(u, v));
-        let pv = self.potential(v);
-        let pu = self.potential(u);
-        self.op.op(&pv, &self.op.inv(&pu))
+        let _ = self.find(u);
+        let _ = self.find(v);
+        let pu = &self.potentials[u];
+        let pv = &self.potentials[v];
+        self.op.op(pv, &self.op.inv(pu))
     }
 
     /// 連結成分を列挙する
@@ -167,7 +166,7 @@ mod tests {
                 }
                 &DifferencePotential(u, v) => {
                     if dsu.connected(u, v) {
-                        res.push(dsu.difference_potential(u, v));
+                        res.push(dsu.diff_potential(u, v));
                     } else {
                         res.push(-1)
                     }
