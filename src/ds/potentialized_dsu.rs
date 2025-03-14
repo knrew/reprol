@@ -1,5 +1,3 @@
-//! NOTE: potential取得前のfindいらないのでは？　要検証
-
 use std::mem::swap;
 
 use crate::ops::group::Group;

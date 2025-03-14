@@ -41,7 +41,6 @@ where
 trait Integer {
     fn zero() -> Self;
     fn add_(self, rhs: Self) -> Self;
-    fn neg_(self) -> Self;
 }
 
 macro_rules! impl_unsigned {
@@ -54,10 +53,6 @@ macro_rules! impl_unsigned {
             #[inline]
             fn add_(self, rhs: Self) -> Self {
                 self + rhs
-            }
-            #[inline]
-            fn neg_(self) -> Self{
-                -self
             }
         }
     )*};
@@ -76,10 +71,6 @@ macro_rules! impl_signed {
             fn add_(self, rhs: Self) -> Self {
                 self.wrapping_add(rhs)
             }
-            #[inline]
-            fn neg_(self) -> Self{
-                self.wrapping_neg()
-            }
         }
     )*};
 }
@@ -94,9 +85,5 @@ impl<const P: u64> Integer for ModInt<P> {
     #[inline]
     fn add_(self, rhs: Self) -> Self {
         self + rhs
-    }
-    #[inline]
-    fn neg_(self) -> Self {
-        -self
     }
 }
