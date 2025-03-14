@@ -1,4 +1,7 @@
 //! AVL木によるordered setの実装
+//! # NOTE
+//! - rangeの計算量が悪い
+//! - (全体のk番目は取得できるが)指定した範囲のk番目を取得できない(逆も然り)
 
 use std::{
     borrow::Borrow,
@@ -136,26 +139,26 @@ fn traverse<T>(
     node: Link<T>,
     mut preorder_f: impl FnMut(NodePtr<T>),
     mut inorder_f: impl FnMut(NodePtr<T>),
-    mut post_order_f: impl FnMut(NodePtr<T>),
+    mut postorder_f: impl FnMut(NodePtr<T>),
 ) {
     fn traverse<T>(
         node: Link<T>,
         preorder_f: &mut impl FnMut(NodePtr<T>),
         inorder_f: &mut impl FnMut(NodePtr<T>),
-        post_order_f: &mut impl FnMut(NodePtr<T>),
+        postorder_f: &mut impl FnMut(NodePtr<T>),
     ) {
         if let Some(node) = node {
             let left = unsafe { node.as_ref() }.left;
             let right = unsafe { node.as_ref() }.right;
             preorder_f(node);
-            traverse(left, preorder_f, inorder_f, post_order_f);
+            traverse(left, preorder_f, inorder_f, postorder_f);
             inorder_f(node);
-            traverse(right, preorder_f, inorder_f, post_order_f);
-            post_order_f(node);
+            traverse(right, preorder_f, inorder_f, postorder_f);
+            postorder_f(node);
         }
     }
 
-    traverse(node, &mut preorder_f, &mut inorder_f, &mut post_order_f);
+    traverse(node, &mut preorder_f, &mut inorder_f, &mut postorder_f);
 }
 
 #[allow(unused)]
@@ -589,6 +592,7 @@ impl<T> Drop for IntoIter<T> {
     }
 }
 
+// TODO: 全部走査しているので効率が悪い
 pub struct RangeIter<'a, T, B> {
     stack_left: Vec<&'a NodePtr<T>>,
     stack_right: Vec<&'a NodePtr<T>>,
@@ -869,6 +873,7 @@ mod tests {
         let st = AvlTreeSet::from([2, 4, 6, 8, 10, 12, 14, 16]);
         assert!(st.range(3..11).copied().eq([4, 6, 8, 10]));
         assert!(st.range(3..11).rev().copied().eq([10, 8, 6, 4]));
+        assert!(st.range(4..7).copied().eq([4, 6]));
     }
 
     #[test]
