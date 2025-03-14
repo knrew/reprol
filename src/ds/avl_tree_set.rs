@@ -6,6 +6,7 @@ use std::{
     fmt::Debug,
     hash::Hash,
     mem::{swap, take},
+    ops::{self},
     ptr::NonNull,
 };
 
@@ -130,42 +131,6 @@ fn balance<T>(root: &mut Link<T>) {
     }
 }
 
-/// rootに新しいノードを挿入する
-/// すでにnew_nodeと同じ値のノードが存在する場合は挿入せずnew_nodeのメモリを開放する
-fn insert_node<T: Ord>(root: &mut Link<T>, new_node: NodePtr<T>) -> bool {
-    fn insert<T: Ord>(root: &mut Link<T>, mut new_node: NodePtr<T>) -> bool {
-        if let Some(node) = root.map(|mut node| unsafe { node.as_mut() }) {
-            match unsafe { new_node.as_ref().key.borrow() }.cmp(&node.key) {
-                Ordering::Equal => {
-                    free(new_node);
-                    return false;
-                }
-                Ordering::Less => {
-                    if !insert(&mut node.left, new_node) {
-                        return false;
-                    }
-                }
-                Ordering::Greater => {
-                    if !insert(&mut node.right, new_node) {
-                        return false;
-                    }
-                }
-            }
-            balance(root);
-        } else {
-            unsafe {
-                new_node.as_mut().left = None;
-                new_node.as_mut().right = None;
-            }
-            *root = Some(new_node);
-        }
-
-        true
-    }
-
-    insert(root, new_node)
-}
-
 #[allow(unused)]
 fn traverse<T>(
     node: Link<T>,
@@ -209,6 +174,117 @@ fn traverse_inorder<T>(node: Link<T>, f: impl FnMut(NodePtr<T>)) {
 #[inline]
 fn traverse_postorder<T>(node: Link<T>, f: impl FnMut(NodePtr<T>)) {
     traverse(node, |_| {}, |_| {}, f);
+}
+
+/// rootに新しいノードを挿入する
+/// すでにnew_nodeと同じ値のノードが存在する場合は挿入せずnew_nodeのメモリを開放する
+fn insert_node<T: Ord>(root: &mut Link<T>, new_node: NodePtr<T>) -> bool {
+    fn insert<T: Ord>(root: &mut Link<T>, mut new_node: NodePtr<T>) -> bool {
+        if let Some(node) = root.map(|mut node| unsafe { node.as_mut() }) {
+            match unsafe { new_node.as_ref().key.borrow() }.cmp(&node.key) {
+                Ordering::Equal => {
+                    free(new_node);
+                    return false;
+                }
+                Ordering::Less => {
+                    if !insert(&mut node.left, new_node) {
+                        return false;
+                    }
+                }
+                Ordering::Greater => {
+                    if !insert(&mut node.right, new_node) {
+                        return false;
+                    }
+                }
+            }
+            balance(root);
+        } else {
+            unsafe {
+                new_node.as_mut().left = None;
+                new_node.as_mut().right = None;
+            }
+            *root = Some(new_node);
+        }
+
+        true
+    }
+
+    insert(root, new_node)
+}
+
+fn get_nth<'a, T>(root: &'a Link<T>, mut n: usize) -> Option<&'a T> {
+    let mut cur = root;
+    while let Some(node) = cur.map(|node| unsafe { node.as_ref() }) {
+        let left_len = node_len(node.left);
+        if n == left_len {
+            return Some(&node.key);
+        } else if n < left_len {
+            cur = &node.left;
+        } else {
+            cur = &node.right;
+            n -= left_len + 1;
+        }
+    }
+    None
+}
+
+/// r未満の要素のうち、昇順n番目の要素を返す
+/// NOTE: get_nthを統合するか
+fn get_nth_to<'a, T: Ord>(root: &'a Link<T>, mut n: usize, r: Option<&T>) -> Option<&'a T> {
+    let mut cur = root;
+    while let Some(node) = cur.map(|node| unsafe { node.as_ref() }) {
+        match r {
+            Some(r) if &node.key >= r => {
+                return None;
+            }
+            _ => {}
+        }
+        let left_len = node_len(node.left);
+        if n == left_len {
+            return Some(&node.key);
+        } else if n < left_len {
+            cur = &node.left;
+        } else {
+            cur = &node.right;
+            n -= left_len + 1;
+        }
+    }
+    None
+}
+
+fn get_nth_back<'a, T>(root: &'a Link<T>, mut n: usize) -> Option<&'a T> {
+    let mut cur = root;
+    while let Some(node) = cur.map(|node| unsafe { node.as_ref() }) {
+        let right_len = node_len(node.right);
+        if n == right_len {
+            return Some(&node.key);
+        } else if n < right_len {
+            cur = &node.right;
+        } else {
+            cur = &node.left;
+            n -= right_len + 1;
+        }
+    }
+    None
+}
+
+/// key以上で最小の要素を持つノードを返す
+#[allow(unused)]
+fn lower_bound<'a, T: Ord>(root: &'a Link<T>, key: &T) -> &'a Link<T> {
+    let mut cur = root;
+    let mut res = &None;
+
+    while let Some(node) = cur.map(|node| unsafe { node.as_ref() }) {
+        match key.cmp(&node.key) {
+            Ordering::Equal | Ordering::Less => {
+                res = cur;
+                cur = &node.left;
+            }
+            _ => cur = &node.right,
+        }
+    }
+
+    res
 }
 
 /// AVL木によるordered setの実装
@@ -334,37 +410,20 @@ impl<T> AvlTreeSet<T> {
     }
 
     /// 昇順n番目の要素
-    pub fn get_nth(&self, mut n: usize) -> Option<&T> {
-        let mut cur = &self.root;
-        while let Some(node) = cur.map(|node| unsafe { node.as_ref() }) {
-            let left_len = node_len(node.left);
-            if n == left_len {
-                return Some(&node.key);
-            } else if n < left_len {
-                cur = &node.left;
-            } else {
-                cur = &node.right;
-                n -= left_len + 1;
-            }
-        }
-        None
+    pub fn get_nth(&self, n: usize) -> Option<&T> {
+        get_nth(&self.root, n)
     }
 
     /// 降順n番目の要素
-    pub fn get_nth_back(&self, mut n: usize) -> Option<&T> {
-        let mut cur = &self.root;
-        while let Some(node) = cur.map(|node| unsafe { node.as_ref() }) {
-            let right_len = node_len(node.right);
-            if n == right_len {
-                return Some(&node.key);
-            } else if n < right_len {
-                cur = &node.right;
-            } else {
-                cur = &node.left;
-                n -= right_len + 1;
-            }
-        }
-        None
+    pub fn get_nth_back(&self, n: usize) -> Option<&T> {
+        get_nth_back(&self.root, n)
+    }
+
+    pub fn range(&self, range: ops::Range<T>) -> RangeIter<T>
+    where
+        T: Ord,
+    {
+        RangeIter::new(&self.root, range)
     }
 
     /// NOTE: 2つのAVL木の要素数をN, Mに対してO(min(N+M)log N)
@@ -599,6 +658,70 @@ impl<T> Drop for IntoIter<T> {
     }
 }
 
+// TODO: Range -> RangeBounds
+pub struct RangeIter<'a, T> {
+    stack_left: Vec<&'a NodePtr<T>>,
+    stack_right: Vec<&'a NodePtr<T>>,
+    range: ops::Range<T>,
+}
+
+impl<'a, T: Ord> RangeIter<'a, T> {
+    fn new(root: &'a Link<T>, range: ops::Range<T>) -> Self {
+        let mut iter = Self {
+            stack_left: vec![],
+            stack_right: vec![],
+            range,
+        };
+        iter.push_left(root);
+        iter.push_right(root);
+        iter
+    }
+
+    fn push_left(&mut self, mut node: &'a Link<T>) {
+        while let Some(n) = node {
+            let key = unsafe { n.as_ref() }.key.borrow();
+            if key < &self.range.start {
+                break;
+            };
+            if key < &self.range.end {
+                self.stack_left.push(n);
+            }
+            node = &unsafe { n.as_ref() }.left;
+        }
+    }
+
+    fn push_right(&mut self, mut node: &'a Link<T>) {
+        while let Some(n) = node {
+            let key = unsafe { n.as_ref() }.key.borrow();
+            if key >= &self.range.end {
+                break;
+            }
+            if key >= &self.range.start {
+                self.stack_right.push(n);
+            }
+            node = &unsafe { n.as_ref() }.right;
+        }
+    }
+}
+
+impl<'a, T: Ord> Iterator for RangeIter<'a, T> {
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let node = unsafe { self.stack_left.pop()?.as_ref() };
+        self.push_left(&node.right);
+        Some(&node.key)
+    }
+}
+
+impl<'a, T: Ord> DoubleEndedIterator for RangeIter<'a, T> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        let node = unsafe { self.stack_right.pop()?.as_ref() };
+        self.push_right(&node.left);
+        Some(&node.key)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use rand::thread_rng;
@@ -720,6 +843,37 @@ mod tests {
         let tree2 = tree1.split_off(&10);
         assert!(tree1.is_empty());
         assert!(tree2.is_empty());
+    }
+
+    #[test]
+    fn test_range() {
+        let st = AvlTreeSet::from([1, 2, 3, 4, 5]);
+        assert!(st.range(2..5).copied().eq([2, 3, 4]));
+        assert!(st.range(2..5).rev().copied().eq([4, 3, 2]));
+
+        let st = AvlTreeSet::from([1, 3, 5]);
+        assert!(st.range(2..3).copied().eq([]));
+        assert!(st.range(2..3).rev().copied().eq([]));
+
+        let st = AvlTreeSet::from([1, 2, 3]);
+        assert!(st.range(1..4).copied().eq([1, 2, 3]));
+        assert!(st.range(1..4).rev().copied().eq([3, 2, 1]));
+
+        let st = AvlTreeSet::from([2, 4, 6, 8]);
+        assert!(st.range(3..7).copied().eq([4, 6]));
+        assert!(st.range(3..7).rev().copied().eq([6, 4]));
+
+        let st = AvlTreeSet::from([1, 3, 5, 7]);
+        assert!(st.range(2..6).copied().eq([3, 5]));
+        assert!(st.range(2..6).rev().copied().eq([5, 3]));
+
+        let st = AvlTreeSet::from([10, 20, 30]);
+        assert!(st.range(40..50).copied().eq([]));
+        assert!(st.range(40..50).rev().copied().eq([]));
+
+        let st = AvlTreeSet::from([5, 10, 15]);
+        assert!(st.range(10..11).copied().eq([10]));
+        assert!(st.range(10..11).rev().copied().eq([10]));
     }
 
     #[test]
