@@ -3,10 +3,10 @@
 use std::{
     borrow::Borrow,
     cmp::Ordering,
-    fmt::Debug,
+    fmt::{Debug, Display},
     hash::Hash,
     mem::{swap, take},
-    ops::{self},
+    ops::{Bound, RangeBounds},
     ptr::NonNull,
 };
 
@@ -419,7 +419,7 @@ impl<T> AvlTreeSet<T> {
         get_nth_back(&self.root, n)
     }
 
-    pub fn range(&self, range: ops::Range<T>) -> RangeIter<T>
+    pub fn range(&self, range: impl RangeBounds<T>) -> RangeIter<'_, T>
     where
         T: Ord,
     {
@@ -465,8 +465,15 @@ impl<T> AvlTreeSet<T> {
         Self { root: right }
     }
 
-    pub fn iter(&self) -> Iter<'_, T> {
-        Iter::new(&self.root)
+    // pub fn iter(&self) -> Iter<'_, T> {
+    //     Iter::new(&self.root)
+    // }
+
+    pub fn iter(&self) -> RangeIter<'_, T>
+    where
+        T: Ord,
+    {
+        RangeIter::new(&self.root, ..)
     }
 }
 
@@ -482,15 +489,15 @@ impl<T> Default for AvlTreeSet<T> {
     }
 }
 
-impl<T: PartialEq> PartialEq for AvlTreeSet<T> {
+impl<T: Ord + PartialEq> PartialEq for AvlTreeSet<T> {
     fn eq(&self, other: &Self) -> bool {
         self.iter().eq(other.iter())
     }
 }
 
-impl<T: Eq> Eq for AvlTreeSet<T> {}
+impl<T: Ord + Eq> Eq for AvlTreeSet<T> {}
 
-impl<T: PartialOrd> PartialOrd for AvlTreeSet<T> {
+impl<T: Ord + PartialOrd> PartialOrd for AvlTreeSet<T> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         self.iter().partial_cmp(other.iter())
     }
@@ -502,14 +509,14 @@ impl<T: Ord> Ord for AvlTreeSet<T> {
     }
 }
 
-impl<T: Hash> Hash for AvlTreeSet<T> {
+impl<T: Ord + Hash> Hash for AvlTreeSet<T> {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.iter().for_each(|item| item.hash(state));
     }
 }
 
-impl<'a, T> IntoIterator for &'a AvlTreeSet<T> {
-    type IntoIter = Iter<'a, T>;
+impl<'a, T: Ord> IntoIterator for &'a AvlTreeSet<T> {
+    type IntoIter = RangeIter<'a, T>;
     type Item = &'a T;
 
     fn into_iter(self) -> Self::IntoIter {
@@ -560,60 +567,60 @@ impl<T: Ord, const N: usize> From<[T; N]> for AvlTreeSet<T> {
     }
 }
 
-impl<T: Debug> Debug for AvlTreeSet<T> {
+impl<T: Ord + Debug> Debug for AvlTreeSet<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_set().entries(self.iter()).finish()
     }
 }
 
-pub struct Iter<'a, T> {
-    stack_left: Vec<&'a NodePtr<T>>,
-    stack_right: Vec<&'a NodePtr<T>>,
-}
+// pub struct Iter<'a, T> {
+//     stack_left: Vec<&'a NodePtr<T>>,
+//     stack_right: Vec<&'a NodePtr<T>>,
+// }
 
-impl<'a, T> Iter<'a, T> {
-    fn new(root: &'a Link<T>) -> Self {
-        let mut iter = Self {
-            stack_left: vec![],
-            stack_right: vec![],
-        };
-        iter.push_left(root);
-        iter.push_right(root);
-        iter
-    }
+// impl<'a, T> Iter<'a, T> {
+//     fn new(root: &'a Link<T>) -> Self {
+//         let mut iter = Self {
+//             stack_left: vec![],
+//             stack_right: vec![],
+//         };
+//         iter.push_left(root);
+//         iter.push_right(root);
+//         iter
+//     }
 
-    fn push_left(&mut self, mut node: &'a Link<T>) {
-        while let Some(n) = node {
-            self.stack_left.push(n);
-            node = &unsafe { n.as_ref() }.left;
-        }
-    }
+//     fn push_left(&mut self, mut node: &'a Link<T>) {
+//         while let Some(n) = node {
+//             self.stack_left.push(n);
+//             node = &unsafe { n.as_ref() }.left;
+//         }
+//     }
 
-    fn push_right(&mut self, mut node: &'a Link<T>) {
-        while let Some(n) = node {
-            self.stack_right.push(n);
-            node = &unsafe { n.as_ref() }.right;
-        }
-    }
-}
+//     fn push_right(&mut self, mut node: &'a Link<T>) {
+//         while let Some(n) = node {
+//             self.stack_right.push(n);
+//             node = &unsafe { n.as_ref() }.right;
+//         }
+//     }
+// }
 
-impl<'a, T> Iterator for Iter<'a, T> {
-    type Item = &'a T;
+// impl<'a, T> Iterator for Iter<'a, T> {
+//     type Item = &'a T;
 
-    fn next(&mut self) -> Option<Self::Item> {
-        let node = unsafe { self.stack_left.pop()?.as_ref() };
-        self.push_left(&node.right);
-        Some(&node.key)
-    }
-}
+//     fn next(&mut self) -> Option<Self::Item> {
+//         let node = unsafe { self.stack_left.pop()?.as_ref() };
+//         self.push_left(&node.right);
+//         Some(&node.key)
+//     }
+// }
 
-impl<'a, T> DoubleEndedIterator for Iter<'a, T> {
-    fn next_back(&mut self) -> Option<Self::Item> {
-        let node = unsafe { self.stack_right.pop()?.as_ref() };
-        self.push_right(&node.left);
-        Some(&node.key)
-    }
-}
+// impl<'a, T> DoubleEndedIterator for Iter<'a, T> {
+//     fn next_back(&mut self) -> Option<Self::Item> {
+//         let node = unsafe { self.stack_right.pop()?.as_ref() };
+//         self.push_right(&node.left);
+//         Some(&node.key)
+//     }
+// }
 
 // TODO: ???
 pub struct IntoIter<T> {
@@ -658,48 +665,92 @@ impl<T> Drop for IntoIter<T> {
     }
 }
 
-// TODO: Range -> RangeBounds
+// TODO: remove Clone
 pub struct RangeIter<'a, T> {
     stack_left: Vec<&'a NodePtr<T>>,
     stack_right: Vec<&'a NodePtr<T>>,
-    range: ops::Range<T>,
+    min_node: Option<&'a NodePtr<T>>,
+    max_node: Option<&'a NodePtr<T>>,
 }
 
 impl<'a, T: Ord> RangeIter<'a, T> {
-    fn new(root: &'a Link<T>, range: ops::Range<T>) -> Self {
-        let mut iter = Self {
-            stack_left: vec![],
-            stack_right: vec![],
-            range,
-        };
-        iter.push_left(root);
-        iter.push_right(root);
-        iter
-    }
+    fn new(root: &'a Link<T>, range: impl RangeBounds<T>) -> Self {
+        let mut stack_left = vec![];
+        let mut min_node = None;
+        {
+            let mut node = root;
+            while let Some(raw_node) = node {
+                let key = unsafe { raw_node.as_ref() }.key.borrow();
 
-    fn push_left(&mut self, mut node: &'a Link<T>) {
-        while let Some(n) = node {
-            let key = unsafe { n.as_ref() }.key.borrow();
-            if key < &self.range.start {
-                break;
-            };
-            if key < &self.range.end {
-                self.stack_left.push(n);
+                match &range.start_bound() {
+                    Bound::Included(start) if key < start => {
+                        node = &unsafe { raw_node.as_ref() }.right;
+                        continue;
+                    }
+                    Bound::Excluded(start) if key <= start => {
+                        node = &unsafe { raw_node.as_ref() }.right;
+                        continue;
+                    }
+                    _ => {}
+                }
+
+                match &range.end_bound() {
+                    Bound::Included(end) if key > end => {
+                        break;
+                    }
+                    Bound::Excluded(end) if key >= end => {
+                        break;
+                    }
+                    _ => {}
+                }
+
+                stack_left.push(raw_node);
+                min_node = Some(raw_node);
+                node = &unsafe { raw_node.as_ref() }.left;
             }
-            node = &unsafe { n.as_ref() }.left;
         }
-    }
 
-    fn push_right(&mut self, mut node: &'a Link<T>) {
-        while let Some(n) = node {
-            let key = unsafe { n.as_ref() }.key.borrow();
-            if key >= &self.range.end {
-                break;
+        let mut stack_right = vec![];
+        let mut max_node = None;
+        {
+            let mut node = root;
+
+            while let Some(raw_node) = node {
+                let key = unsafe { raw_node.as_ref() }.key.borrow();
+
+                match &range.end_bound() {
+                    Bound::Excluded(end) if key >= end => {
+                        node = &unsafe { raw_node.as_ref() }.left;
+                        continue;
+                    }
+                    Bound::Included(end) if key > end => {
+                        node = &unsafe { raw_node.as_ref() }.left;
+                        continue;
+                    }
+                    _ => {}
+                }
+
+                match &range.start_bound() {
+                    Bound::Included(start) if key < start => {
+                        break;
+                    }
+                    Bound::Excluded(start) if key <= start => {
+                        break;
+                    }
+                    _ => {}
+                }
+
+                stack_right.push(raw_node);
+                max_node = Some(raw_node);
+                node = &unsafe { raw_node.as_ref() }.right;
             }
-            if key >= &self.range.start {
-                self.stack_right.push(n);
-            }
-            node = &unsafe { n.as_ref() }.right;
+        }
+
+        Self {
+            stack_left,
+            stack_right,
+            min_node,
+            max_node,
         }
     }
 }
@@ -708,17 +759,115 @@ impl<'a, T: Ord> Iterator for RangeIter<'a, T> {
     type Item = &'a T;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let node = unsafe { self.stack_left.pop()?.as_ref() };
-        self.push_left(&node.right);
-        Some(&node.key)
+        let res = unsafe { self.stack_left.pop()?.as_ref() };
+
+        let mut cur = &res.right;
+        while let Some(raw_node) = cur {
+            let key = unsafe { raw_node.as_ref() }.key.borrow();
+
+            if let Some(min_key) = self
+                .min_node
+                .map(|node| unsafe { node.as_ref() }.key.borrow())
+            {
+                if key < &min_key {
+                    cur = &unsafe { raw_node.as_ref() }.right;
+                    continue;
+                }
+            }
+            if let Some(max_key) = self
+                .max_node
+                .map(|node| unsafe { node.as_ref() }.key.borrow())
+            {
+                if key > &max_key {
+                    break;
+                }
+            }
+
+            self.stack_left.push(raw_node);
+            cur = &unsafe { raw_node.as_ref() }.left;
+        }
+
+        Some(&res.key)
     }
 }
 
 impl<'a, T: Ord> DoubleEndedIterator for RangeIter<'a, T> {
     fn next_back(&mut self) -> Option<Self::Item> {
-        let node = unsafe { self.stack_right.pop()?.as_ref() };
-        self.push_right(&node.left);
-        Some(&node.key)
+        let res = unsafe { self.stack_right.pop()?.as_ref() };
+
+        let mut node = &res.left;
+        while let Some(raw_node) = node {
+            let key = unsafe { raw_node.as_ref() }.key.borrow();
+
+            if let Some(max_key) = self
+                .max_node
+                .map(|node| unsafe { node.as_ref() }.key.borrow())
+            {
+                if key > &max_key {
+                    node = &unsafe { raw_node.as_ref() }.left;
+                    continue;
+                }
+            }
+
+            if let Some(min_key) = self
+                .min_node
+                .map(|node| unsafe { node.as_ref() }.key.borrow())
+            {
+                if key < &min_key {
+                    break;
+                }
+            }
+
+            self.stack_right.push(raw_node);
+            node = &unsafe { raw_node.as_ref() }.right;
+        }
+
+        Some(&res.key)
+    }
+}
+
+/// デバッグ用
+#[allow(unused)]
+fn visualize<T: Display>(root: Link<T>) {
+    fn visualize<T: Display>(
+        node: Link<T>,
+        prefix: &str,
+        is_root: bool,
+        is_last: bool,
+        res: &mut String,
+    ) {
+        if let Some(node) = node.map(|node| unsafe { node.as_ref() }) {
+            if is_root {
+                *res += &format!("{}\n", node.key);
+            } else {
+                *res += &format!(
+                    "{}{}{}\n",
+                    prefix,
+                    if is_last { "└── " } else { "├── " },
+                    node.key
+                );
+            }
+
+            let new_prefix = if is_root {
+                String::new()
+            } else {
+                format!("{}{}", prefix, if is_last { "    " } else { "│   " })
+            };
+
+            visualize(node.right, &new_prefix, false, node.left.is_none(), res);
+            visualize(node.left, &new_prefix, false, true, res);
+        }
+    }
+
+    let mut res = String::new();
+    visualize(root, "", true, true, &mut res);
+    println!("{}", res);
+}
+
+impl<T: Display> AvlTreeSet<T> {
+    #[allow(unused)]
+    pub fn visualize(&self) {
+        visualize(self.root);
     }
 }
 
@@ -874,6 +1023,11 @@ mod tests {
         let st = AvlTreeSet::from([5, 10, 15]);
         assert!(st.range(10..11).copied().eq([10]));
         assert!(st.range(10..11).rev().copied().eq([10]));
+
+        let st = AvlTreeSet::from([2, 4, 6, 8, 10]);
+        assert!(st.range(..).copied().eq([2, 4, 6, 8, 10]));
+        assert!(st.range(..=8).copied().eq([2, 4, 6, 8]));
+        assert!(st.range(4..).copied().eq([4, 6, 8, 10]));
     }
 
     #[test]
