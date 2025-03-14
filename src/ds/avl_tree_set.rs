@@ -212,62 +212,6 @@ fn insert_node<T: Ord>(root: &mut Link<T>, new_node: NodePtr<T>) -> bool {
     insert(root, new_node)
 }
 
-fn get_nth<'a, T>(root: &'a Link<T>, mut n: usize) -> Option<&'a T> {
-    let mut cur = root;
-    while let Some(node) = cur.map(|node| unsafe { node.as_ref() }) {
-        let left_len = node_len(node.left);
-        if n == left_len {
-            return Some(&node.key);
-        } else if n < left_len {
-            cur = &node.left;
-        } else {
-            cur = &node.right;
-            n -= left_len + 1;
-        }
-    }
-    None
-}
-
-/// r未満の要素のうち、昇順n番目の要素を返す
-/// NOTE: get_nthを統合するか
-fn get_nth_to<'a, T: Ord>(root: &'a Link<T>, mut n: usize, r: Option<&T>) -> Option<&'a T> {
-    let mut cur = root;
-    while let Some(node) = cur.map(|node| unsafe { node.as_ref() }) {
-        match r {
-            Some(r) if &node.key >= r => {
-                return None;
-            }
-            _ => {}
-        }
-        let left_len = node_len(node.left);
-        if n == left_len {
-            return Some(&node.key);
-        } else if n < left_len {
-            cur = &node.left;
-        } else {
-            cur = &node.right;
-            n -= left_len + 1;
-        }
-    }
-    None
-}
-
-fn get_nth_back<'a, T>(root: &'a Link<T>, mut n: usize) -> Option<&'a T> {
-    let mut cur = root;
-    while let Some(node) = cur.map(|node| unsafe { node.as_ref() }) {
-        let right_len = node_len(node.right);
-        if n == right_len {
-            return Some(&node.key);
-        } else if n < right_len {
-            cur = &node.right;
-        } else {
-            cur = &node.left;
-            n -= right_len + 1;
-        }
-    }
-    None
-}
-
 /// key以上で最小の要素を持つノードを返す
 #[allow(unused)]
 fn lower_bound<'a, T: Ord>(root: &'a Link<T>, key: &T) -> &'a Link<T> {
@@ -410,16 +354,22 @@ impl<T> AvlTreeSet<T> {
     }
 
     /// 昇順n番目の要素
-    pub fn get_nth(&self, n: usize) -> Option<&T> {
-        get_nth(&self.root, n)
+    pub fn get_nth<'a>(&'a self, n: usize) -> Option<&'a T>
+    where
+        T: Ord,
+    {
+        self.range(..).nth(n)
     }
 
     /// 降順n番目の要素
-    pub fn get_nth_back(&self, n: usize) -> Option<&T> {
-        get_nth_back(&self.root, n)
+    pub fn get_nth_back<'a>(&'a self, n: usize) -> Option<&'a T>
+    where
+        T: Ord,
+    {
+        self.range(..).nth_back(n)
     }
 
-    pub fn range(&self, range: impl RangeBounds<T>) -> RangeIter<'_, T>
+    pub fn range<'a>(&'a self, range: impl RangeBounds<T>) -> RangeIter<'a, T>
     where
         T: Ord,
     {
@@ -464,10 +414,6 @@ impl<T> AvlTreeSet<T> {
         *self = Self { root: left };
         Self { root: right }
     }
-
-    // pub fn iter(&self) -> Iter<'_, T> {
-    //     Iter::new(&self.root)
-    // }
 
     pub fn iter(&self) -> RangeIter<'_, T>
     where
@@ -573,55 +519,6 @@ impl<T: Ord + Debug> Debug for AvlTreeSet<T> {
     }
 }
 
-// pub struct Iter<'a, T> {
-//     stack_left: Vec<&'a NodePtr<T>>,
-//     stack_right: Vec<&'a NodePtr<T>>,
-// }
-
-// impl<'a, T> Iter<'a, T> {
-//     fn new(root: &'a Link<T>) -> Self {
-//         let mut iter = Self {
-//             stack_left: vec![],
-//             stack_right: vec![],
-//         };
-//         iter.push_left(root);
-//         iter.push_right(root);
-//         iter
-//     }
-
-//     fn push_left(&mut self, mut node: &'a Link<T>) {
-//         while let Some(n) = node {
-//             self.stack_left.push(n);
-//             node = &unsafe { n.as_ref() }.left;
-//         }
-//     }
-
-//     fn push_right(&mut self, mut node: &'a Link<T>) {
-//         while let Some(n) = node {
-//             self.stack_right.push(n);
-//             node = &unsafe { n.as_ref() }.right;
-//         }
-//     }
-// }
-
-// impl<'a, T> Iterator for Iter<'a, T> {
-//     type Item = &'a T;
-
-//     fn next(&mut self) -> Option<Self::Item> {
-//         let node = unsafe { self.stack_left.pop()?.as_ref() };
-//         self.push_left(&node.right);
-//         Some(&node.key)
-//     }
-// }
-
-// impl<'a, T> DoubleEndedIterator for Iter<'a, T> {
-//     fn next_back(&mut self) -> Option<Self::Item> {
-//         let node = unsafe { self.stack_right.pop()?.as_ref() };
-//         self.push_right(&node.left);
-//         Some(&node.key)
-//     }
-// }
-
 // TODO: ???
 pub struct IntoIter<T> {
     iter: std::vec::IntoIter<NodePtr<T>>,
@@ -665,7 +562,6 @@ impl<T> Drop for IntoIter<T> {
     }
 }
 
-// TODO: remove Clone
 pub struct RangeIter<'a, T> {
     stack_left: Vec<&'a NodePtr<T>>,
     stack_right: Vec<&'a NodePtr<T>>,
@@ -752,6 +648,20 @@ impl<'a, T: Ord> RangeIter<'a, T> {
             min_node,
             max_node,
         }
+    }
+
+    pub fn nth(&mut self, n: usize) -> Option<&'a T> {
+        for _ in 0..n {
+            self.next()?;
+        }
+        self.next()
+    }
+
+    pub fn nth_back(&mut self, n: usize) -> Option<&'a T> {
+        for _ in 0..n {
+            self.next_back()?;
+        }
+        self.next_back()
     }
 }
 
