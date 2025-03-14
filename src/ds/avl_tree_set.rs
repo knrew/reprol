@@ -6,7 +6,7 @@ use std::{
     fmt::{Debug, Display},
     hash::Hash,
     mem::{swap, take},
-    ops::{Bound, RangeBounds},
+    ops::{Bound, RangeBounds, RangeFull},
     ptr::NonNull,
 };
 
@@ -177,7 +177,7 @@ fn traverse_postorder<T>(node: Link<T>, f: impl FnMut(NodePtr<T>)) {
 }
 
 /// rootに新しいノードを挿入する
-/// すでにnew_nodeと同じ値のノードが存在する場合は挿入せずnew_nodeのメモリを開放する
+/// すでにnew_nodeと同じ値のノードが存在する場合は挿入せずnew_nodeのメモリを解放する
 fn insert_node<T: Ord>(root: &mut Link<T>, new_node: NodePtr<T>) -> bool {
     fn insert<T: Ord>(root: &mut Link<T>, mut new_node: NodePtr<T>) -> bool {
         if let Some(node) = root.map(|mut node| unsafe { node.as_mut() }) {
@@ -210,25 +210,6 @@ fn insert_node<T: Ord>(root: &mut Link<T>, new_node: NodePtr<T>) -> bool {
     }
 
     insert(root, new_node)
-}
-
-/// key以上で最小の要素を持つノードを返す
-#[allow(unused)]
-fn lower_bound<'a, T: Ord>(root: &'a Link<T>, key: &T) -> &'a Link<T> {
-    let mut cur = root;
-    let mut res = &None;
-
-    while let Some(node) = cur.map(|node| unsafe { node.as_ref() }) {
-        match key.cmp(&node.key) {
-            Ordering::Equal | Ordering::Less => {
-                res = cur;
-                cur = &node.left;
-            }
-            _ => cur = &node.right,
-        }
-    }
-
-    res
 }
 
 /// AVL木によるordered setの実装
@@ -354,24 +335,70 @@ impl<T> AvlTreeSet<T> {
     }
 
     /// 昇順n番目の要素
-    pub fn get_nth<'a>(&'a self, n: usize) -> Option<&'a T>
+    pub fn get_nth(&self, mut n: usize) -> Option<&T>
     where
         T: Ord,
     {
-        self.range(..).nth(n)
+        let mut cur = &self.root;
+        while let Some(node) = cur.map(|node| unsafe { node.as_ref() }) {
+            let left_len = node_len(node.left);
+            if n == left_len {
+                return Some(&node.key);
+            } else if n < left_len {
+                cur = &node.left;
+            } else {
+                cur = &node.right;
+                n -= left_len + 1;
+            }
+        }
+        None
     }
 
     /// 降順n番目の要素
-    pub fn get_nth_back<'a>(&'a self, n: usize) -> Option<&'a T>
+    pub fn get_nth_back(&self, mut n: usize) -> Option<&T>
     where
         T: Ord,
     {
-        self.range(..).nth_back(n)
+        let mut cur = &self.root;
+        while let Some(node) = cur.map(|node| unsafe { node.as_ref() }) {
+            let right_len = node_len(node.right);
+            if n == right_len {
+                return Some(&node.key);
+            } else if n < right_len {
+                cur = &node.right;
+            } else {
+                cur = &node.left;
+                n -= right_len + 1;
+            }
+        }
+        None
     }
 
-    pub fn range<'a>(&'a self, range: impl RangeBounds<T>) -> RangeIter<'a, T>
+    // key以上最小の要素
+    pub fn lower_bound(&self, key: &T) -> Option<&T>
     where
         T: Ord,
+    {
+        let mut cur = &self.root;
+        let mut res = None;
+
+        while let Some(node) = cur.map(|node| unsafe { node.as_ref() }) {
+            match key.cmp(&node.key) {
+                Ordering::Equal | Ordering::Less => {
+                    res = cur.map(|node| &unsafe { node.as_ref() }.key);
+                    cur = &node.left;
+                }
+                _ => cur = &node.right,
+            }
+        }
+
+        res
+    }
+
+    pub fn range<'a, B>(&'a self, range: B) -> RangeIter<'a, T, B>
+    where
+        T: Ord,
+        B: RangeBounds<T>,
     {
         RangeIter::new(&self.root, range)
     }
@@ -415,7 +442,7 @@ impl<T> AvlTreeSet<T> {
         Self { root: right }
     }
 
-    pub fn iter(&self) -> RangeIter<'_, T>
+    pub fn iter(&self) -> RangeIter<'_, T, RangeFull>
     where
         T: Ord,
     {
@@ -462,7 +489,7 @@ impl<T: Ord + Hash> Hash for AvlTreeSet<T> {
 }
 
 impl<'a, T: Ord> IntoIterator for &'a AvlTreeSet<T> {
-    type IntoIter = RangeIter<'a, T>;
+    type IntoIter = RangeIter<'a, T, RangeFull>;
     type Item = &'a T;
 
     fn into_iter(self) -> Self::IntoIter {
@@ -562,177 +589,78 @@ impl<T> Drop for IntoIter<T> {
     }
 }
 
-pub struct RangeIter<'a, T> {
+pub struct RangeIter<'a, T, B> {
     stack_left: Vec<&'a NodePtr<T>>,
     stack_right: Vec<&'a NodePtr<T>>,
-    min_node: Option<&'a NodePtr<T>>,
-    max_node: Option<&'a NodePtr<T>>,
+    range: B,
 }
 
-impl<'a, T: Ord> RangeIter<'a, T> {
-    fn new(root: &'a Link<T>, range: impl RangeBounds<T>) -> Self {
-        let mut stack_left = vec![];
-        let mut min_node = None;
-        {
-            let mut node = root;
-            while let Some(raw_node) = node {
-                let key = unsafe { raw_node.as_ref() }.key.borrow();
+impl<'a, T: Ord, B: RangeBounds<T>> RangeIter<'a, T, B> {
+    fn new(root: &'a Link<T>, range: B) -> Self {
+        let mut res = Self {
+            stack_left: vec![],
+            stack_right: vec![],
+            range,
+        };
+        res.push_left(root);
+        res.push_right(root);
+        res
+    }
 
-                match &range.start_bound() {
-                    Bound::Included(start) if key < start => {
-                        node = &unsafe { raw_node.as_ref() }.right;
-                        continue;
-                    }
-                    Bound::Excluded(start) if key <= start => {
-                        node = &unsafe { raw_node.as_ref() }.right;
-                        continue;
-                    }
-                    _ => {}
-                }
-
-                match &range.end_bound() {
-                    Bound::Included(end) if key > end => {
-                        break;
-                    }
-                    Bound::Excluded(end) if key >= end => {
-                        break;
-                    }
-                    _ => {}
-                }
-
-                stack_left.push(raw_node);
-                min_node = Some(raw_node);
-                node = &unsafe { raw_node.as_ref() }.left;
-            }
-        }
-
-        let mut stack_right = vec![];
-        let mut max_node = None;
-        {
-            let mut node = root;
-
-            while let Some(raw_node) = node {
-                let key = unsafe { raw_node.as_ref() }.key.borrow();
-
-                match &range.end_bound() {
-                    Bound::Excluded(end) if key >= end => {
-                        node = &unsafe { raw_node.as_ref() }.left;
-                        continue;
-                    }
-                    Bound::Included(end) if key > end => {
-                        node = &unsafe { raw_node.as_ref() }.left;
-                        continue;
-                    }
-                    _ => {}
-                }
-
-                match &range.start_bound() {
-                    Bound::Included(start) if key < start => {
-                        break;
-                    }
-                    Bound::Excluded(start) if key <= start => {
-                        break;
-                    }
-                    _ => {}
-                }
-
-                stack_right.push(raw_node);
-                max_node = Some(raw_node);
-                node = &unsafe { raw_node.as_ref() }.right;
-            }
-        }
-
-        Self {
-            stack_left,
-            stack_right,
-            min_node,
-            max_node,
+    fn push_left(&mut self, mut node: &'a Link<T>) {
+        while let Some(node_ptr) = node {
+            self.stack_left.push(node_ptr);
+            node = &unsafe { node_ptr.as_ref() }.left;
         }
     }
 
-    pub fn nth(&mut self, n: usize) -> Option<&'a T> {
-        for _ in 0..n {
-            self.next()?;
+    fn push_right(&mut self, mut node: &'a Link<T>) {
+        while let Some(node_ptr) = node {
+            self.stack_right.push(node_ptr);
+            node = &unsafe { node_ptr.as_ref() }.right;
         }
-        self.next()
     }
 
-    pub fn nth_back(&mut self, n: usize) -> Option<&'a T> {
-        for _ in 0..n {
-            self.next_back()?;
+    fn in_range(&self, key: &T) -> bool {
+        match self.range.start_bound() {
+            Bound::Included(start) if key < start => return false,
+            Bound::Excluded(start) if key <= start => return false,
+            _ => {}
         }
-        self.next_back()
+
+        match self.range.end_bound() {
+            Bound::Included(end) if key > end => return false,
+            Bound::Excluded(end) if key >= end => return false,
+            _ => {}
+        }
+
+        true
     }
 }
 
-impl<'a, T: Ord> Iterator for RangeIter<'a, T> {
+impl<'a, T: Ord, B: RangeBounds<T>> Iterator for RangeIter<'a, T, B> {
     type Item = &'a T;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let res = unsafe { self.stack_left.pop()?.as_ref() };
-
-        let mut cur = &res.right;
-        while let Some(raw_node) = cur {
-            let key = unsafe { raw_node.as_ref() }.key.borrow();
-
-            if let Some(min_key) = self
-                .min_node
-                .map(|node| unsafe { node.as_ref() }.key.borrow())
-            {
-                if key < &min_key {
-                    cur = &unsafe { raw_node.as_ref() }.right;
-                    continue;
-                }
+        loop {
+            let node = unsafe { self.stack_left.pop()?.as_ref() };
+            self.push_left(&node.right);
+            if self.in_range(&node.key) {
+                return Some(&node.key);
             }
-            if let Some(max_key) = self
-                .max_node
-                .map(|node| unsafe { node.as_ref() }.key.borrow())
-            {
-                if key > &max_key {
-                    break;
-                }
-            }
-
-            self.stack_left.push(raw_node);
-            cur = &unsafe { raw_node.as_ref() }.left;
         }
-
-        Some(&res.key)
     }
 }
 
-impl<'a, T: Ord> DoubleEndedIterator for RangeIter<'a, T> {
+impl<'a, T: Ord, B: RangeBounds<T>> DoubleEndedIterator for RangeIter<'a, T, B> {
     fn next_back(&mut self) -> Option<Self::Item> {
-        let res = unsafe { self.stack_right.pop()?.as_ref() };
-
-        let mut node = &res.left;
-        while let Some(raw_node) = node {
-            let key = unsafe { raw_node.as_ref() }.key.borrow();
-
-            if let Some(max_key) = self
-                .max_node
-                .map(|node| unsafe { node.as_ref() }.key.borrow())
-            {
-                if key > &max_key {
-                    node = &unsafe { raw_node.as_ref() }.left;
-                    continue;
-                }
+        loop {
+            let node = unsafe { self.stack_right.pop()?.as_ref() };
+            self.push_right(&node.left);
+            if self.in_range(&node.key) {
+                return Some(&node.key);
             }
-
-            if let Some(min_key) = self
-                .min_node
-                .map(|node| unsafe { node.as_ref() }.key.borrow())
-            {
-                if key < &min_key {
-                    break;
-                }
-            }
-
-            self.stack_right.push(raw_node);
-            node = &unsafe { raw_node.as_ref() }.right;
         }
-
-        Some(&res.key)
     }
 }
 
@@ -783,12 +711,11 @@ impl<T: Display> AvlTreeSet<T> {
 
 #[cfg(test)]
 mod tests {
-    use rand::thread_rng;
 
     use super::AvlTreeSet;
 
     #[test]
-    fn test_insert_and_contains() {
+    fn test_avl_tree_set_insert_and_contains() {
         let mut tree = AvlTreeSet::new();
         assert!(!tree.contains(&3));
         assert!(!tree.contains(&1));
@@ -808,7 +735,7 @@ mod tests {
     }
 
     #[test]
-    fn test_remove() {
+    fn test_avl_tree_set_remove() {
         let mut tree = AvlTreeSet::from([52, 73, 63, 27, 44, 94, 31, 82, 70, 37]);
         assert!(tree
             .iter()
@@ -824,7 +751,7 @@ mod tests {
     }
 
     #[test]
-    fn test_get_nth() {
+    fn test_avl_tree_set_get_nth() {
         let tree = AvlTreeSet::from([1, 3, 5, 7, 9]);
         assert_eq!(tree.get_nth(0), Some(&1));
         assert_eq!(tree.get_nth(1), Some(&3));
@@ -835,7 +762,7 @@ mod tests {
     }
 
     #[test]
-    fn test_get_nth_back() {
+    fn test_avl_tree_set_get_nth_back() {
         let tree = AvlTreeSet::from([2, 4, 6, 8, 10]);
         assert_eq!(tree.get_nth_back(0), Some(&10));
         assert_eq!(tree.get_nth_back(1), Some(&8));
@@ -846,7 +773,7 @@ mod tests {
     }
 
     #[test]
-    fn test_append() {
+    fn test_avl_tree_set_append() {
         let mut tree1 = AvlTreeSet::from([1, 3, 5]);
         let mut tree2 = AvlTreeSet::from([2, 4, 6]);
         tree1.append(&mut tree2);
@@ -877,7 +804,7 @@ mod tests {
     }
 
     #[test]
-    fn test_split_off() {
+    fn test_avl_tree_set_split_off() {
         let mut tree1 = AvlTreeSet::from([1, 2, 3, 4, 5, 6]);
         let tree2 = tree1.split_off(&4);
         assert!(tree1.iter().copied().eq([1, 2, 3]));
@@ -905,7 +832,7 @@ mod tests {
     }
 
     #[test]
-    fn test_range() {
+    fn test_avl_tree_set_range() {
         let st = AvlTreeSet::from([1, 2, 3, 4, 5]);
         assert!(st.range(2..5).copied().eq([2, 3, 4]));
         assert!(st.range(2..5).rev().copied().eq([4, 3, 2]));
@@ -938,12 +865,41 @@ mod tests {
         assert!(st.range(..).copied().eq([2, 4, 6, 8, 10]));
         assert!(st.range(..=8).copied().eq([2, 4, 6, 8]));
         assert!(st.range(4..).copied().eq([4, 6, 8, 10]));
+
+        let st = AvlTreeSet::from([2, 4, 6, 8, 10, 12, 14, 16]);
+        assert!(st.range(3..11).copied().eq([4, 6, 8, 10]));
+        assert!(st.range(3..11).rev().copied().eq([10, 8, 6, 4]));
+    }
+
+    #[test]
+    fn test_avl_tree_set_range_nth() {
+        let st = AvlTreeSet::from([2, 4, 6, 8, 10, 12, 14, 16]);
+        assert_eq!(st.range(3..9).nth(0), Some(&4));
+        assert_eq!(st.range(3..9).nth(1), Some(&6));
+        assert_eq!(st.range(3..9).nth(2), Some(&8));
+        assert_eq!(st.range(3..9).nth(3), None);
+        assert_eq!(st.range(3..11).nth(3), Some(&10));
+
+        assert_eq!(st.range(6..16).nth_back(0), Some(&14));
+        assert_eq!(st.range(6..16).nth_back(1), Some(&12));
+        assert_eq!(st.range(6..16).nth_back(2), Some(&10));
+        assert_eq!(st.range(6..16).nth_back(3), Some(&8));
+        assert_eq!(st.range(6..16).nth_back(4), Some(&6));
+    }
+
+    #[test]
+    fn test_avl_tree_set_lower_bound() {
+        let st = AvlTreeSet::from([2, 4, 6, 8, 10, 12, 14, 16]);
+        assert_eq!(st.lower_bound(&4), Some(&4));
+        assert_eq!(st.lower_bound(&9), Some(&10));
+        assert_eq!(st.lower_bound(&1), Some(&2));
+        assert_eq!(st.lower_bound(&17), None);
     }
 
     #[test]
     #[cfg_attr(miri, ignore)]
-    fn test_random() {
-        use rand::Rng;
+    fn test_avl_tree_set_random() {
+        use rand::{thread_rng, Rng};
         use std::collections::BTreeSet;
 
         let mut rng = thread_rng();
