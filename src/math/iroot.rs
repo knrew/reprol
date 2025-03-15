@@ -1,6 +1,6 @@
 use crate::bisect::Bisect;
 
-pub trait Isqrt: Sized {
+pub trait IRoot: Sized {
     /// $\lfloor \sqrt{x} \rfloor$
     fn isqrt(self) -> Self {
         self.iroot_nth(2)
@@ -18,7 +18,7 @@ pub trait Isqrt: Sized {
 
 macro_rules! impl_integer {
     ($($ty:ident),*) => {$(
-        impl Isqrt for $ty {
+        impl IRoot for $ty {
             #[allow(unused_comparisons)]
             fn iroot_nth(self, n: u32) -> Self {
                 assert!(self >= 0);
@@ -39,7 +39,7 @@ impl_integer! { u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize }
 
 #[cfg(test)]
 mod tests {
-    use super::Isqrt;
+    use super::IRoot;
 
     #[test]
     fn test_isqrt() {
