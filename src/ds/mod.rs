@@ -1,6 +1,7 @@
 //! データ構造(data structure)
 
 pub mod avl_tree_set;
+pub mod avl_tree_vec;
 pub mod cumulative_product;
 pub mod cumulative_product_2d;
 pub mod disjoint_sparse_table;
