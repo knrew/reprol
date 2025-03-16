@@ -573,14 +573,12 @@ impl<'a, T> IterBase<'a, T> {
         }
     }
 
-    #[inline]
     fn next(&mut self) -> Option<NodePtr<T>> {
         let node = self.stack.pop()?;
         self.push_left(unsafe { node.as_ref() }.right);
         Some(node)
     }
 
-    #[inline]
     fn next_back(&mut self) -> Option<NodePtr<T>> {
         let node = self.stack_rev.pop()?;
         self.push_right(unsafe { node.as_ref() }.left);
