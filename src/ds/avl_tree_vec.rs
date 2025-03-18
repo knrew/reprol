@@ -224,21 +224,16 @@ fn get<T>(root: Link<T>, index: usize) -> Link<T> {
 /// はじめてfがfalseとなるindexを返す
 /// すべての要素がtrueの場合はnを返す
 fn bisect<T>(root: Link<T>, mut f: impl FnMut(&T) -> bool) -> usize {
-    let node = if let Some(node) = root {
-        unsafe { node.as_ref() }
-    } else {
-        return 0;
-    };
-
-    let left = node.left;
-    let right = node.right;
-    let left_len = len(left);
-
-    if !f(&node.value) {
-        bisect(left, f)
-    } else {
-        bisect(right, f) + left_len + 1
-    }
+    root.map(|node| unsafe { node.as_ref() }).map_or(0, |node| {
+        let left = node.left;
+        let right = node.right;
+        let left_len = len(left);
+        if !f(&node.value) {
+            bisect(left, f)
+        } else {
+            bisect(right, f) + left_len + 1
+        }
+    })
 }
 
 #[allow(unused)]
@@ -359,8 +354,7 @@ impl<T> AvlTreeVec<T> {
             let (left, right) = split(self.root.take(), index);
             let (removed, right) = split(right, 1);
             self.root = merge(left, right);
-            let boxed = unsafe { Box::from_raw(removed.unwrap().as_ptr()) };
-            boxed.value
+            unsafe { Box::from_raw(removed.unwrap().as_ptr()) }.value
         })
     }
 
