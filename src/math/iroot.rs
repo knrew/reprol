@@ -3,24 +3,24 @@ use crate::bisect::Bisect;
 pub trait IRoot: Sized {
     /// $\lfloor \sqrt{x} \rfloor$
     fn isqrt(self) -> Self {
-        self.iroot_nth(2)
+        self.nth_iroot(2)
     }
 
     /// $\lfloor \sqrt[3]{x} \rfloor$
     fn icbrt(self) -> Self {
-        self.iroot_nth(3)
+        self.nth_iroot(3)
     }
 
     /// 非負整数$x$に対して$n$乗根の整数部分$\lfloor \sqrt[n]{x} \rfloor$を計算する
     /// $n$乗数$x^n$に対しては$x$を返すことが保証される
-    fn iroot_nth(self, n: u32) -> Self;
+    fn nth_iroot(self, n: u32) -> Self;
 }
 
 macro_rules! impl_integer {
     ($($ty:ident),*) => {$(
         impl IRoot for $ty {
             #[allow(unused_comparisons)]
-            fn iroot_nth(self, n: u32) -> Self {
+            fn nth_iroot(self, n: u32) -> Self {
                 assert!(self >= 0);
                 if self == 0 {
                     0
