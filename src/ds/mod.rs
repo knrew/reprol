@@ -2,8 +2,8 @@
 
 pub mod avl_tree_set;
 pub mod avl_tree_vec;
-pub mod cumulative_product;
-pub mod cumulative_product_2d;
+pub mod cumulative_array;
+pub mod cumulative_array_2d;
 pub mod disjoint_sparse_table;
 pub mod dsu;
 pub mod fenwick_tree;
