@@ -1,4 +1,7 @@
-use std::ops::{Index, Range, RangeBounds};
+use std::{
+    iter::FromIterator,
+    ops::{Index, Range, RangeBounds},
+};
 
 use crate::{ops::monoid::Monoid, range::to_open_range};
 
@@ -259,6 +262,16 @@ where
 {
     fn from(v: &[O::Value]) -> Self {
         Self::from((v, O::default()))
+    }
+}
+
+impl<O> FromIterator<O::Value> for SegmentTree<O>
+where
+    O: Monoid + Default,
+    O::Value: Clone,
+{
+    fn from_iter<I: IntoIterator<Item = O::Value>>(iter: I) -> Self {
+        Self::from(iter.into_iter().collect::<Vec<_>>())
     }
 }
 

@@ -123,32 +123,6 @@ where
     }
 }
 
-impl<O> From<&Vec<Vec<O::Value>>> for CumulativeArray2d<O>
-where
-    O: Group + Default,
-    O::Value: Clone,
-{
-    fn from(v: &Vec<Vec<O::Value>>) -> Self {
-        assert!(!v.is_empty());
-        assert!(!v[0].is_empty());
-        debug_assert!(v.iter().all(|vi| vi.len() == v[0].len()));
-        Self::construct(v.len(), v[0].len(), |i, j| v[i][j].clone())
-    }
-}
-
-impl<O> From<&[Vec<O::Value>]> for CumulativeArray2d<O>
-where
-    O: Group + Default,
-    O::Value: Clone,
-{
-    fn from(v: &[Vec<O::Value>]) -> Self {
-        assert!(!v.is_empty());
-        assert!(!v[0].is_empty());
-        debug_assert!(v.iter().all(|vi| vi.len() == v[0].len()));
-        Self::construct(v.len(), v[0].len(), |i, j| v[i][j].clone())
-    }
-}
-
 impl<O> Clone for CumulativeArray2d<O>
 where
     O: Monoid + Clone,

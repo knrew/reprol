@@ -1,4 +1,5 @@
 use std::{
+    iter::FromIterator,
     mem::replace,
     ops::{Range, RangeBounds},
 };
@@ -406,6 +407,17 @@ where
 {
     fn from(v: &[O::Value]) -> Self {
         Self::from((v, O::default(), A::default()))
+    }
+}
+
+impl<O, A> FromIterator<O::Value> for LazySegmentTree<O, A>
+where
+    O: Monoid + Default,
+    O::Value: Clone,
+    A: Action<O> + Default,
+{
+    fn from_iter<I: IntoIterator<Item = O::Value>>(iter: I) -> Self {
+        Self::from(iter.into_iter().collect::<Vec<_>>())
     }
 }
 

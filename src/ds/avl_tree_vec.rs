@@ -2,6 +2,7 @@ use std::{
     cmp::Ordering,
     fmt::Debug,
     hash::Hash,
+    iter::FromIterator,
     marker::PhantomData,
     ops::{Index, IndexMut},
     ptr::NonNull,

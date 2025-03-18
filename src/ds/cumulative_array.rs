@@ -1,5 +1,6 @@
 use std::{
     fmt::Debug,
+    iter::FromIterator,
     ops::{Index, Range, RangeBounds},
 };
 
@@ -83,7 +84,7 @@ where
     O::Value: Clone,
 {
     fn from((v, op): ([O::Value; N], O)) -> Self {
-        CumulativeArray::construct_with_op(v.len(), op, |i| v[i].clone())
+        CumulativeArray::from((v.to_vec(), op))
     }
 }
 
@@ -103,27 +104,17 @@ where
     O::Value: Clone,
 {
     fn from(v: [O::Value; N]) -> Self {
-        CumulativeArray::construct(v.len(), |i| v[i].clone())
+        CumulativeArray::from(v.to_vec())
     }
 }
 
-impl<O> From<&Vec<O::Value>> for CumulativeArray<O>
+impl<O> FromIterator<O::Value> for CumulativeArray<O>
 where
     O: Monoid + Default,
     O::Value: Clone,
 {
-    fn from(v: &Vec<O::Value>) -> Self {
-        CumulativeArray::construct(v.len(), |i| v[i].clone())
-    }
-}
-
-impl<O> From<&[O::Value]> for CumulativeArray<O>
-where
-    O: Monoid + Default,
-    O::Value: Clone,
-{
-    fn from(v: &[O::Value]) -> Self {
-        CumulativeArray::construct(v.len(), |i| v[i].clone())
+    fn from_iter<I: IntoIterator<Item = O::Value>>(iter: I) -> Self {
+        Self::new(iter.into_iter().collect())
     }
 }
 
@@ -180,7 +171,7 @@ mod tests {
             ((4, 5), 5),
             ((0, 4), 10),
         ];
-        let cum = CumulativeSum::<i64>::new(v);
+        let cum = CumulativeSum::<i64>::from(v);
         assert_eq!(cum.fold(..), 15);
         assert_eq!(cum.get(5), &15);
         for ((l, r), expected) in testcases {
