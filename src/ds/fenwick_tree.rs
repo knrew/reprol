@@ -31,12 +31,13 @@ impl<O: Monoid> FenwickTree<O> {
         let mut res = Self::with_op(v.len(), op);
         v.into_iter()
             .enumerate()
-            .for_each(|(i, rhs)| res.mul(i, rhs));
+            .for_each(|(i, rhs)| res.apply(i, rhs));
         res
     }
 
-    /// i番目の要素v[i]をop(v[i], rhs)で更新する
-    pub fn mul(&mut self, mut index: usize, rhs: &O::Value) {
+    /// i番目の要素にrhsを作用させる
+    /// v[i] <- op(v[i], rhs)
+    pub fn apply(&mut self, mut index: usize, rhs: &O::Value) {
         assert!(index < self.nodes.len());
         index += 1;
         while index <= self.nodes.len() {
@@ -57,12 +58,12 @@ impl<O: Monoid> FenwickTree<O> {
     }
 
     /// [l, r)の区間積を取得する
-    pub fn product(&self, range: impl RangeBounds<usize>) -> O::Value
+    pub fn fold(&self, range: impl RangeBounds<usize>) -> O::Value
     where
         O: Group,
     {
         let Range { start: l, end: r } = to_open_range(range, self.nodes.len());
-        assert!(l < r);
+        assert!(l <= r);
         let cl = self.get(l);
         let cr = self.get(r);
         self.op.op(&cr, &self.op.inv(&cl))
@@ -114,16 +115,16 @@ mod tests {
     #[test]
     fn test_fenwick_tree() {
         let mut ft = FenwickTree::<OpAdd<i64>>::new(10);
-        ft.mul(0, &5);
-        ft.mul(2, &10);
-        ft.mul(6, &20);
-        assert_eq!(ft.product(..1), 5);
-        assert_eq!(ft.product(..3), 15);
-        assert_eq!(ft.product(..7), 35);
-        assert_eq!(ft.product(..), 35);
-        assert_eq!(ft.product(0..3), 15);
-        assert_eq!(ft.product(3..=6), 20);
-        ft.mul(9, &10);
-        assert_eq!(ft.product(0..10), 45);
+        ft.apply(0, &5);
+        ft.apply(2, &10);
+        ft.apply(6, &20);
+        assert_eq!(ft.fold(..1), 5);
+        assert_eq!(ft.fold(..3), 15);
+        assert_eq!(ft.fold(..7), 35);
+        assert_eq!(ft.fold(..), 35);
+        assert_eq!(ft.fold(0..3), 15);
+        assert_eq!(ft.fold(3..=6), 20);
+        ft.apply(9, &10);
+        assert_eq!(ft.fold(0..10), 45);
     }
 }

@@ -49,10 +49,10 @@ impl<O: Monoid> SegmentTree<O> {
         }
     }
 
-    /// `seg.prod(l..r)`で区間[l, r)の区間積を求める
-    pub fn product(&mut self, range: impl RangeBounds<usize>) -> O::Value {
+    /// `seg.fold(l..r)`で区間[l, r)の区間積を求める
+    pub fn fold(&mut self, range: impl RangeBounds<usize>) -> O::Value {
         let Range { start: l, end: r } = to_open_range(range, self.len);
-        assert!(l < r);
+        assert!(l <= r);
         assert!(r <= self.len);
 
         let offset = self.nodes.len() / 2;
@@ -283,11 +283,11 @@ mod tests {
     fn test_add() {
         let v = vec![1, 3, 5, 7, 9, 11];
         let mut seg = SegmentTree::<OpAdd<i64>>::from(v);
-        assert_eq!(seg.product(0..3), 9);
-        assert_eq!(seg.product(1..=4), 24);
-        assert_eq!(seg.product(..), 36);
+        assert_eq!(seg.fold(0..3), 9);
+        assert_eq!(seg.fold(1..=4), 24);
+        assert_eq!(seg.fold(..), 36);
         seg.set(2, 6);
-        assert_eq!(seg.product(0..3), 10);
+        assert_eq!(seg.fold(0..3), 10);
         assert_eq!(seg[5], 11);
     }
 
@@ -295,11 +295,11 @@ mod tests {
     fn test_min() {
         let v = vec![5, 2, 6, 3, 7, 1];
         let mut seg = SegmentTree::<OpMin<i32>>::from(v);
-        assert_eq!(seg.product(0..4), 2);
-        assert_eq!(seg.product(2..=5), 1);
-        assert_eq!(seg.product(..), 1);
-        assert_eq!(seg.product(..=4), 2);
+        assert_eq!(seg.fold(0..4), 2);
+        assert_eq!(seg.fold(2..=5), 1);
+        assert_eq!(seg.fold(..), 1);
+        assert_eq!(seg.fold(..=4), 2);
         seg.set(3, 0);
-        assert_eq!(seg.product(0..4), 0);
+        assert_eq!(seg.fold(0..4), 0);
     }
 }

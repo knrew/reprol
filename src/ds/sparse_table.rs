@@ -38,7 +38,7 @@ where
         Self { n, nodes, monoid }
     }
 
-    pub fn product(&self, range: impl RangeBounds<usize>) -> M::Value {
+    pub fn fold(&self, range: impl RangeBounds<usize>) -> M::Value {
         let Range { start: l, end: r } = to_open_range(range, self.n);
         if l >= r {
             return self.monoid.identity();
@@ -117,7 +117,7 @@ mod tests {
 
         let sp = SparseTable::<OpMin<i64>>::new(v);
         for ([l, r], expected) in test_cases {
-            assert_eq!(sp.product(l..r), expected);
+            assert_eq!(sp.fold(l..r), expected);
         }
     }
 }

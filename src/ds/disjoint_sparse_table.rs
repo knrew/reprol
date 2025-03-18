@@ -50,16 +50,16 @@ impl<O: Monoid> DisjointSparseTable<O> {
 
     /// i番目の要素を取得する
     pub fn get(&self, index: usize) -> O::Value {
-        self.product(index..=index)
+        self.fold(index..=index)
     }
 
-    /// `dst.product(l..r)`で [l, r)の区間積を計算する
-    pub fn product(&self, range: impl RangeBounds<usize>) -> O::Value {
+    /// `dst.fold(l..r)`で [l, r)の区間積を計算する
+    pub fn fold(&self, range: impl RangeBounds<usize>) -> O::Value {
         let Range {
             start: l,
             end: mut r,
         } = to_open_range(range, self.len);
-        assert!(l < r);
+        assert!(l <= r);
         assert!(r <= self.len);
         r += 1;
         let i = ((l ^ r) + 1).next_power_of_two().trailing_zeros() - 1;
@@ -130,7 +130,7 @@ mod tests {
 
         let dst = DisjointSparseTable::<OpMin<i64>>::new(v);
         for ([l, r], expected) in test_cases {
-            assert_eq!(dst.product(l..r), expected);
+            assert_eq!(dst.fold(l..r), expected);
         }
     }
 }

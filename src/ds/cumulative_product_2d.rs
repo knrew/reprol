@@ -8,13 +8,14 @@ use crate::{
     range::to_open_range,
 };
 
-pub struct CumulativeProduct2d<O: Monoid> {
+/// 2次元配列の累積積を管理するデータ構造
+pub struct CumulativeArray2d<O: Monoid> {
     data: Vec<Vec<O::Value>>,
     op: O,
 }
 
-impl<O: Monoid> CumulativeProduct2d<O> {
-    /// 2次元配列の累積積を計算する
+impl<O: Monoid> CumulativeArray2d<O> {
+    /// 2次元配列の累積配列を計算する
     pub fn new(v: Vec<Vec<O::Value>>) -> Self
     where
         O: Group + Default,
@@ -82,8 +83,8 @@ impl<O: Monoid> CumulativeProduct2d<O> {
         &self.data[i][j]
     }
 
-    /// `cum.product(il..ir, jl..jr)`で [il, ir) \times [jl, jr)の累積積を計算する
-    pub fn product(
+    /// `cum.fold(il..ir, jl..jr)`で [il, ir) \times [jl, jr)の累積積を計算する
+    pub fn fold(
         &self,
         row_range: impl RangeBounds<usize>,
         col_range: impl RangeBounds<usize>,
@@ -93,8 +94,8 @@ impl<O: Monoid> CumulativeProduct2d<O> {
     {
         let Range { start: il, end: ir } = to_open_range(row_range, self.data.len() - 1);
         let Range { start: jl, end: jr } = to_open_range(col_range, self.data[0].len() - 1);
-        assert!(il < ir);
-        assert!(jl < jr);
+        assert!(il <= ir);
+        assert!(jl <= jr);
         let mut res = self.op.op(&self.data[ir][jr], &self.data[il][jl]);
         res = self.op.op(&res, &self.op.inv(&self.data[il][jr]));
         res = self.op.op(&res, &self.op.inv(&self.data[ir][jl]));
@@ -102,27 +103,27 @@ impl<O: Monoid> CumulativeProduct2d<O> {
     }
 }
 
-impl<O> From<(Vec<Vec<O::Value>>, O)> for CumulativeProduct2d<O>
+impl<O> From<(Vec<Vec<O::Value>>, O)> for CumulativeArray2d<O>
 where
     O: Group,
     O::Value: Clone,
 {
     fn from((v, op): (Vec<Vec<O::Value>>, O)) -> Self {
-        CumulativeProduct2d::with_op(v, op)
+        CumulativeArray2d::with_op(v, op)
     }
 }
 
-impl<O> From<Vec<Vec<O::Value>>> for CumulativeProduct2d<O>
+impl<O> From<Vec<Vec<O::Value>>> for CumulativeArray2d<O>
 where
     O: Group + Default,
     O::Value: Clone,
 {
     fn from(v: Vec<Vec<O::Value>>) -> Self {
-        CumulativeProduct2d::new(v)
+        CumulativeArray2d::new(v)
     }
 }
 
-impl<O> From<&Vec<Vec<O::Value>>> for CumulativeProduct2d<O>
+impl<O> From<&Vec<Vec<O::Value>>> for CumulativeArray2d<O>
 where
     O: Group + Default,
     O::Value: Clone,
@@ -135,7 +136,7 @@ where
     }
 }
 
-impl<O> From<&[Vec<O::Value>]> for CumulativeProduct2d<O>
+impl<O> From<&[Vec<O::Value>]> for CumulativeArray2d<O>
 where
     O: Group + Default,
     O::Value: Clone,
@@ -148,7 +149,7 @@ where
     }
 }
 
-impl<O> Clone for CumulativeProduct2d<O>
+impl<O> Clone for CumulativeArray2d<O>
 where
     O: Monoid + Clone,
     O::Value: Clone,
@@ -161,7 +162,7 @@ where
     }
 }
 
-impl<O> Index<[usize; 2]> for CumulativeProduct2d<O>
+impl<O> Index<[usize; 2]> for CumulativeArray2d<O>
 where
     O: Monoid,
 {
@@ -171,7 +172,7 @@ where
     }
 }
 
-impl<O> Index<(usize, usize)> for CumulativeProduct2d<O>
+impl<O> Index<(usize, usize)> for CumulativeArray2d<O>
 where
     O: Monoid,
 {
@@ -181,7 +182,7 @@ where
     }
 }
 
-impl<O> Debug for CumulativeProduct2d<O>
+impl<O> Debug for CumulativeArray2d<O>
 where
     O: Monoid,
     O::Value: Debug,
@@ -191,7 +192,7 @@ where
     }
 }
 
-pub type CumulativeSum2d<T> = CumulativeProduct2d<OpAdd<T>>;
+pub type CumulativeSum2d<T> = CumulativeArray2d<OpAdd<T>>;
 
 #[cfg(test)]
 mod tests {
@@ -210,9 +211,9 @@ mod tests {
             // ((0, 0, 0, 0), 0),
         ];
         let cum = CumulativeSum2d::new(v);
-        assert_eq!(cum.product(.., ..), 45);
+        assert_eq!(cum.fold(.., ..), 45);
         for ((r1, c1, r2, c2), expected) in test_cases {
-            assert_eq!(cum.product(r1..r2, c1..c2), expected);
+            assert_eq!(cum.fold(r1..r2, c1..c2), expected);
         }
 
         let v = vec![
@@ -233,7 +234,7 @@ mod tests {
         ];
         let cum = CumulativeSum2d::new(v);
         for ((x1, y1, x2, y2), expected) in test_cases {
-            assert_eq!(cum.product(x1..x2, y1..y2), expected);
+            assert_eq!(cum.fold(x1..x2, y1..y2), expected);
         }
     }
 }

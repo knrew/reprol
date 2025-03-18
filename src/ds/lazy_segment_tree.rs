@@ -132,13 +132,13 @@ impl<O: Monoid, A: Action<O>> LazySegmentTree<O, A> {
         }
     }
 
-    /// `seg.prod(l..r)`で区間[l, r)の区間積を求める
-    pub fn product(&mut self, range: impl RangeBounds<usize>) -> O::Value
+    /// `seg.fold(l..r)`で区間[l, r)の区間積を求める
+    pub fn fold(&mut self, range: impl RangeBounds<usize>) -> O::Value
     where
         A::Value: PartialEq,
     {
         let Range { start: l, end: r } = to_open_range(range, self.len);
-        assert!(l < r);
+        assert!(l <= r);
         assert!(r <= self.len);
 
         let offset = self.nodes.len() / 2;
@@ -447,12 +447,12 @@ mod tests {
             (0..5).map(|i| *seg.get(i)).collect::<Vec<_>>(),
             vec![4, 6, 6, 6, 4]
         );
-        assert_eq!(seg.product(0..=2), 6);
+        assert_eq!(seg.fold(0..=2), 6);
         seg.act(0..5, &(-1));
         assert_eq!(
             (0..5).map(|i| *seg.get(i)).collect::<Vec<_>>(),
             vec![3, 5, 5, 5, 3]
         );
-        assert_eq!(seg.product(..), 5);
+        assert_eq!(seg.fold(..), 5);
     }
 }

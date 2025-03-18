@@ -107,7 +107,7 @@ where
         }
     }
 
-    pub fn product(
+    pub fn fold(
         &self,
         row_range: impl RangeBounds<usize>,
         col_range: impl RangeBounds<usize>,
@@ -119,8 +119,8 @@ where
         }
         let k = (ir - il + 1).next_power_of_two().trailing_zeros() as usize - 1;
         self.monoid.op(
-            &self.nodes[k][il].product(jl..jr),
-            &self.nodes[k][ir - (1 << k)].product(jl..jr),
+            &self.nodes[k][il].fold(jl..jr),
+            &self.nodes[k][ir - (1 << k)].fold(jl..jr),
         )
     }
 }
