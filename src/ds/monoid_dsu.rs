@@ -6,7 +6,7 @@ pub struct MonoidDsu<O: Monoid> {
     parents: Vec<usize>,
     sizes: Vec<usize>,
     states: Vec<O::Value>,
-    num_components: usize,
+    count_components: usize,
     monoid: O,
 }
 
@@ -17,7 +17,7 @@ impl<O: Monoid> MonoidDsu<O> {
             parents: (0..n).collect(),
             sizes: vec![1; n],
             states: initial_states,
-            num_components: n,
+            count_components: n,
             monoid,
         }
     }
@@ -44,7 +44,7 @@ impl<O: Monoid> MonoidDsu<O> {
             return;
         }
 
-        self.num_components -= 1;
+        self.count_components -= 1;
 
         if self.sizes[u] < self.sizes[v] {
             swap(&mut u, &mut v);
@@ -72,7 +72,7 @@ impl<O: Monoid> MonoidDsu<O> {
     }
 
     /// 連結成分の個数
-    pub fn num_components(&self) -> usize {
-        self.num_components
+    pub fn count_components(&self) -> usize {
+        self.count_components
     }
 }

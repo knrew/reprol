@@ -6,7 +6,7 @@ pub struct PotentializedDsu<O: Group> {
     parents: Vec<usize>,
     sizes: Vec<usize>,
     potentials: Vec<O::Value>,
-    num_components: usize,
+    count_components: usize,
     op: O,
 }
 
@@ -23,7 +23,7 @@ impl<O: Group> PotentializedDsu<O> {
             parents: (0..n).collect(),
             sizes: vec![1; n],
             potentials: (0..n).map(|_| op.identity()).collect(),
-            num_components: n,
+            count_components: n,
             op,
         }
     }
@@ -73,7 +73,7 @@ impl<O: Group> PotentializedDsu<O> {
         self.sizes[u] += self.sizes[v];
         self.parents[v] = u;
         self.potentials[v] = w;
-        self.num_components -= 1;
+        self.count_components -= 1;
 
         true
     }
@@ -118,8 +118,8 @@ impl<O: Group> PotentializedDsu<O> {
     }
 
     /// 連結成分の個数
-    pub fn num_components(&self) -> usize {
-        self.num_components
+    pub fn count_components(&self) -> usize {
+        self.count_components
     }
 }
 
@@ -173,7 +173,7 @@ mod tests {
                     res.push(dsu.size(v) as i64);
                 }
                 &CountComponents => {
-                    res.push(dsu.num_components() as i64);
+                    res.push(dsu.count_components() as i64);
                 }
             }
         }

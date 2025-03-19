@@ -3,7 +3,7 @@ use std::mem::swap;
 pub struct Dsu {
     parents: Vec<usize>,
     sizes: Vec<usize>,
-    num_components: usize,
+    count_components: usize,
 }
 
 impl Dsu {
@@ -11,7 +11,7 @@ impl Dsu {
         Self {
             parents: (0..n).collect(),
             sizes: vec![1; n],
-            num_components: n,
+            count_components: n,
         }
     }
 
@@ -40,7 +40,7 @@ impl Dsu {
 
         self.sizes[u] += self.sizes[v];
         self.parents[v] = u;
-        self.num_components -= 1;
+        self.count_components -= 1;
     }
 
     /// xとyが同じグループに属すか
@@ -66,8 +66,8 @@ impl Dsu {
     }
 
     /// 連結成分の個数
-    pub fn num_components(&self) -> usize {
-        self.num_components
+    pub fn count_components(&self) -> usize {
+        self.count_components
     }
 }
 
@@ -110,7 +110,7 @@ mod tests {
                     res.push(dsu.size(v));
                 }
                 &CountComponents => {
-                    res.push(dsu.num_components());
+                    res.push(dsu.count_components());
                 }
             }
         }
