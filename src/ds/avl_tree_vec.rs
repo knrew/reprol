@@ -70,19 +70,17 @@ fn balance<T>(mut root: Link<T>) -> Link<T> {
     /// (左の子が存在している場合のみ呼び出す)
     fn rotate_right<T>(root: &mut Link<T>) {
         *root = {
-            unsafe {
-                let mut root = root.unwrap();
-                let raw_root = root.as_mut();
+            let mut root = root.unwrap();
+            let raw_root = unsafe { root.as_mut() };
 
-                let mut left = raw_root.left.unwrap();
-                let raw_left = left.as_mut();
+            let mut left = raw_root.left.unwrap();
+            let raw_left = unsafe { left.as_mut() };
 
-                raw_root.left = raw_left.right;
-                raw_root.fetch();
-                raw_left.right = Some(root);
-                raw_left.fetch();
-                Some(left)
-            }
+            raw_root.left = raw_left.right;
+            raw_root.fetch();
+            raw_left.right = Some(root);
+            raw_left.fetch();
+            Some(left)
         };
     }
 
@@ -90,28 +88,32 @@ fn balance<T>(mut root: Link<T>) -> Link<T> {
     /// (右の子が存在する場合のみ呼び出す)
     fn rotate_left<T>(root: &mut Link<T>) {
         *root = {
-            unsafe {
-                let mut root = root.unwrap();
-                let mut right = root.as_ref().right.unwrap();
-                root.as_mut().right = right.as_mut().left;
-                root.as_mut().fetch();
-                right.as_mut().left = Some(root);
-                right.as_mut().fetch();
-                Some(right)
-            }
+            let mut root = root.unwrap();
+            let raw_root = unsafe { root.as_mut() };
+
+            let mut right = raw_root.right.unwrap();
+            let raw_right = unsafe { right.as_mut() };
+
+            raw_root.right = raw_right.left;
+            raw_root.fetch();
+            raw_right.left = Some(root);
+            raw_right.fetch();
+            Some(right)
         };
     }
 
-    if root.is_none() {
+    let raw_root = if let Some(mut root) = root {
+        unsafe { root.as_mut() }
+    } else {
         return None;
-    }
+    };
 
     let d = diff_height(root);
 
     if d > 1 {
         // 左部分木が高い場合
 
-        let left = &mut unsafe { root.unwrap().as_mut() }.left;
+        let left = &mut raw_root.left;
         if diff_height(*left) < 0 {
             rotate_left(left);
         }
@@ -120,14 +122,14 @@ fn balance<T>(mut root: Link<T>) -> Link<T> {
     } else if d < -1 {
         // 右部分木が高い場合
 
-        let right = &mut unsafe { root.unwrap().as_mut() }.right;
+        let right = &mut raw_root.right;
         if diff_height(*right) > 0 {
             rotate_right(right);
         }
 
         rotate_left(&mut root);
     } else {
-        unsafe { root.unwrap().as_mut() }.fetch();
+        raw_root.fetch();
     }
 
     root
