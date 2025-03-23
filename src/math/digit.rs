@@ -8,7 +8,7 @@ macro_rules! impl_integer {
         impl Digit for $ty {
             #[allow(unused_comparisons)]
             fn digit(self) -> usize {
-                debug_assert!(self >= 0);
+                assert!(self >= 0);
                 if self == 0 {
                     return 1;
                 }
