@@ -1,5 +1,6 @@
-// グラフのサイクルをすべて検出する
-// is_edge_minimal: 辺素なサイクルのみを検出するかどうか
+// グラフの閉路をすべて検出する
+// 連結成分ごとに閉路の個数がたかだか1個のグラフにのみ適用可能
+// is_edge_minimal: 辺素な閉路のみを検出するかどうか
 fn detect_cycles(g: &[Vec<usize>], is_edge_minimal: bool) -> Vec<Vec<usize>> {
     fn dfs(
         g: &[Vec<usize>],
@@ -24,10 +25,8 @@ fn detect_cycles(g: &[Vec<usize>], is_edge_minimal: bool) -> Vec<Vec<usize>> {
 
             if visited[nv] && !finished[nv] {
                 return Some(nv);
-            } else {
-                if let Some(u) = dfs(g, is_edge_minimal, visited, finished, path, nv, v) {
-                    return Some(u);
-                }
+            } else if let Some(u) = dfs(g, is_edge_minimal, visited, finished, path, nv, v) {
+                return Some(u);
             }
         }
 
@@ -64,6 +63,7 @@ fn detect_cycles(g: &[Vec<usize>], is_edge_minimal: bool) -> Vec<Vec<usize>> {
                     break;
                 }
             }
+
             cycle.reverse();
             res.push(cycle);
         }
