@@ -22,10 +22,10 @@ macro_rules! impl_integer {
             #[allow(unused_comparisons)]
             fn nth_iroot(self, n: u32) -> Self {
                 assert!(self >= 0);
-                if self == 0 {
-                    0
+                if self <= 1 || n == 1 {
+                    self
                 } else {
-                    (1..self + 1).bisect(|&x| match x.checked_pow(n) {
+                    (1..self).bisect(|&x| match x.checked_pow(n) {
                         Some(xn) if xn <= self => true,
                         _ => false,
                     }) - 1
