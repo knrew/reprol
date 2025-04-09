@@ -106,6 +106,19 @@ where
     }
 }
 
+impl<O> Clone for FenwickTree<O>
+where
+    O: Monoid + Clone,
+    O::Value: Clone,
+{
+    fn clone(&self) -> Self {
+        Self {
+            nodes: self.nodes.clone(),
+            op: self.op.clone(),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::ops::op_add::OpAdd;
