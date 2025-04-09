@@ -91,6 +91,7 @@ where
             let cost_v = costs[index_v].unwrap();
 
             for (nv, dcost) in neighbors(&v) {
+                assert!(dcost <= 1);
                 let index_nv = to_index(&nv);
                 let new_cost_nv = cost_v + dcost;
 
@@ -101,10 +102,8 @@ where
                         previous_vertices[index_nv] = Some(v.clone());
                         if dcost == 0 {
                             queue.push_front(nv);
-                        } else if dcost == 1 {
-                            queue.push_back(nv);
                         } else {
-                            assert!(false);
+                            queue.push_back(nv);
                         }
                     }
                 }
