@@ -20,10 +20,8 @@ impl<O: Monoid> CumulativeArray<O> {
     pub fn new(v: Vec<O::Value>) -> Self
     where
         O: Default,
-        O::Value: Clone,
     {
-        assert!(!v.is_empty());
-        Self::construct(v.len(), |i| v[i].clone())
+        Self::with_op(v, O::default())
     }
 
     /// i番目の要素がf(i)であるような累積積を計算する
@@ -35,21 +33,19 @@ impl<O: Monoid> CumulativeArray<O> {
     }
 
     /// 演算を指定して配列vの累積積を計算する
-    pub fn with_op(v: Vec<O::Value>, op: O) -> Self
-    where
-        O::Value: Clone,
-    {
+    pub fn with_op(v: Vec<O::Value>, op: O) -> Self {
         assert!(!v.is_empty());
-        Self::construct_with_op(v.len(), op, |i| v[i].clone())
+        let mut data = (0..v.len() + 1).map(|_| op.identity()).collect::<Vec<_>>();
+        for i in 0..v.len() {
+            data[i + 1] = op.op(&data[i], &v[i]);
+        }
+        Self { data, op }
     }
 
     /// 演算を指定してi番目の要素がf(i)であるような累積積を計算する
     pub fn construct_with_op(len: usize, op: O, mut f: impl FnMut(usize) -> O::Value) -> Self {
-        let mut data = (0..len + 1).map(|_| op.identity()).collect::<Vec<_>>();
-        for i in 0..len {
-            data[i + 1] = op.op(&data[i], &f(i));
-        }
-        Self { data, op }
+        assert!(len > 0);
+        Self::with_op((0..len).map(|i| f(i)).collect(), op)
     }
 
     /// [0, r)の累積積を取得する
@@ -71,7 +67,6 @@ impl<O: Monoid> CumulativeArray<O> {
 impl<O> From<(Vec<O::Value>, O)> for CumulativeArray<O>
 where
     O: Monoid,
-    O::Value: Clone,
 {
     fn from((v, op): (Vec<O::Value>, O)) -> Self {
         CumulativeArray::with_op(v, op)
@@ -81,37 +76,33 @@ where
 impl<O, const N: usize> From<([O::Value; N], O)> for CumulativeArray<O>
 where
     O: Monoid,
-    O::Value: Clone,
 {
     fn from((v, op): ([O::Value; N], O)) -> Self {
-        CumulativeArray::from((v.to_vec(), op))
+        CumulativeArray::with_op(v.into_iter().collect::<Vec<_>>(), op)
     }
 }
 
 impl<O> From<Vec<O::Value>> for CumulativeArray<O>
 where
     O: Monoid + Default,
-    O::Value: Clone,
 {
     fn from(v: Vec<O::Value>) -> Self {
-        CumulativeArray::new(v)
+        CumulativeArray::from((v, O::default()))
     }
 }
 
 impl<O, const N: usize> From<[O::Value; N]> for CumulativeArray<O>
 where
     O: Monoid + Default,
-    O::Value: Clone,
 {
     fn from(v: [O::Value; N]) -> Self {
-        CumulativeArray::from(v.to_vec())
+        CumulativeArray::from((v, O::default()))
     }
 }
 
 impl<O> FromIterator<O::Value> for CumulativeArray<O>
 where
     O: Monoid + Default,
-    O::Value: Clone,
 {
     fn from_iter<I: IntoIterator<Item = O::Value>>(iter: I) -> Self {
         Self::new(iter.into_iter().collect())

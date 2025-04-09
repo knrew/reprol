@@ -19,9 +19,7 @@ impl<O: Monoid> CumulativeArray2d<O> {
     pub fn new(v: Vec<Vec<O::Value>>) -> Self
     where
         O: Group + Default,
-        O::Value: Clone,
     {
-        assert!(!v.is_empty());
         Self::with_op(v, O::default())
     }
 
@@ -33,7 +31,6 @@ impl<O: Monoid> CumulativeArray2d<O> {
     ) -> Self
     where
         O: Group + Default,
-        O::Value: Clone,
     {
         Self::construct_with_op(row_len, col_len, O::default(), f)
     }
@@ -42,12 +39,27 @@ impl<O: Monoid> CumulativeArray2d<O> {
     pub fn with_op(v: Vec<Vec<O::Value>>, op: O) -> Self
     where
         O: Group,
-        O::Value: Clone,
     {
         assert!(!v.is_empty());
         assert!(!v[0].is_empty());
         debug_assert!(v.iter().all(|vi| vi.len() == v[0].len()));
-        Self::construct_with_op(v.len(), v[0].len(), op, |i, j| v[i][j].clone())
+
+        let row_len = v.len();
+        let col_len = v[0].len();
+        let mut data = (0..row_len + 1)
+            .map(|_| (0..col_len + 1).map(|_| op.identity()).collect::<Vec<_>>())
+            .collect::<Vec<_>>();
+
+        for i in 0..row_len {
+            for j in 0..col_len {
+                let mut res = op.op(&data[i + 1][j], &data[i][j + 1]);
+                res = op.op(&res, &op.inv(&data[i][j]));
+                res = op.op(&res, &v[i][j]);
+                data[i + 1][j + 1] = res;
+            }
+        }
+
+        Self { data, op }
     }
 
     /// 演算を指定して要素(i, j)の値がf(i, j)であるような2次元累積積を計算する
@@ -59,23 +71,13 @@ impl<O: Monoid> CumulativeArray2d<O> {
     ) -> Self
     where
         O: Group,
-        O::Value: Clone,
     {
         assert!(row_len > 0);
         assert!(col_len > 0);
-
-        let mut data = vec![vec![op.identity(); col_len + 1]; row_len + 1];
-
-        for i in 0..row_len {
-            for j in 0..col_len {
-                let mut res = op.op(&data[i + 1][j], &data[i][j + 1]);
-                res = op.op(&res, &op.inv(&data[i][j]));
-                res = op.op(&res, &f(i, j));
-                data[i + 1][j + 1] = res;
-            }
-        }
-
-        Self { data, op }
+        let v = (0..row_len)
+            .map(|i| (0..col_len).map(|j| f(i, j)).collect())
+            .collect();
+        Self::with_op(v, op)
     }
 
     /// [0, i) \times [0, j)の累積積を取得
@@ -106,7 +108,6 @@ impl<O: Monoid> CumulativeArray2d<O> {
 impl<O> From<(Vec<Vec<O::Value>>, O)> for CumulativeArray2d<O>
 where
     O: Group,
-    O::Value: Clone,
 {
     fn from((v, op): (Vec<Vec<O::Value>>, O)) -> Self {
         CumulativeArray2d::with_op(v, op)
@@ -116,7 +117,6 @@ where
 impl<O> From<Vec<Vec<O::Value>>> for CumulativeArray2d<O>
 where
     O: Group + Default,
-    O::Value: Clone,
 {
     fn from(v: Vec<Vec<O::Value>>) -> Self {
         CumulativeArray2d::new(v)
