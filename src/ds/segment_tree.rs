@@ -53,7 +53,7 @@ impl<O: Monoid> SegmentTree<O> {
     }
 
     /// `seg.fold(l..r)`で区間[l, r)の区間積を求める
-    pub fn fold(&mut self, range: impl RangeBounds<usize>) -> O::Value {
+    pub fn fold(&self, range: impl RangeBounds<usize>) -> O::Value {
         let Range { start: l, end: r } = to_open_range(range, self.len);
         assert!(l <= r);
         assert!(r <= self.len);

@@ -9,6 +9,7 @@ pub struct RollingHash<const P: u64> {
 
 impl<const P: u64> RollingHash<P> {
     pub fn new(s: &[u8], base: u64) -> Self {
+        assert!(base < P);
         let n = s.len();
         let base = base.into();
         let mut hash = vec![ModInt::new(0); n + 1];

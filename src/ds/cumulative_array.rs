@@ -78,7 +78,7 @@ where
     O: Monoid,
 {
     fn from((v, op): ([O::Value; N], O)) -> Self {
-        CumulativeArray::with_op(v.into_iter().collect::<Vec<_>>(), op)
+        CumulativeArray::with_op(v.into_iter().collect(), op)
     }
 }
 
