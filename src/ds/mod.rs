@@ -1,6 +1,5 @@
 //! データ構造(data structure)
 
-pub mod avl_tree_set;
 pub mod avl_tree_vec;
 pub mod cumulative_array;
 pub mod cumulative_array_2d;

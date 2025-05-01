@@ -329,11 +329,17 @@ impl<T> AvlTreeVec<T> {
     }
 
     pub fn push_front(&mut self, value: T) {
-        self.insert(0, value);
+        let mut tmp = Self {
+            root: Some(Node::new(value)),
+        };
+        tmp.append(self);
+        *self = tmp;
     }
 
     pub fn push_back(&mut self, value: T) {
-        self.insert(self.len(), value);
+        self.append(&mut Self {
+            root: Some(Node::new(value)),
+        });
     }
 
     pub fn pop_front(&mut self) -> Option<T> {
@@ -669,6 +675,7 @@ mod tests {
     #[test]
     fn test_push_back() {
         let mut tree = AvlTreeVec::new();
+        assert!(tree.is_empty());
         tree.push_back(3);
         tree.push_back(1);
         tree.push_back(4);
@@ -687,6 +694,7 @@ mod tests {
     #[test]
     fn test_push_front() {
         let mut tree = AvlTreeVec::new();
+        assert!(tree.is_empty());
         tree.push_front(3);
         tree.push_front(1);
         tree.push_front(4);
@@ -757,6 +765,112 @@ mod tests {
     }
 
     #[test]
+    fn test_insert() {
+        let mut tree = AvlTreeVec::new();
+        tree.insert(0, 10);
+        assert!(tree.iter().copied().eq([10]));
+
+        let mut tree = AvlTreeVec::new();
+        tree.push_back(1);
+        tree.push_back(2);
+        tree.insert(0, 99);
+        assert!(tree.iter().copied().eq([99, 1, 2]));
+
+        let mut tree = AvlTreeVec::new();
+        tree.push_back(1);
+        tree.push_back(2);
+        tree.insert(tree.len(), 99);
+        assert!(tree.iter().copied().eq([1, 2, 99]));
+
+        let mut tree = AvlTreeVec::from([0, 1, 2, 3]);
+        tree.insert(2, 42);
+        assert!(tree.iter().copied().eq([0, 1, 42, 2, 3]));
+
+        let mut tree = AvlTreeVec::new();
+        tree.insert(0, 0);
+        tree.insert(0, -1);
+        tree.insert(1, 100);
+        tree.insert(tree.len(), 7);
+        assert!(tree.iter().copied().eq([-1, 100, 0, 7]));
+    }
+
+    #[test]
+    fn test_remove() {
+        let mut tree = AvlTreeVec::from([0, 1, 2, 3]);
+        tree.insert(2, 99);
+        assert_eq!(tree.remove(1), Some(1));
+        assert!(tree.iter().copied().eq([0, 99, 2, 3]));
+
+        let mut tree = AvlTreeVec::from([10, 20, 30, 40, 50]);
+        assert_eq!(tree.remove(0), Some(10));
+        assert_eq!(tree.remove(tree.len() - 1), Some(50));
+        assert!(tree.iter().copied().eq([20, 30, 40]));
+
+        let mut tree = AvlTreeVec::from([1, 2, 3]);
+        assert_eq!(tree.remove(0), Some(1));
+        assert_eq!(tree.remove(0), Some(2));
+        assert_eq!(tree.remove(0), Some(3));
+        assert!(tree.is_empty());
+        assert_eq!(tree.remove(0), None);
+
+        let mut tree = AvlTreeVec::from([10, 20, 30, 40, 50, 60]);
+        assert_eq!(tree.remove(2), Some(30));
+        assert_eq!(tree.remove(4), Some(60));
+        assert_eq!(tree.remove(0), Some(10));
+        assert_eq!(tree.remove(1), Some(40));
+        assert!(tree.iter().copied().eq([20, 50]));
+    }
+
+    #[test]
+    fn test_append() {
+        let mut left = AvlTreeVec::from([0, 1, 2, 3]);
+        let mut right = AvlTreeVec::from([4, 5, 6, 7]);
+        left.append(&mut right);
+        assert!(left.iter().copied().eq([0, 1, 2, 3, 4, 5, 6, 7]));
+
+        let mut left = AvlTreeVec::from([1, 2, 3]);
+        let mut right = AvlTreeVec::from([]);
+        left.append(&mut right);
+        assert!(left.iter().copied().eq([1, 2, 3]));
+        assert!(right.is_empty());
+
+        let mut left = AvlTreeVec::from([]);
+        let mut right = AvlTreeVec::from([7, 8, 9]);
+        left.append(&mut right);
+        assert!(left.iter().copied().eq([7, 8, 9]));
+        assert!(right.is_empty());
+
+        let mut left = AvlTreeVec::from([10, 20, 30]);
+        let mut right = AvlTreeVec::from([5, 25, 35, 40]);
+        left.append(&mut right);
+        assert!(left.iter().copied().eq([10, 20, 30, 5, 25, 35, 40]));
+        assert!(right.is_empty());
+    }
+
+    #[test]
+    fn test_split_off() {
+        let mut left = AvlTreeVec::from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+        let right = left.split_off(4);
+        assert!(left.iter().copied().eq([0, 1, 2, 3]));
+        assert!(right.iter().copied().eq([4, 5, 6, 7, 8, 9]));
+
+        let mut left = AvlTreeVec::from([10, 20, 30]);
+        let right = left.split_off(0);
+        assert!(left.iter().copied().eq([]));
+        assert!(right.iter().copied().eq([10, 20, 30]));
+
+        let mut left = AvlTreeVec::from([1, 2, 3]);
+        let right = left.split_off(left.len());
+        assert!(left.iter().copied().eq([1, 2, 3]));
+        assert!(right.iter().copied().eq([]));
+
+        let mut left = AvlTreeVec::from([5, 10, 15, 20, 25, 30, 35]);
+        let right = left.split_off(3);
+        assert!(left.iter().copied().eq([5, 10, 15]));
+        assert!(right.iter().copied().eq([20, 25, 30, 35]));
+    }
+
+    #[test]
     fn test_lower_upper_bound() {
         let v = AvlTreeVec::from([
             2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40,
@@ -789,5 +903,41 @@ mod tests {
             *e += 1;
         }
         assert!(v.iter().copied().eq([3, 5, 7, 9, 11]));
+    }
+
+    #[test]
+    fn test_insert_and_remove_random() {
+        use rand::{thread_rng, Rng};
+
+        let mut rng = thread_rng();
+
+        for _ in 0..5 {
+            let mut avl: AvlTreeVec<i32> = AvlTreeVec::new();
+            let mut vec = vec![];
+
+            assert!(avl.is_empty());
+
+            for _ in 0..100000 {
+                if rng.gen_ratio(2, 3) {
+                    // insert
+                    let value = rng.gen();
+                    let index = rng.gen_range(0..=avl.len());
+                    avl.insert(index, value);
+                    vec.insert(index, value);
+                } else {
+                    // remove
+                    if vec.len() > 0 {
+                        let index = rng.gen_range(0..vec.len());
+                        assert_eq!(avl.remove(index), Some(vec.remove(index)));
+                    } else {
+                        assert_eq!(avl.remove(0), None);
+                    }
+                }
+
+                assert_eq!(avl.len(), vec.len());
+            }
+
+            assert!(avl.iter().eq(vec.iter()));
+        }
     }
 }
