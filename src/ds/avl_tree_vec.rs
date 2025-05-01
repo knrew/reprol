@@ -871,6 +871,17 @@ mod tests {
     }
 
     #[test]
+    fn test_split_and_append() {
+        // splitしてappendしたら元に戻る
+        let original = [100, 200, 300, 400, 500, 600];
+        let mut tree = AvlTreeVec::from(original);
+        let mut right = tree.split_off(3);
+        tree.append(&mut right);
+        assert!(tree.iter().copied().eq(original));
+        assert!(right.is_empty());
+    }
+
+    #[test]
     fn test_lower_upper_bound() {
         let v = AvlTreeVec::from([
             2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40,
