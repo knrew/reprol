@@ -34,59 +34,40 @@ mod tests {
 
     #[test]
     fn test_rolling_hash() {
+        use rand::{thread_rng, Rng};
+
         let testcases = vec![
             "abcabc",
-            "xJ7fQm2ZaL",
-            "pKd8sYwBvX",
-            "ZqM3Lt9NcR",
-            "VwP6YmBdT4",
-            "gXJ2KsN7Qm",
-            "aX7JqM2Lt9NcRVwP6YmB",
-            "ZqM3Lt9NcRVwP6YmBdT4",
-            "pKd8sYwBvXZqM3Lt9NcR",
-            "gXJ2KsN7QmaX7JqM2Lt9N",
-            "VwP6YmBdT4gXJ2KsN7QmL",
+            "aabcaabxaaaz",
+            "aaaaaaa",
+            "abcababcababcab",
+            "abacabadabacaba",
+            "abracadabra",
+            "abcabcabcabc",
+            "abcdeedcba",
+            "abababababab",
+            "abcdefg",
+            "xyzxyzxyzxyzxyz",
+            "banana",
+            "jxqweorvzmxnalskdjqpwoeiruty",
+            "ghfjdkalsuznvmbqowieury",
+            "thequickbrownfoxjumpsoveralazydog",
         ];
 
-        const MOD: u64 = 1000000007;
-        let base = 100;
+        const MOD1: u64 = 1000000007;
+        const MOD2: u64 = 2147483647;
+
+        let mut rng = thread_rng();
 
         for s in testcases {
-            let rh = RollingHash::<MOD>::new(&s.as_bytes(), base);
+            let rh1 = RollingHash::<MOD1>::new(s.as_bytes(), rng.gen_range(0..MOD1));
+            let rh2 = RollingHash::<MOD2>::new(s.as_bytes(), rng.gen_range(0..MOD2));
             for i in 0..s.len() {
                 for j in i..s.len() {
                     for k in 0..s.len() {
                         for l in k..s.len() {
-                            assert_eq!(rh.get(i..j) == rh.get(k..l), s[i..j] == s[k..l]);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    #[test]
-    #[ignore]
-    fn test_rolling_hash_long() {
-        debug_assert!(false, "run with release!");
-
-        let testcases = [
-            "aX7JqM2Lt9NcRVwP6YmBgXJ2KsN7QmaX7JqM2Lt9NcRVwP6YmBdT4pKd8sYwBvXZqM3Lt9NcRVwP6YmBdT4gXJ2KsN7QmaX7JqM2Lt9NcRVwP6YmBdT4pKd8sYwBvXZqM3Lt9NcRVwP6YmBdT4gXJ2KsN7QmaX7JqM2Lt9NcRVwP6YmBdT4",
-            "x1XYQhseITkwqbkzTnygM872WNAbUqAmQ2iRGT8uuzJYwm64XnlPtglfknKhgrbpiB7kaobpts2BXNrPZtoJFgmiW0arFxHm1nhrAdJ2CJwyVFaTsFCh93ijVCJmMGkn77ZmQ4ynd759mET3Q8Rp4UQrpgwCMSeXkK4dQnbOTMbNM8pCLT8vsJSFNfPMT1himdztczjz",
-            "GTEgHfq7X7R1hC5PvGHwIibQlYKxI40Dnb3vCyX5nVFhwdwM38UZHSEa2dQGSSOg0sKNfQ439HbxNavMNzaiM4EawfrFLUfS9OBvcMfTRgU5EgmMYhbqGhXRJBO2eSgalgYhlgbrJba91tcoPpvpRXJddyP2XXxGLMrNj6roGbJ5frl42PPa6YJEO6lK0SnqN7yrq26N",
-            "7uvlQUYfl6DjNhGKM4s3S1xFNY37gY05RYYq2ZAP4hl07MwHQSxBcqgXeCZ3Frz4QWG0WmkvgOq76gu8g408IUGL4ay9nvqSeAqLzPExVrqMQeBu8ZB7vIEdn6tplyYLXt0eg1ozaPR1WCYqJguy688JUNlIaByZTOvQVHPa8LWjb0CUrv37qLlwH1f9rP9ZPu5cAY", 
-    ];
-
-        const MOD: u64 = 1000000007;
-        let base = 100;
-
-        for s in testcases {
-            let rh = RollingHash::<MOD>::new(&s.as_bytes(), base);
-            for i in 0..s.len() {
-                for j in i..s.len() {
-                    for k in 0..s.len() {
-                        for l in k..s.len() {
-                            assert_eq!(rh.get(i..j) == rh.get(k..l), s[i..j] == s[k..l]);
+                            assert_eq!(rh1.get(i..j) == rh1.get(k..l), s[i..j] == s[k..l]);
+                            assert_eq!(rh2.get(i..j) == rh2.get(k..l), s[i..j] == s[k..l]);
                         }
                     }
                 }

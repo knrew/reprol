@@ -83,29 +83,38 @@ impl Debug for ZAlgorithm {
 
 #[cfg(test)]
 mod tests {
-    use std::fmt::Debug;
-
     use super::ZAlgorithm;
-
-    fn check<T: PartialOrd + Debug>(s: &[T]) {
-        let z = ZAlgorithm::new(&s);
-        let n = s.len();
-        for i in 0..n {
-            let l = z[i];
-            assert_eq!(&s[0..l], &s[i..(i + l)]);
-            if i + l < s.len() {
-                assert!(s[l..(l + 1)] != s[(i + l)..(i + l + 1)]);
-            }
-        }
-    }
 
     #[test]
     fn test_z_algorithm() {
-        let s =b"xkevvvwnqswzyanzdptrcvwcokjkdmlrbbxdwycoeyrlboklgukinxkhrxzfeakjkshqpurjntnrretcqmpvupjiskdagpxubdpjxkevvvwnqswzyanzdptrcvwcokjkdmlrbbxdwycoeyrlboklgukinxkhrxzfeakjkshqpurjntnrretcqmpvupjiskdagpxubdpj";
-        check(s);
-        let s = b"mgdimasxapolbeewjltejnwnqyhmisbquatxqszeuwlxieqwwumgdimasxapolbeewjltejnwnqyhmisbquatxqszeuwlxieqwwu";
-        check(s);
-        let s = "eqjxcaarubgfbjiwazubmkyujgjcgegjqzfeqjxcaarubgfbjiwazubmkyujgjcgegjqzf";
-        check(s.as_bytes());
+        let testcases = vec![
+            "abcabc",
+            "aabcaabxaaaz",
+            "aaaaaaa",
+            "abcababcababcab",
+            "abacabadabacaba",
+            "abracadabra",
+            "abcabcabcabc",
+            "abcdeedcba",
+            "abababababab",
+            "abcdefg",
+            "xyzxyzxyzxyzxyz",
+            "banana",
+            "jxqweorvzmxnalskdjqpwoeiruty",
+            "ghfjdkalsuznvmbqowieury",
+            "thequickbrownfoxjumpsoveralazydog",
+        ];
+
+        for s in testcases {
+            let z = ZAlgorithm::new(s.as_bytes());
+            let n = s.len();
+            for i in 0..n {
+                let l = z[i];
+                assert_eq!(&s[0..l], &s[i..i + l]);
+                if i + l < s.len() {
+                    assert!(s[l..l + 1] != s[i + l..i + l + 1]);
+                }
+            }
+        }
     }
 }
