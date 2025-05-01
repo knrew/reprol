@@ -41,7 +41,7 @@ impl Scc {
     }
 
     /// 分解された連結成分の個数
-    pub fn num_components(&self) -> usize {
+    pub fn count_components(&self) -> usize {
         assert!(self.has_built);
         self.components.len()
     }
@@ -132,6 +132,6 @@ mod tests {
             scc.add_edge(u, v);
         }
         scc.build();
-        assert_eq!(scc.num_components(), 3);
+        assert_eq!(scc.count_components(), 3);
     }
 }
