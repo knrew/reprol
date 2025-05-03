@@ -931,9 +931,9 @@ mod tests {
 
     #[test]
     fn test_insert_and_remove_random_small() {
-        use rand::{thread_rng, Rng};
+        use rand::{rngs::StdRng, Rng, SeedableRng};
 
-        let mut rng = thread_rng();
+        let mut rng = StdRng::seed_from_u64(42);
 
         for _ in 0..5 {
             let mut avl: AvlTreeVec<i32> = AvlTreeVec::new();
@@ -968,9 +968,9 @@ mod tests {
 
     #[test]
     fn test_insert_and_remove_random_large() {
-        use rand::{thread_rng, Rng};
+        use rand::{rngs::StdRng, Rng, SeedableRng};
 
-        let mut rng = thread_rng();
+        let mut rng = StdRng::seed_from_u64(42);
 
         for _ in 0..10 {
             let mut avl: AvlTreeVec<i32> = AvlTreeVec::new();
