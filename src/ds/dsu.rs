@@ -13,6 +13,9 @@
 //! assert_eq!(dsu.size(0), 2);
 //! assert_eq!(dsu.count_components(), 3);
 //! ```
+//!
+//! # 問題例
+//! - [Disjoint Set: Union Find Tree](https://onlinejudge.u-aizu.ac.jp/courses/library/3/DSL/1/DSL_1_A)
 
 use std::mem::swap;
 
@@ -23,7 +26,7 @@ pub struct Dsu {
 }
 
 impl Dsu {
-    /// 要素数`n`で初期化する
+    /// 要素数`n`で初期化する．
     pub fn new(n: usize) -> Self {
         assert!(n > 0);
         Self {
@@ -33,7 +36,7 @@ impl Dsu {
         }
     }
 
-    /// 要素`v`が属する集合の代表元を返す
+    /// 要素`v`が属する集合の代表元を返す．
     pub fn find(&mut self, v: usize) -> usize {
         if self.parents[v] == v {
             return v;
@@ -43,7 +46,7 @@ impl Dsu {
         root
     }
 
-    /// 要素`u`と`v`が属する集合を統合する
+    /// 要素`u`と`v`が属する集合を統合する．
     pub fn merge(&mut self, u: usize, v: usize) {
         let mut u = self.find(u);
         let mut v = self.find(v);
@@ -61,18 +64,18 @@ impl Dsu {
         self.count_components -= 1;
     }
 
-    /// 要素`u`と`v`が同じ集合に属するかを判定する
+    /// 要素`u`と`v`が同じ集合に属するかを判定する．
     pub fn connected(&mut self, u: usize, v: usize) -> bool {
         self.find(u) == self.find(v)
     }
 
-    /// 要素`v`が属する集合の要素数を返す
+    /// 要素`v`が属する集合の要素数を返す．
     pub fn size(&mut self, v: usize) -> usize {
         let v = self.find(v);
         self.sizes[v]
     }
 
-    /// すべての連結成分を列挙する
+    /// すべての連結成分を列挙する．
     pub fn components(&mut self) -> impl Iterator<Item = Vec<usize>> {
         let n = self.parents.len();
         let mut components = vec![vec![]; n];
@@ -83,7 +86,7 @@ impl Dsu {
         components.into_iter()
     }
 
-    /// 連結成分の個数を返す
+    /// 連結成分の個数を返す．
     pub fn count_components(&self) -> usize {
         self.count_components
     }
