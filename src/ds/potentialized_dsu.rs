@@ -1,3 +1,28 @@
+//! ポテンシャルつきDSU
+//!
+//! # 使用例
+//! ```
+//! use reprol::ds::potentialized_dsu::PotentializedDsu;
+//! use reprol::ops::op_add::OpAdd;
+//!
+//! let mut dsu = PotentializedDsu::<OpAdd<i64>>::new(5);
+//! assert!(dsu.merge(0, 1, 4));
+//! assert!(dsu.connected(0, 1));
+//! assert_eq!(dsu.diff_potential(0, 1), 4);
+//! assert_eq!(dsu.diff_potential(1, 0), -4);
+//!
+//! assert!(!dsu.merge(0, 1, 6));
+//! assert_eq!(dsu.diff_potential(0, 1), 4);
+//!
+//! assert!(dsu.merge(0, 3, 5));
+//! assert_eq!(dsu.diff_potential(0, 3), 5);
+//! assert_eq!(dsu.diff_potential(1, 3), 1);
+//! ```
+//!
+//! # 問題例
+//! - [Weighted Union Find Trees](https://onlinejudge.u-aizu.ac.jp/courses/library/3/DSL/1/DSL_1_B)
+//! - [ABC373 D](https://atcoder.jp/contests/abc373/tasks/abc373_d)
+
 use std::mem::swap;
 
 use crate::ops::group::Group;
@@ -11,6 +36,7 @@ pub struct PotentializedDsu<O: Group> {
 }
 
 impl<O: Group> PotentializedDsu<O> {
+    /// 要素数`n`で初期化する．
     pub fn new(n: usize) -> Self
     where
         O: Default,
@@ -18,6 +44,7 @@ impl<O: Group> PotentializedDsu<O> {
         Self::with_op(n, O::default())
     }
 
+    /// 演算(群)`op`を明示的に渡して要素数`n`で初期化する．
     pub fn with_op(n: usize, op: O) -> Self {
         Self {
             parents: (0..n).collect(),
@@ -28,7 +55,7 @@ impl<O: Group> PotentializedDsu<O> {
         }
     }
 
-    /// xのrootのindexを返す
+    /// 要素`v`が属する集合の代表元を返す．
     pub fn find(&mut self, v: usize) -> usize {
         if self.parents[v] == v {
             return v;
@@ -43,9 +70,10 @@ impl<O: Group> PotentializedDsu<O> {
         root
     }
 
-    /// xが属するグループとyが属するグループを統合する
-    /// potential[u]+w=potential[v]となるように頂点にポテンシャルを置く
-    /// 既存のポテンシャルと矛盾があれば，もとのポテンシャルを維持して返り値としてfalseを返す
+    /// 要素`u`と`v`が属する集合を統合する．
+    /// potental[u]+d=potential[v]となるようにポテンシャルを更新する．
+    /// すでに`u`と`v`が同じ集合に属しており，既存の差と矛盾があれば更新は行われずfalseを返す．
+    /// そうでない場合にはtrueを返す．
     pub fn merge(&mut self, u: usize, v: usize, d: O::Value) -> bool
     where
         O::Value: PartialEq,
@@ -78,25 +106,26 @@ impl<O: Group> PotentializedDsu<O> {
         true
     }
 
-    /// xとyが同じグループに属すか
+    /// 要素`u`と`v`が同じ集合に属するかを判定する．
     pub fn connected(&mut self, u: usize, v: usize) -> bool {
         self.find(u) == self.find(v)
     }
 
-    /// xが属するグループの要素数
+    /// 要素`v`が属する集合の要素数を返す．
     pub fn size(&mut self, v: usize) -> usize {
         let v = self.find(v);
         self.sizes[v]
     }
 
-    /// vに置かれたポテンシャル
+    /// 要素`v`に置かれたポテンシャルを返す．
     pub fn potential(&mut self, v: usize) -> &O::Value {
         let _ = self.find(v);
         &self.potentials[v]
     }
 
-    /// uとvのポテンシャルの差
-    /// potential[v] - potential[u]
+    /// 要素`u`と`v`が同じ集合に属している場合に，
+    /// それらのポテンシャルの差(potential[v] - potential[u])を返す．
+    /// `u`と`v`が同じ集合に属していない場合はpanicする．
     pub fn diff_potential(&mut self, u: usize, v: usize) -> O::Value {
         assert!(self.connected(u, v));
         let _ = self.find(u);
@@ -106,7 +135,7 @@ impl<O: Group> PotentializedDsu<O> {
         self.op.op(pv, &self.op.inv(pu))
     }
 
-    /// 連結成分を列挙する
+    /// すべての連結成分を列挙する．
     pub fn components(&mut self) -> impl Iterator<Item = Vec<usize>> {
         let n = self.parents.len();
         let mut components = vec![vec![]; n];
@@ -117,7 +146,7 @@ impl<O: Group> PotentializedDsu<O> {
         components.into_iter()
     }
 
-    /// 連結成分の個数
+    /// 連結成分の個数を返す．
     pub fn count_components(&self) -> usize {
         self.count_components
     }
@@ -125,94 +154,76 @@ impl<O: Group> PotentializedDsu<O> {
 
 #[cfg(test)]
 mod tests {
-    #[derive(Debug)]
-    enum Query {
-        /// Merge(u, v, w): uが属する集合とvが属する集合を結合し，
-        /// u+w=vとなるように頂点にポテンシャルを置く
-        /// すでに設定されているポテンシャルと矛盾があれば，ポテンシャルは変更せず，
-        /// クエリの出力として-1を返す
-        /// 矛盾がなければ0を返す
-        Merge(usize, usize, i64),
+    use crate::ops::{op_add::OpAdd, op_xor::OpXor};
 
-        /// DifferencePotential(u, v): uとvが同じ集合に属するならその差(v-u)を出力する．
-        /// そうでなければ-1を出力する
-        DifferencePotential(usize, usize),
+    use super::*;
 
-        /// Size(v): vが属する集合の要素数
-        Size(usize),
+    #[test]
+    fn test() {
+        let mut dsu = PotentializedDsu::<OpAdd<i64>>::new(5);
 
-        /// 連結成分の個数をカウントする
-        CountComponents,
-    }
-    use Query::{CountComponents, DifferencePotential, Merge, Size};
+        assert!(dsu.merge(0, 1, 4));
+        assert!(dsu.connected(0, 1));
+        assert_eq!(dsu.diff_potential(0, 1), 4);
+        assert_eq!(dsu.diff_potential(1, 0), -4);
 
-    use crate::ops::op_add::OpAdd;
+        assert!(!dsu.merge(0, 1, 6));
+        assert_eq!(dsu.diff_potential(0, 1), 4);
 
-    use super::PotentializedDsu;
+        assert!(dsu.merge(0, 3, 5));
+        assert_eq!(dsu.diff_potential(0, 3), 5);
+        assert_eq!(dsu.diff_potential(1, 3), 1);
+        assert_eq!(dsu.diff_potential(3, 1), -1);
 
-    /// クエリを順に実行する
-    /// 各実行結果を返す
-    fn run_queries(n: usize, queries: &[Query]) -> Vec<i64> {
-        let mut res = vec![];
+        let mut dsu = PotentializedDsu::<OpAdd<i64>>::new(4);
 
-        let mut dsu = PotentializedDsu::<OpAdd<i64>>::new(n);
+        assert!(dsu.merge(0, 1, 2));
+        assert!(dsu.merge(1, 2, 3));
+        assert!(dsu.merge(2, 3, 4));
 
-        for query in queries {
-            match query {
-                &Merge(u, v, w) => {
-                    res.push(if dsu.merge(u, v, w) { 0 } else { -1 });
-                }
-                &DifferencePotential(u, v) => {
-                    if dsu.connected(u, v) {
-                        res.push(dsu.diff_potential(u, v));
-                    } else {
-                        res.push(-1)
-                    }
-                }
-                &Size(v) => {
-                    res.push(dsu.size(v) as i64);
-                }
-                &CountComponents => {
-                    res.push(dsu.count_components() as i64);
-                }
-            }
-        }
+        assert_eq!(dsu.diff_potential(0, 3), 9);
+        assert_eq!(dsu.diff_potential(3, 0), -9);
+        assert_eq!(dsu.diff_potential(1, 3), 7);
+        assert_eq!(dsu.diff_potential(0, 2), 5);
 
-        res
+        let mut dsu = PotentializedDsu::<OpAdd<i64>>::new(4);
+
+        assert!(dsu.merge(0, 1, 3));
+        assert!(dsu.merge(2, 3, 7));
+        assert!(dsu.merge(1, 3, 0));
+        assert_eq!(dsu.diff_potential(0, 2), -4);
+        assert_eq!(dsu.diff_potential(2, 0), 4);
+        assert_eq!(dsu.diff_potential(1, 3), 0);
     }
 
     #[test]
-    fn test_potentialzized_dsu() {
-        {
-            let n = 5;
-            let queries = vec![
-                Merge(2, 2, 4),
-                Merge(2, 2, 0),
-                DifferencePotential(4, 4),
-                CountComponents,
-                Merge(0, 2, 3),
-                Merge(1, 2, -5),
-                Merge(0, 1, 48),
-                DifferencePotential(4, 0),
-                CountComponents,
-                Size(4),
-                Size(2),
-                DifferencePotential(1, 2),
-                DifferencePotential(0, 1),
-                Size(4),
-                Merge(4, 0, -30),
-                Merge(4, 3, -68),
-                DifferencePotential(2, 4),
-                DifferencePotential(4, 2),
-                DifferencePotential(3, 1),
-                DifferencePotential(2, 2),
-                CountComponents,
-            ];
-            let expected = vec![
-                -1, 0, 0, 5, 0, 0, -1, -1, 3, 1, 3, -5, 8, 1, 0, 0, 27, -27, 46, 0, 1,
-            ];
-            let result = run_queries(n, &queries);
-            assert_eq!(expected, result);
-        }
+    fn test_xor() {
+        let mut dsu = PotentializedDsu::<OpXor<u32>>::new(4);
+
+        assert!(dsu.merge(0, 1, 1));
+        assert_eq!(dsu.diff_potential(0, 1), 1);
+        assert_eq!(dsu.diff_potential(1, 0), 1);
+
+        assert!(dsu.merge(1, 2, 2));
+        assert_eq!(dsu.diff_potential(0, 2), 3);
+        assert_eq!(dsu.diff_potential(2, 0), 3);
+
+        assert!(dsu.merge(2, 3, 9));
+        assert_eq!(dsu.diff_potential(0, 3), 10);
+        assert_eq!(dsu.diff_potential(3, 0), 10);
+
+        assert!(dsu.merge(3, 0, 10));
+        assert_eq!(dsu.diff_potential(3, 0), 10);
+
+        assert!(!dsu.merge(0, 3, 12));
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_diff_potential_with_unconnected_nodes() {
+        // `u`と`v`が同じ集合に属していない場合に`diff_potential(u, v)`を呼ぶとpanicする．
+        let mut dsu = PotentializedDsu::<OpAdd<_>>::new(4);
+        dsu.merge(1, 2, 3);
+        dsu.diff_potential(0, 3);
     }
 }
