@@ -1,3 +1,19 @@
+//! Disjoint Set Union(Union-Find)
+//!
+//! # 使用例
+//! ```
+//! use reprol::ds::dsu::Dsu;
+//!
+//! let mut dsu = Dsu::new(5);
+//!
+//! dsu.merge(0, 1);
+//! dsu.merge(3, 4);
+//! assert!(dsu.connected(0, 1));
+//! assert!(!dsu.connected(0, 3));
+//! assert_eq!(dsu.size(0), 2);
+//! assert_eq!(dsu.count_components(), 3);
+//! ```
+
 use std::mem::swap;
 
 pub struct Dsu {
@@ -7,7 +23,9 @@ pub struct Dsu {
 }
 
 impl Dsu {
+    /// 要素数`n`で初期化する
     pub fn new(n: usize) -> Self {
+        assert!(n > 0);
         Self {
             parents: (0..n).collect(),
             sizes: vec![1; n],
@@ -15,7 +33,7 @@ impl Dsu {
         }
     }
 
-    /// xのrootのindexを返す
+    /// 要素`v`が属する集合の代表元を返す
     pub fn find(&mut self, v: usize) -> usize {
         if self.parents[v] == v {
             return v;
@@ -25,7 +43,7 @@ impl Dsu {
         root
     }
 
-    /// xが属するグループとyが属するグループを統合する
+    /// 要素`u`と`v`が属する集合を統合する
     pub fn merge(&mut self, u: usize, v: usize) {
         let mut u = self.find(u);
         let mut v = self.find(v);
@@ -43,18 +61,18 @@ impl Dsu {
         self.count_components -= 1;
     }
 
-    /// xとyが同じグループに属すか
+    /// 要素`u`と`v`が同じ集合に属するかを判定する
     pub fn connected(&mut self, u: usize, v: usize) -> bool {
         self.find(u) == self.find(v)
     }
 
-    /// xが属するグループの要素数
+    /// 要素`v`が属する集合の要素数を返す
     pub fn size(&mut self, v: usize) -> usize {
         let v = self.find(v);
         self.sizes[v]
     }
 
-    /// 連結成分を列挙する
+    /// すべての連結成分を列挙する
     pub fn components(&mut self) -> impl Iterator<Item = Vec<usize>> {
         let n = self.parents.len();
         let mut components = vec![vec![]; n];
@@ -65,7 +83,7 @@ impl Dsu {
         components.into_iter()
     }
 
-    /// 連結成分の個数
+    /// 連結成分の個数を返す
     pub fn count_components(&self) -> usize {
         self.count_components
     }
@@ -73,188 +91,89 @@ impl Dsu {
 
 #[cfg(test)]
 mod tests {
-    use super::Dsu;
-
-    // (ポテンシャルなし)DSUに対するクエリ
-    enum Query {
-        /// Merge(u, v): uが属する集合とvが属する集合を結合する
-        Merge(usize, usize),
-
-        /// Same(u, v): uとvが同じ集合に属するかを判定する
-        Connected(usize, usize),
-
-        /// Size(v): vが属する集合の要素数
-        Size(usize),
-
-        /// 連結成分の個数をカウントする
-        CountComponents,
-    }
-    use Query::{Connected, CountComponents, Merge, Size};
-
-    /// クエリを順に実行する
-    /// 各実行結果を返す
-    fn run_queries(n: usize, queries: &[Query]) -> Vec<usize> {
-        let mut res = vec![];
-
-        let mut dsu = Dsu::new(n);
-
-        for query in queries {
-            match query {
-                &Merge(u, v) => {
-                    dsu.merge(u, v);
-                }
-                &Connected(u, v) => {
-                    res.push(if dsu.connected(u, v) { 1 } else { 0 });
-                }
-                &Size(v) => {
-                    res.push(dsu.size(v));
-                }
-                &CountComponents => {
-                    res.push(dsu.count_components());
-                }
-            }
-        }
-
-        res
-    }
+    use super::*;
 
     #[test]
     fn test_dsu() {
-        {
-            // https://judge.u-aizu.ac.jp/onlinejudge/description.jsp?id=DSL_1_A
-            let n = 5;
-            let queries = vec![
-                Merge(1, 4),
-                Merge(2, 3),
-                Connected(1, 2),
-                Connected(3, 4),
-                Connected(1, 4),
-                Connected(3, 2),
-                Merge(1, 3),
-                Connected(2, 4),
-                Connected(3, 0),
-                Merge(0, 4),
-                Connected(0, 2),
-                Connected(3, 0),
-            ];
-            let expected = vec![0, 0, 1, 1, 1, 0, 1, 1];
-            let result = run_queries(n, &queries);
-            assert_eq!(expected, result);
-        }
+        let mut dsu = Dsu::new(6);
 
-        {
-            let n = 5;
-            let queries = vec![
-                Merge(1, 0),
-                Connected(2, 0),
-                Merge(0, 2),
-                Connected(4, 0),
-                Connected(3, 4),
-                Merge(1, 2),
-                Connected(2, 0),
-                Connected(4, 1),
-                Connected(1, 4),
-                Connected(3, 3),
-                Merge(2, 1),
-                Connected(3, 2),
-                Merge(4, 2),
-                Connected(4, 1),
-            ];
-            let expected = vec![0, 0, 0, 1, 0, 0, 1, 0, 1];
-            let result = run_queries(n, &queries);
-            assert_eq!(expected, result);
-        }
+        dsu.merge(0, 1);
+        dsu.merge(2, 3);
+        assert!(dsu.connected(0, 1));
+        assert!(dsu.connected(2, 3));
+        assert!(!dsu.connected(0, 2));
+        assert_eq!(dsu.count_components(), 4);
 
-        {
-            let n = 10;
-            let queries = vec![
-                Connected(5, 4),
-                Connected(4, 8),
-                Merge(8, 3),
-                Connected(4, 7),
-                Merge(8, 4),
-                CountComponents,
-                Merge(5, 8),
-                Merge(7, 7),
-                Connected(8, 6),
-                CountComponents,
-                Merge(3, 5),
-                Connected(6, 0),
-                CountComponents,
-                Size(4),
-                Size(1),
-                Size(2),
-                Connected(8, 7),
-                Connected(0, 2),
-                Merge(5, 6),
-                Merge(6, 3),
-                CountComponents,
-            ];
-            let expected = vec![0, 0, 0, 8, 0, 7, 0, 7, 4, 1, 1, 0, 0, 6];
-            let result = run_queries(n, &queries);
-            assert_eq!(expected, result);
-        }
+        dsu.merge(1, 2);
+        assert!(dsu.connected(0, 3));
+        assert_eq!(dsu.size(1), 4);
+        assert_eq!(dsu.count_components(), 3);
 
-        {
-            let n = 12;
-            let queries = vec![
-                Connected(0, 9),
-                Merge(0, 11),
-                Merge(8, 2),
-                Merge(10, 0),
-                Connected(0, 2),
-                CountComponents,
-                Merge(0, 11),
-                Merge(4, 10),
-                CountComponents,
-                Merge(0, 2),
-                Connected(4, 3),
-                Merge(4, 1),
-                Merge(11, 2),
-                Connected(11, 4),
-                Merge(6, 2),
-                Connected(8, 3),
-                CountComponents,
-                Merge(8, 5),
-                Size(6),
-                Merge(3, 7),
-                Size(10),
-                CountComponents,
-            ];
-            let expected = vec![0, 0, 9, 8, 0, 1, 0, 5, 9, 9, 3];
-            let result = run_queries(n, &queries);
-            assert_eq!(expected, result);
-        }
+        dsu.merge(4, 5);
+        assert!(dsu.connected(4, 5));
+        assert_eq!(dsu.count_components(), 2);
 
-        {
-            let n = 15;
-            let queries = vec![
-                Merge(10, 14),
-                Connected(5, 8),
-                Merge(5, 14),
-                Size(3),
-                Merge(12, 6),
-                Merge(7, 4),
-                Merge(12, 6),
-                Merge(7, 13),
-                Connected(10, 13),
-                Connected(5, 10),
-                Connected(0, 1),
-                Connected(6, 12),
-                Connected(9, 4),
-                Merge(2, 7),
-                Merge(1, 12),
-                Merge(7, 14),
-                Size(5),
-                Size(12),
-                Merge(13, 5),
-                Connected(6, 7),
-                Connected(14, 14),
-                CountComponents,
-            ];
-            let expected = vec![0, 1, 0, 1, 0, 1, 0, 7, 3, 0, 1, 7];
-            let result = run_queries(n, &queries);
-            assert_eq!(expected, result);
+        let mut dsu = Dsu::new(3);
+        dsu.merge(0, 1);
+        dsu.merge(1, 0);
+        assert!(dsu.connected(0, 1));
+        assert_eq!(dsu.count_components(), 2);
+    }
+
+    #[test]
+    fn test_components() {
+        let mut dsu = Dsu::new(6);
+        dsu.merge(0, 1);
+        dsu.merge(2, 3);
+        dsu.merge(4, 5);
+
+        let mut components = dsu.components().collect::<Vec<_>>();
+        components.iter_mut().for_each(|v| v.sort_unstable());
+        components.sort_unstable();
+
+        assert_eq!(components, vec![vec![0, 1], vec![2, 3], vec![4, 5]]);
+    }
+
+    #[test]
+    fn test_dsu_merge_and_connected_random() {
+        use rand::{rngs::StdRng, Rng, SeedableRng};
+
+        let mut rng = StdRng::seed_from_u64(30);
+
+        // 要素数
+        let n = 100;
+
+        // クエリ数
+        let q = 10000;
+
+        for _ in 0..10 {
+            let mut dsu = Dsu::new(n);
+
+            // 愚直実装
+            // naive[v]: vが属する集合の代表元
+            let mut naive = (0..n).collect::<Vec<_>>();
+
+            for _ in 0..q {
+                let u = rng.gen_range(0..n);
+                let v = rng.gen_range(0..n);
+
+                if rng.gen_ratio(1, 2) {
+                    // merge
+
+                    dsu.merge(u, v);
+
+                    let cur = naive[v];
+                    let nxt = naive[u];
+                    for v in 0..n {
+                        if naive[v] == cur {
+                            naive[v] = nxt;
+                        }
+                    }
+                } else {
+                    // connected
+                    assert_eq!(dsu.connected(u, v), naive[u] == naive[v]);
+                }
+            }
         }
     }
 }
