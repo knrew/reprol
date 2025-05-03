@@ -94,7 +94,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_dsu() {
+    fn test() {
         let mut dsu = Dsu::new(6);
 
         dsu.merge(0, 1);
@@ -135,7 +135,7 @@ mod tests {
     }
 
     #[test]
-    fn test_dsu_merge_and_connected_random() {
+    fn test_merge_and_connected_random() {
         use rand::{rngs::StdRng, Rng, SeedableRng};
 
         let mut rng = StdRng::seed_from_u64(30);
@@ -151,7 +151,7 @@ mod tests {
 
             // 愚直実装
             // naive[v]: vが属する集合の代表元
-            let mut naive = (0..n).collect::<Vec<_>>();
+            let mut naive_parents = (0..n).collect::<Vec<_>>();
 
             for _ in 0..q {
                 let u = rng.gen_range(0..n);
@@ -162,16 +162,19 @@ mod tests {
 
                     dsu.merge(u, v);
 
-                    let cur = naive[v];
-                    let nxt = naive[u];
-                    for v in 0..n {
-                        if naive[v] == cur {
-                            naive[v] = nxt;
+                    // 愚直実装の更新
+                    {
+                        let u = naive_parents[u];
+                        let v = naive_parents[v];
+                        for p in &mut naive_parents {
+                            if *p == u {
+                                *p = v;
+                            }
                         }
                     }
                 } else {
                     // connected
-                    assert_eq!(dsu.connected(u, v), naive[u] == naive[v]);
+                    assert_eq!(dsu.connected(u, v), naive_parents[u] == naive_parents[v]);
                 }
             }
         }
