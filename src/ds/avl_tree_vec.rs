@@ -670,7 +670,18 @@ impl<T> DoubleEndedIterator for IntoIter<T> {
 
 #[cfg(test)]
 mod tests {
-    use super::AvlTreeVec;
+    use super::*;
+
+    /// AVL木が正しく平衡であるかを確認する
+    fn is_balanced<T>(tree: &AvlTreeVec<T>) -> bool {
+        let mut is_balanced = true;
+        traverse_postorder(tree.root, |node| {
+            if diff_height(Some(node)) > 1 {
+                is_balanced = false;
+            }
+        });
+        is_balanced
+    }
 
     #[test]
     fn test_push_back() {
@@ -681,6 +692,7 @@ mod tests {
         tree.push_back(4);
         tree.push_back(1);
         tree.push_back(5);
+        assert!(is_balanced(&tree));
         assert_eq!(tree[0], 3);
         assert_eq!(tree[1], 1);
         assert_eq!(tree[2], 4);
@@ -700,6 +712,7 @@ mod tests {
         tree.push_front(4);
         tree.push_front(1);
         tree.push_front(5);
+        assert!(is_balanced(&tree));
         assert_eq!(tree[0], 5);
         assert_eq!(tree[1], 1);
         assert_eq!(tree[2], 4);
@@ -917,12 +930,49 @@ mod tests {
     }
 
     #[test]
-    fn test_insert_and_remove_random() {
+    fn test_insert_and_remove_random_small() {
         use rand::{thread_rng, Rng};
 
         let mut rng = thread_rng();
 
         for _ in 0..5 {
+            let mut avl: AvlTreeVec<i32> = AvlTreeVec::new();
+            let mut vec = vec![];
+
+            assert!(avl.is_empty());
+
+            for _ in 0..1000 {
+                if rng.gen_ratio(2, 3) {
+                    // insert
+                    let value = rng.gen();
+                    let index = rng.gen_range(0..=avl.len());
+                    avl.insert(index, value);
+                    vec.insert(index, value);
+                } else {
+                    // remove
+                    if vec.len() > 0 {
+                        let index = rng.gen_range(0..vec.len());
+                        assert_eq!(avl.remove(index), Some(vec.remove(index)));
+                    } else {
+                        assert_eq!(avl.remove(0), None);
+                    }
+                }
+
+                assert!(is_balanced(&avl));
+                assert_eq!(avl.len(), vec.len());
+            }
+
+            assert!(avl.iter().eq(vec.iter()));
+        }
+    }
+
+    #[test]
+    fn test_insert_and_remove_random_large() {
+        use rand::{thread_rng, Rng};
+
+        let mut rng = thread_rng();
+
+        for _ in 0..10 {
             let mut avl: AvlTreeVec<i32> = AvlTreeVec::new();
             let mut vec = vec![];
 
@@ -948,6 +998,7 @@ mod tests {
                 assert_eq!(avl.len(), vec.len());
             }
 
+            assert!(is_balanced(&avl));
             assert!(avl.iter().eq(vec.iter()));
         }
     }
