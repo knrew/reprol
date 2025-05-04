@@ -1,5 +1,7 @@
 # reprol
-競技プログラミングライブラリ
+競技プログラミングライブラリ．
+
+ドキュメント(整備中): [https://knrew.github.com/knrew/reprol](https://knrew.github.com/knrew/reprol)
 
 ## 使い方
 1. クローン
