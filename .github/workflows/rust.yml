@@ -28,7 +28,7 @@ jobs:
       - name: Run tests(release)
         run: cargo test --release --verbose
 
-  deploydoc:
+  deploydocs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -40,7 +40,7 @@ jobs:
         run: cargo doc --no-deps --verbose
       - name: Move docs to root
         run: |
-          CRATE_NAME=$(basename $(pwd)) i
+          CRATE_NAME=$(basename $(pwd))
           mkdir ./docs
           cp -r target/doc/${CRATE_NAME}/* ./docs
       - name: Deploy to GitHub Pages
