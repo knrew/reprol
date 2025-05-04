@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"trait":["ArrayFormatter","CharsFormatter","IterFormatter","Usize1ArrayFormatter"]};
