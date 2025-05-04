@@ -1,5 +1,7 @@
 //! 出力時に便利な関数など
-//! NOTE: 命名が微妙
+//!
+//! # NOTE
+//! - 命名が微妙
 
 use std::fmt::{Display, Write};
 
