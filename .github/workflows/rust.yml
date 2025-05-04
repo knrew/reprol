@@ -39,7 +39,7 @@ jobs:
       - name: Build docs
         run: cargo doc --no-deps --verbose
       - name: Add redirect index.html
-        run: echo '<meta http-equiv="refresh" content="0; url=/">' > target/doc/index.html
+        run: echo '<meta http-equiv="refresh" content="0; url=reprol/">' > target/doc/index.html
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
