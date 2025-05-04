@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["next_permutation","next_permutation_by","next_permutation_by_key"]};

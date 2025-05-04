@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"mod":["digit","div_ceil","div_floor","divisors","factors","gcd","inv_mod","iroot","is_prime","lcm","linear_sieve","mod_factorial","modint","pow","pow_mod","radix","ratio"]};

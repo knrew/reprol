@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"struct":["CumulativeArray2d"],"type":["CumulativeSum2d"]};

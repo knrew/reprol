@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"struct":["ModFactorial"],"type":["ModFactorial1000000007","ModFactorial998244353"]};

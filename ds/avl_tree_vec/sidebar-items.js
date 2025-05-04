@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"struct":["AvlTreeVec","IntoIter","Iter","IterMut"]};
