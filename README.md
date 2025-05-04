@@ -2,7 +2,7 @@
 競技プログラミングライブラリ．
 
 ## ドキュメント(整備中)
-[https://knrew.github.io/reprol/reprol/](https://knrew.github.io/reprol/reprol/)
+[https://knrew.github.io/reprol/](https://knrew.github.io/reprol/)
 
 ## 使い方
 1. クローン
