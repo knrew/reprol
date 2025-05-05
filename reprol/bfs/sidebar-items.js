@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["Bfs","NoPath","WithPath"]};
+window.SIDEBAR_ITEMS = {"struct":["BfsImpl","NoPath","WithPath"],"trait":["PathTracker"],"type":["Bfs","BfsWithPath"]};
