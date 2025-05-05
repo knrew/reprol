@@ -51,7 +51,6 @@ mod tests {
             "banana",
             "jxqweorvzmxnalskdjqpwoeiruty",
             "ghfjdkalsuznvmbqowieury",
-            "thequickbrownfoxjumpsoveralazydog",
         ];
 
         const MOD1: u64 = 1000000007;

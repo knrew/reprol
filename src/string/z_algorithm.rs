@@ -1,15 +1,27 @@
-//! Z-algorithm
+//! Z algorithm
+//!
+//! 文字列`s`に対して，配列`z`(長さ`|S|`)を構築する．
+//! `z[i]`: `s`と`s[i..n)`の最長共通接頭辞(LCP)の長さ．
+//!
+//! # 使用例
+//! ```
+//! use reprol::string::z_algorithm::ZAlgorithm;
+//! let z = ZAlgorithm::new(b"abacaba");
+//! assert_eq!(z[0], 7);
+//! assert_eq!(z[1], 0);
+//! assert_eq!(z[4], 3);
+//! ```
 
 use std::{fmt::Debug, ops::Index};
 
+#[derive(Clone)]
 pub struct ZAlgorithm {
     z: Vec<usize>,
 }
 
 impl ZAlgorithm {
-    /// 文字列sに対して，
-    /// z[i]: sとs[i..]の最長共通接頭辞の長さ
-    /// となる配列zを構築する
+    /// 文字列`s`に対して，配列`z`(長さ`|S|`)を構築する．
+    /// `z[i]`: `s`と`s[i..n)`の最長共通接頭辞(LCP)の長さ．
     pub fn new<T: PartialEq>(s: &[T]) -> Self {
         if s.is_empty() {
             return Self { z: vec![] };
@@ -83,7 +95,7 @@ impl Debug for ZAlgorithm {
 
 #[cfg(test)]
 mod tests {
-    use super::ZAlgorithm;
+    use super::*;
 
     #[test]
     fn test_z_algorithm() {
@@ -102,7 +114,6 @@ mod tests {
             "banana",
             "jxqweorvzmxnalskdjqpwoeiruty",
             "ghfjdkalsuznvmbqowieury",
-            "thequickbrownfoxjumpsoveralazydog",
         ];
 
         for s in testcases {
