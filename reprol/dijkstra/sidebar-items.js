@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["dijkstra_adjacencies"],"struct":["Dijkstra"]};
+window.SIDEBAR_ITEMS = {"struct":["DijkstraImpl","NoPath","WithPath"],"trait":["PathTracker"],"type":["Dijkstra","DijkstraWithPath"]};
