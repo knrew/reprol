@@ -1,3 +1,15 @@
+//! ローリングハッシュ(Rolling Hash)
+//!
+//! 文字列の連続部分列のハッシュ値を計算する．
+//!
+//! # 使用例
+//! ```
+//! use reprol::string::rolling_hash::RollingHash;
+//! let s = b"abracadabra";
+//! let rh = RollingHash::<1_000_000_009>::new(s, 9973);
+//! let h = rh.get(0..3); // "abr"のハッシュ値
+//! ```
+
 use std::ops::{Range, RangeBounds};
 
 use crate::{math::modint::ModInt, range::to_open_range};
@@ -8,6 +20,7 @@ pub struct RollingHash<const P: u64> {
 }
 
 impl<const P: u64> RollingHash<P> {
+    /// 文字列`s`に対して，連続部分列のハッシュ値を計算するための前処理を行う．
     pub fn new(s: &[u8], base: u64) -> Self {
         assert!(base < P);
         let n = s.len();
@@ -16,11 +29,12 @@ impl<const P: u64> RollingHash<P> {
         let mut pow = vec![ModInt::new(1); n + 1];
         for i in 0..n {
             hash[i + 1] = hash[i] * base + s[i].into();
-            pow[i + 1] = pow[i] * base.into();
+            pow[i + 1] = pow[i] * base;
         }
         Self { hash, pow }
     }
 
+    ///　文字列の区間`[l, r)`のハッシュ値を計算する．
     pub fn get(&self, range: impl RangeBounds<usize>) -> u64 {
         let Range { start: l, end: r } = to_open_range(range, self.hash.len() - 1);
         assert!(l <= r);
@@ -34,7 +48,7 @@ mod tests {
 
     #[test]
     fn test_rolling_hash() {
-        use rand::{thread_rng, Rng};
+        use rand::{rngs::StdRng, Rng, SeedableRng};
 
         let testcases = vec![
             "abcabc",
@@ -56,7 +70,7 @@ mod tests {
         const MOD1: u64 = 1000000007;
         const MOD2: u64 = 2147483647;
 
-        let mut rng = thread_rng();
+        let mut rng = StdRng::seed_from_u64(30);
 
         for s in testcases {
             let rh1 = RollingHash::<MOD1>::new(s.as_bytes(), rng.gen_range(0..MOD1));
