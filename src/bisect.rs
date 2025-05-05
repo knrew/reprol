@@ -143,7 +143,7 @@ impl<T: Ord> Bounds for [T] {
 
 #[cfg(test)]
 mod tests {
-    use super::Bounds;
+    use super::*;
 
     #[test]
     fn test_lower_bound() {

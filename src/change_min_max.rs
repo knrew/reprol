@@ -101,7 +101,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::{ChangeMinMax, ChangeMinMaxOrSet};
+    use super::*;
 
     #[test]
     fn test_change_min() {

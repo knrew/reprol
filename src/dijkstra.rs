@@ -228,7 +228,10 @@ where
     }
 }
 
+/// ダイクストラ(経路復元なし)
 pub type Dijkstra<V, C, I> = DijkstraImpl<V, C, I, NoPath>;
+
+/// ダイクストラ(経路復元あり)
 pub type DijkstraWithPath<V, C, I> = DijkstraImpl<V, C, I, WithPath<V>>;
 
 #[cfg(test)]
