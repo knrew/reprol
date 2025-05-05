@@ -1,4 +1,4 @@
-//! 幅優先探索 / Breadth First Search(BFS)
+//! 幅優先探索(Breadth First Search, BFS)
 //!
 //! BFSで単一始点最短経路を計算する．
 //! 01-BFSも実装．
