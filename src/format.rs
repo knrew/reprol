@@ -1,12 +1,9 @@
 //! 出力時に便利な関数など
-//!
-//! # NOTE
-//! - 命名が微妙
 
 use std::fmt::{Display, Write};
 
 pub trait IterFormatter {
-    /// イテレータをsep区切りで文字列に変換する
+    /// 要素のイテレータからsep区切りで文字列に変換する．
     fn to_string(&mut self, sep: &str) -> String;
 }
 
@@ -28,7 +25,7 @@ where
 }
 
 pub trait ArrayFormatter {
-    /// 配列をsep区切りで文字列に変換する
+    /// 配列をsep区切りで文字列に変換する．
     fn to_string(&self, sep: &str) -> String;
 }
 
@@ -42,6 +39,7 @@ where
 }
 
 pub trait Usize1ArrayFormatter {
+    /// usizeの配列を1-indexedの文字列に変換する．
     fn to_string_usize1(&self, sep: &str) -> String;
 }
 
@@ -52,6 +50,7 @@ impl Usize1ArrayFormatter for [usize] {
 }
 
 pub trait CharsFormatter {
+    // char型またはu8型の配列を文字列に変換する．
     fn as_string(&self) -> String;
 }
 
