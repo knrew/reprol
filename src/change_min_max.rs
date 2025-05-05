@@ -1,5 +1,38 @@
+//! change_min / change_max
+//!
+//! 最小値・最大値の更新に関するトレイト．
+//!
+//! - [`ChangeMinMax`]：最小値・最大値更新．
+//! - [`ChangeMinMaxOrSet`]：`Option<T>`に対して，代入or最小値・最大値更新．
+//!
+//! # 使用例
+//! ```
+//! use reprol::change_min_max::ChangeMinMax;
+//! let mut a = 10;
+//! assert!(a.change_min(5));
+//! assert!(!a.change_min(7));
+//! assert!(a.change_max(12));
+//! assert!(!a.change_max(9));
+//!```
+//!
+//!```
+//! use reprol::change_min_max::ChangeMinMaxOrSet;
+//! let mut a: Option<i32> = None;
+//! assert!(a.change_min_or_set(10));
+//! assert!(!a.change_min_or_set(15));
+//! assert!(a.change_min_or_set(5));
+//! assert!(a.change_max_or_set(20));
+//! assert!(!a.change_max_or_set(18));
+//! ```
+
+/// 最小値・最大値更新を行うためのトレイト．
 pub trait ChangeMinMax {
+    /// `rhs`の値が`self`より小さい場合，`self`を`rhs`に変更し，trueを返す．
+    /// そうでない場合は，何も変更せずにfalseを返す．
     fn change_min(&mut self, rhs: Self) -> bool;
+
+    /// `rhs`の値が`self`より大きい場合，`self`を`rhs`に変更し，trueを返す．
+    /// そうでない場合は，何も変更せずにfalseを返す．
     fn change_max(&mut self, rhs: Self) -> bool;
 }
 
@@ -26,11 +59,17 @@ where
     }
 }
 
-/// Option型に対してNoneなら代入，Someなら最小値(最大値)を更新する
+/// `Option<T>`に対して，代入or最小値・最大値更新を行うためのトレイト．
 pub trait ChangeMinMaxOrSet {
     type Item;
-    fn change_min_or_set(&mut self, value: Self::Item) -> bool;
-    fn change_max_or_set(&mut self, value: Self::Item) -> bool;
+
+    /// `self`が`None`である場合，または，`self`が`Some(lhs)`で`rhs`の値が`lhs`より小さい場合，`self`を`Some(rhs)`に変更し，trueを返す．
+    /// そうでない場合は，何も変更せずにfalseを返す．
+    fn change_min_or_set(&mut self, rhs: Self::Item) -> bool;
+
+    /// `self`が`None`である場合，または，`self`が`Some(lhs)`で`rhs`の値が`lhs`より大きい場合，`self`を`Some(rhs)`に変更し，trueを返す．
+    /// そうでない場合は，何も変更せずにfalseを返す．
+    fn change_max_or_set(&mut self, lhs: Self::Item) -> bool;
 }
 
 impl<T> ChangeMinMaxOrSet for Option<T>
