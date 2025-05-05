@@ -20,7 +20,7 @@
 //! # NOTE
 //! - コードの重複が多いかも
 
-use std::{collections::VecDeque,fmt::Debug};
+use std::{collections::VecDeque, fmt::Debug};
 
 /// 経路復元用の構造体．
 /// 各頂点の直前の頂点を記録する．
