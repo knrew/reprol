@@ -1,12 +1,39 @@
+//! 二分探索(Binary Search)
+//!
+//! - [`Bisect`](Bisect): 整数範囲上の二分探索
+//! - [`Bounds`](Bounds): ソート済み配列上のlower_bound/upper_bound
+//!
+//! # 使用例
+//! ## Bisect
+//! ```
+//! use reprol::bisect::Bisect;
+//! let result = (1..=100).bisect(|&x| x * x < 30);
+//! assert_eq!(result, 6);
+//! ```
+//!
+//! ## Bounds
+//! ```
+//! use reprol::bisect::Bounds;
+//! let v = [1, 3, 3, 5, 7];
+//! assert_eq!(v.lower_bound(&0), 0);
+//! assert_eq!(v.lower_bound(&3), 1);
+//! assert_eq!(v.lower_bound(&4), 3);
+//! assert_eq!(v.lower_bound(&8), 5);
+//! ```
+
 use std::{
     cmp::Ordering,
     ops::{Range, RangeInclusive},
 };
 
-/// x \in [l, r)の範囲を探索
-/// !f(x)となる最小のxを返す(f(x-1)==true,  f(x)==false)
+/// 整数範囲に対して，二分探索を行うためのトレイト．
 pub trait Bisect {
+    /// 探索対象の整数の型．
     type Item;
+
+    /// 単調性のある関数`f`に対して，
+    /// 範囲内の整数`x`であって，`f(x)`が`false`となる最小の$x$を返す．
+    /// ただし，すべての`x`に対して`f(x)`が`true`である場合は，範囲の上限を返す．
     fn bisect(&self, f: impl FnMut(&Self::Item) -> bool) -> Self::Item;
 }
 
@@ -50,15 +77,33 @@ macro_rules! impl_integer {
 
 impl_integer! { u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize }
 
+/// ソート済み配列に対して，境界探索を行うためのトレイト．
 pub trait Bounds {
+    /// 配列の要素の型．
     type Item: Ord;
 
+    /// `x`以上の最小の要素のインデックスを返す．
+    /// なければ配列サイズを返す．
     fn lower_bound(&self, x: &Self::Item) -> usize;
+
+    /// 条件関数`f` に対して，`f(x)`が`Ordering::Less`となる最小の要素のインデックスを返す．
+    /// なければ配列サイズを返す．
     fn lower_bound_by(&self, f: impl FnMut(&Self::Item) -> Ordering) -> usize;
+
+    /// 配列の要素`x`に対して，`f(x) < k`となる最小のインデックスを返す．
+    /// なければ配列サイズを返す．
     fn lower_bound_by_key<K: Ord>(&self, k: &K, f: impl FnMut(&Self::Item) -> K) -> usize;
 
+    /// `x`より大きい最小の要素のインデックスを返す．
+    /// なければ配列サイズを返す．
     fn upper_bound(&self, x: &Self::Item) -> usize;
+
+    /// 条件関数`f` に対して，`f(x) != Ordering::Greater`となる最小の要素のインデックスを返す．
+    /// なければ配列サイズを返す．
     fn upper_bound_by(&self, f: impl FnMut(&Self::Item) -> Ordering) -> usize;
+
+    /// 配列の要素`x`に対して，`f(x) <= k`となる最小のインデックスを返す．
+    /// なければ配列サイズを返す．
     fn upper_bound_by_key<K: Ord>(&self, k: &K, f: impl FnMut(&Self::Item) -> K) -> usize;
 }
 
