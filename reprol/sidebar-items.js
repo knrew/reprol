@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["bellman_ford","bfs","bisect","change_min_max","dijkstra","ds","format","lowlink","math","matrix","ops","permutation","rle","rolling_hash","scc","topological_sort","warshall_floyd","z_algorithm"]};
+window.SIDEBAR_ITEMS = {"mod":["bellman_ford","bfs","bisect","change_min_max","dijkstra","ds","format","grid","lowlink","math","ops","permutation","rle","scc","string","topological_sort","warshall_floyd"]};

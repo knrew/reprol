@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["rotate_anticlockwise","rotate_clockwise","transpose"]};

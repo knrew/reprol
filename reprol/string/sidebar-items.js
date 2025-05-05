@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["rolling_hash","z_algorithm"]};
