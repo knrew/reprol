@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["bfs_adjacencies"],"struct":["Bfs"]};
+window.SIDEBAR_ITEMS = {"struct":["Bfs","NoPath","WithPath"]};
