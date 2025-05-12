@@ -1,3 +1,21 @@
+//! Fenwick Tree(Binary Indexed Tree)
+//!
+//! (群をなす集合の要素からなる)配列を管理するデータ構造．
+//! 要素の1点更新と区間積の取得をO(logN)で行うことができる．
+//!
+//! # 使用例
+//! ```
+//! use reprol::{ds::fenwick_tree::FenwickTree, ops::op_add::OpAdd};
+//! let mut ft = FenwickTree::<OpAdd<i32>>::new(5);
+//! ft.op(1, &5); // v[1] += 5
+//! ft.op(2, &3); // v[2] += 3
+//! ft.op(4, &2); // v[4] += 2
+//! assert_eq!(ft.fold(..2), 5); // 区間[0, 2)の区間和
+//! assert_eq!(ft.fold(..=2), 8); // 区間[0, 2]の区間和
+//! assert_eq!(ft.get(5), 10); // 区間[0, 5)の区間和
+//! assert_eq!(ft.fold(2..5), 5); // 区間[2, 5)の区間和
+//! ```
+
 use std::ops::{Range, RangeBounds};
 
 use crate::{
@@ -5,13 +23,15 @@ use crate::{
     range::to_open_range,
 };
 
-/// 要素の1点更新と区間積(和)の取得が行えるデータ構造
+/// Fenwick Tree
 pub struct FenwickTree<O: Monoid> {
     nodes: Vec<O::Value>,
     op: O,
 }
 
 impl<O: Monoid> FenwickTree<O> {
+    /// 長さ`n`で初期化する．
+    /// 要素はすべて単位元で初期化される．
     pub fn new(n: usize) -> Self
     where
         O: Default,
@@ -19,7 +39,7 @@ impl<O: Monoid> FenwickTree<O> {
         Self::with_op(n, O::default())
     }
 
-    /// 演算を引数で指定
+    /// 演算`op`を指定して長さ`n`で初期化する．
     pub fn with_op(n: usize, op: O) -> Self {
         Self {
             nodes: (0..n).map(|_| op.identity()).collect(),
@@ -31,13 +51,13 @@ impl<O: Monoid> FenwickTree<O> {
         let mut res = Self::with_op(v.len(), op);
         v.into_iter()
             .enumerate()
-            .for_each(|(i, rhs)| res.apply(i, rhs));
+            .for_each(|(i, rhs)| res.op(i, rhs));
         res
     }
 
-    /// i番目の要素にrhsを作用させる
-    /// v[i] <- op(v[i], rhs)
-    pub fn apply(&mut self, mut index: usize, rhs: &O::Value) {
+    /// `index`番目の要素に`rhs`を作用させる．
+    /// `v[i] <- v[i] * rhs`
+    pub fn op(&mut self, mut index: usize, rhs: &O::Value) {
         assert!(index < self.nodes.len());
         index += 1;
         while index <= self.nodes.len() {
@@ -46,7 +66,7 @@ impl<O: Monoid> FenwickTree<O> {
         }
     }
 
-    /// [0, r)の累積
+    /// 区間`[0, r)`の区間積を返す．
     pub fn get(&self, mut r: usize) -> O::Value {
         assert!(r <= self.nodes.len());
         let mut res = self.op.identity();
@@ -57,7 +77,7 @@ impl<O: Monoid> FenwickTree<O> {
         res
     }
 
-    /// [l, r)の区間積を取得する
+    /// 区間`[l, r)`の区間積を返す．
     pub fn fold(&self, range: impl RangeBounds<usize>) -> O::Value
     where
         O: Group,
@@ -123,21 +143,21 @@ where
 mod tests {
     use crate::ops::op_add::OpAdd;
 
-    use super::FenwickTree;
+    use super::*;
 
     #[test]
     fn test_fenwick_tree() {
         let mut ft = FenwickTree::<OpAdd<i64>>::new(10);
-        ft.apply(0, &5);
-        ft.apply(2, &10);
-        ft.apply(6, &20);
+        ft.op(0, &5);
+        ft.op(2, &10);
+        ft.op(6, &20);
         assert_eq!(ft.fold(..1), 5);
         assert_eq!(ft.fold(..3), 15);
         assert_eq!(ft.fold(..7), 35);
         assert_eq!(ft.fold(..), 35);
         assert_eq!(ft.fold(0..3), 15);
         assert_eq!(ft.fold(3..=6), 20);
-        ft.apply(9, &10);
+        ft.op(9, &10);
         assert_eq!(ft.fold(0..10), 45);
     }
 }
