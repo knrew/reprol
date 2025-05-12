@@ -1,3 +1,27 @@
+//! 2次元累積積(累積和)
+//!
+//! 群の2次元配列に対する累積積を管理するデータ構造．
+//! 区間積[`fold`](CumulativeArray2d::fold)も提供する．
+//!
+//! # 使用例
+//! ## 2次元累積和
+//! ```
+//! use reprol::{
+//!     ds::cumulative_array_2d::CumulativeSum2d,
+//!     ops::op_add::OpAdd,
+//! };
+//! let v = vec![
+//!     vec![1, 2, 3],
+//!     vec![4, 5, 6],
+//!     vec![7, 8, 9],
+//! ];
+//! let cum = CumulativeSum2d::new(v);
+//! assert_eq!(cum.fold(0..3, 0..3), 45);
+//! assert_eq!(cum.fold(1..3, 1..3), 28);
+//! assert_eq!(cum.fold(0..2, 0..2), 12);
+//! assert_eq!(cum[(2, 2)], 12);
+//! ```
+
 use std::{
     fmt::Debug,
     ops::{Index, Range, RangeBounds},
@@ -8,14 +32,14 @@ use crate::{
     range::to_open_range,
 };
 
-/// 2次元配列の累積積を管理するデータ構造
+/// 2次元累積積を管理するデータ構造
 pub struct CumulativeArray2d<O: Monoid> {
     data: Vec<Vec<O::Value>>,
     op: O,
 }
 
 impl<O: Monoid> CumulativeArray2d<O> {
-    /// 2次元配列の累積配列を計算する
+    /// 2次元配列の累積配列を構築する．
     pub fn new(v: Vec<Vec<O::Value>>) -> Self
     where
         O: Group + Default,
@@ -23,7 +47,7 @@ impl<O: Monoid> CumulativeArray2d<O> {
         Self::with_op(v, O::default())
     }
 
-    /// 要素(i, j)の値がf(i, j)であるような2次元累積和を計算する
+    /// 要素`(i, j)`の値が`f(i, j)`であるような累積配列を構築する．
     pub fn construct(
         row_len: usize,
         col_len: usize,
@@ -35,7 +59,7 @@ impl<O: Monoid> CumulativeArray2d<O> {
         Self::construct_with_op(row_len, col_len, O::default(), f)
     }
 
-    /// 演算を指定して2次元配列の累積積を計算する
+    /// 演算`op`を明示的に渡して2次元配列の累積配列を構築する．
     pub fn with_op(v: Vec<Vec<O::Value>>, op: O) -> Self
     where
         O: Group,
@@ -52,17 +76,17 @@ impl<O: Monoid> CumulativeArray2d<O> {
 
         for i in 0..row_len {
             for j in 0..col_len {
-                let mut res = op.op(&data[i + 1][j], &data[i][j + 1]);
-                res = op.op(&res, &op.inv(&data[i][j]));
-                res = op.op(&res, &v[i][j]);
-                data[i + 1][j + 1] = res;
+                let mut datum = op.op(&data[i + 1][j], &data[i][j + 1]);
+                datum = op.op(&datum, &op.inv(&data[i][j]));
+                datum = op.op(&datum, &v[i][j]);
+                data[i + 1][j + 1] = datum;
             }
         }
 
         Self { data, op }
     }
 
-    /// 演算を指定して要素(i, j)の値がf(i, j)であるような2次元累積積を計算する
+    /// 演算`op`を明示的に渡して要素`(i, j)`の値が`f(i, j)`であるような累積配列を構築する．
     pub fn construct_with_op(
         row_len: usize,
         col_len: usize,
@@ -80,12 +104,12 @@ impl<O: Monoid> CumulativeArray2d<O> {
         Self::with_op(v, op)
     }
 
-    /// [0, i) \times [0, j)の累積積を取得
+    /// `[0, i) x [0, j)`の累積積を返す．
     pub fn get(&self, i: usize, j: usize) -> &O::Value {
         &self.data[i][j]
     }
 
-    /// `cum.fold(il..ir, jl..jr)`で [il, ir) \times [jl, jr)の累積積を計算する
+    /// 区間`[il, ir) x [jl, jr)`の累積積を返す．
     pub fn fold(
         &self,
         row_range: impl RangeBounds<usize>,
@@ -166,11 +190,12 @@ where
     }
 }
 
+/// 2次元累積和
 pub type CumulativeSum2d<T> = CumulativeArray2d<OpAdd<T>>;
 
 #[cfg(test)]
 mod tests {
-    use super::CumulativeSum2d;
+    use super::*;
 
     #[test]
     fn test_cumulative_sum_2d() {
@@ -182,7 +207,7 @@ mod tests {
             ((0, 1, 2, 3), 16),
             ((2, 0, 3, 2), 15),
             ((0, 0, 1, 1), 1),
-            // ((0, 0, 0, 0), 0),
+            ((0, 0, 0, 0), 0),
         ];
         let cum = CumulativeSum2d::new(v);
         assert_eq!(cum.fold(.., ..), 45);
@@ -204,7 +229,7 @@ mod tests {
             ((0, 0, 1, 1), 1),
             ((1, 0, 2, 5), 40),
             ((0, 4, 3, 5), 30),
-            // ((0, 0, 0, 0), 0),
+            ((0, 0, 0, 0), 0),
         ];
         let cum = CumulativeSum2d::new(v);
         for ((x1, y1, x2, y2), expected) in test_cases {
