@@ -13,18 +13,22 @@ jobs:
   fmt:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Check formatting
-      run: cargo fmt --all --check --verbose
+      - uses: actions/checkout@v4
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Check formatting
+        run: cargo fmt --all --check --verbose
 
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Build(debug)
-      run: cargo build --verbose
-    - name: Build(release)
-      run: cargo build --release --verbose
+      - uses: actions/checkout@v4
+      - name: Build(debug)
+        run: cargo build --verbose
+      - name: Build(release)
+        run: cargo build --release --verbose
    
   test:
     runs-on: ubuntu-latest
