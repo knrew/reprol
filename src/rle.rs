@@ -1,13 +1,27 @@
-/// ランレングス圧縮(run-length encodeing)
-/// NOTE: イテレータにする？
-pub trait RunLengthEncoding {
+//! ランレングス圧縮(run-length encoding)
+//!
+//! 配列をランレングス圧縮する．
+//! 連続する同じ要素をまとめて，その値とその個数のペアで表現する．
+//! たとえば，文字列`"aaabbbbcc"`に対してランレングス圧縮を行うと，`[('a', 3), ('b', 4), ('c', 2)]`となる．
+//!
+//! # 使用例
+//! ```
+//! use reprol::rle::Rle;
+//!
+//! let s = b"aaabbbbcc";
+//! assert_eq!(s.rle(), vec![(b'a', 3), (b'b', 4), (b'c', 2)]);
+//!
+//! let v = vec![1, 1, 2, 2, 2, 3, 3];
+//! assert_eq!(v.rle(), vec![(1, 2), (2, 3), (3, 2)]);
+//! ```
+
+pub trait Rle {
     type Output;
 
-    /// ランレングス圧縮を行う
     fn rle(&self) -> Self::Output;
 }
 
-impl<T> RunLengthEncoding for [T]
+impl<T> Rle for [T]
 where
     T: Clone + PartialEq,
 {
@@ -33,7 +47,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::RunLengthEncoding;
+    use super::*;
 
     #[test]
     fn test_rle() {
