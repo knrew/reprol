@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"trait":["RunLengthEncoding"]};
+window.SIDEBAR_ITEMS = {"trait":["Rle"]};
