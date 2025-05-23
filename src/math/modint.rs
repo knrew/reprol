@@ -48,11 +48,7 @@ macro_rules! impl_integer {
 
             fn neg_mod(self, p: Self) -> Self {
                 let x = self.initialize(p);
-                if x == 0 {
-                    0
-                } else {
-                    p - x
-                }
+                (p - x) % p
             }
 
             fn pow_mod(self, mut exp: u64, p: Self) -> Self {
@@ -137,8 +133,9 @@ impl<const P: u64> AddAssign for ModInt<P> {
 impl<const P: u64> Sub for ModInt<P> {
     type Output = Self;
     fn sub(self, rhs: Self) -> Self::Output {
-        let value = (P + self.value - rhs.value) % P;
-        Self { value }
+        Self {
+            value: (P + self.value - rhs.value) % P,
+        }
     }
 }
 
@@ -241,7 +238,7 @@ impl_unsigned! { u8, u16, u32, u64, usize }
 
 impl<const P: u64> From<u128> for ModInt<P> {
     fn from(value: u128) -> Self {
-        Self::new(value.rem_euclid(P as u128) as u64)
+        Self::new((value % P as u128) as u64)
     }
 }
 
@@ -255,7 +252,7 @@ macro_rules! impl_signed {
     )*};
 }
 
-impl_signed! { i8, i16, i32, i64,i128, isize }
+impl_signed! { i8, i16, i32, i64, i128, isize }
 
 pub type ModInt998244353 = ModInt<998244353>;
 pub type ModInt1000000007 = ModInt<1000000007>;
@@ -596,6 +593,9 @@ mod tests {
                 check::<P2>(lhs);
                 check::<P3>(lhs);
             }
+            check::<P1>(0);
+            check::<P2>(0);
+            check::<P3>(0);
         }
 
         #[test]
