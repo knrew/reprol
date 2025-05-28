@@ -107,6 +107,10 @@ impl<O: Monoid> CumulativeArray<O> {
         Self::with_op((0..len).map(|i| f(i)).collect(), op)
     }
 
+    pub fn len(&self) -> usize {
+        self.data.len()
+    }
+
     /// 累積配列の`r`番目の要素を返す(区間`[0, r)`の区間積を返す)．
     pub fn get(&self, r: usize) -> &O::Value {
         &self.data[r]
@@ -121,21 +125,19 @@ impl<O: Monoid> CumulativeArray<O> {
         assert!(l <= r);
         self.op.op(&self.data[r], &self.op.inv(&self.data[l]))
     }
+
+    pub fn iter(&self) -> impl Iterator<Item = &O::Value> {
+        self.data.iter()
+    }
 }
 
-impl<O> From<(Vec<O::Value>, O)> for CumulativeArray<O>
-where
-    O: Monoid,
-{
+impl<O: Monoid> From<(Vec<O::Value>, O)> for CumulativeArray<O> {
     fn from((v, op): (Vec<O::Value>, O)) -> Self {
         CumulativeArray::with_op(v, op)
     }
 }
 
-impl<O, const N: usize> From<([O::Value; N], O)> for CumulativeArray<O>
-where
-    O: Monoid,
-{
+impl<O: Monoid, const N: usize> From<([O::Value; N], O)> for CumulativeArray<O> {
     fn from((v, op): ([O::Value; N], O)) -> Self {
         CumulativeArray::with_op(v.into_iter().collect(), op)
     }
@@ -181,13 +183,28 @@ where
     }
 }
 
-impl<O> Index<usize> for CumulativeArray<O>
-where
-    O: Monoid,
-{
+impl<O: Monoid> Index<usize> for CumulativeArray<O> {
     type Output = O::Value;
     fn index(&self, index: usize) -> &Self::Output {
         &self.data[index]
+    }
+}
+
+impl<'a, O: Monoid> IntoIterator for &'a CumulativeArray<O> {
+    type IntoIter = std::slice::Iter<'a, O::Value>;
+    type Item = &'a O::Value;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.data.iter()
+    }
+}
+
+impl<O: Monoid> IntoIterator for CumulativeArray<O> {
+    type IntoIter = std::vec::IntoIter<O::Value>;
+    type Item = O::Value;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.data.into_iter()
     }
 }
 
