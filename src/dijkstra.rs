@@ -95,16 +95,20 @@ impl<V: Clone> PathTracker<V> for WithPath<V> {
 pub struct NoPath;
 
 impl<V> PathTracker<V> for NoPath {
+    #[inline(always)]
     fn new(_: usize) -> Self {
         Self
     }
 
+    #[inline(always)]
     fn get_previous(&self, _: usize) -> Option<&V> {
         None
     }
 
+    #[inline(always)]
     fn set_previous(&mut self, _: usize, _: &V) {}
 
+    #[inline(always)]
     fn construct_path<C>(
         &self,
         _: &impl Fn(&V) -> usize,
