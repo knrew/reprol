@@ -1,18 +1,11 @@
-use std::ops::Mul;
-
 pub struct LinearSieve {
     lpf: Vec<usize>,
     primes: Vec<usize>,
 }
 
 impl LinearSieve {
-    pub fn new<T>(n: T) -> Self
-    where
-        T: Integer,
-    {
+    pub fn new(n: usize) -> Self {
         const UNASSIGNED: usize = usize::MAX;
-
-        let n = n.as_usize();
 
         let mut primes = vec![];
         let mut lpf = vec![UNASSIGNED; n + 1];
@@ -34,111 +27,69 @@ impl LinearSieve {
         Self { lpf, primes }
     }
 
-    pub fn primes<T>(&self) -> impl Iterator<Item = T> + '_
-    where
-        T: Integer,
-    {
-        self.primes.iter().map(|&p| T::from_usize(p))
+    pub fn lpf(&self, x: usize) -> usize {
+        self.lpf[x]
     }
 
-    pub fn is_prime<T>(&self, x: T) -> bool
-    where
-        T: Integer,
-    {
-        if x <= T::one() {
-            false
-        } else {
-            let x = x.as_usize();
-            self.lpf[x] == x
-        }
+    pub fn primes(&self) -> impl DoubleEndedIterator<Item = usize> + '_ {
+        self.primes.iter().cloned()
     }
 
-    pub fn factors<'a, T>(&self, x: T) -> impl DoubleEndedIterator<Item = (T, u32)> + 'a
-    where
-        T: 'a + Integer,
-    {
-        assert!(x >= T::zero());
+    pub fn is_prime(&self, x: usize) -> bool {
+        x >= 2 && self.lpf[x] == x
+    }
 
-        let mut x = x.as_usize();
-
+    pub fn factors(&self, mut x: usize) -> impl DoubleEndedIterator<Item = (usize, u32)> + '_ {
         let mut factors = vec![];
 
         while x > 1 {
             let p = self.lpf[x];
-            let mut ex = 0;
+            let mut exp = 0;
             while self.lpf[x] == p {
                 x /= p;
-                ex += 1;
+                exp += 1;
             }
-            factors.push((T::from_usize(p), ex));
+            factors.push((p, exp));
         }
 
         factors.into_iter()
     }
 
-    /// NOTE: ソートされていない
-    pub fn divisors<'a, T>(&self, x: T) -> impl DoubleEndedIterator<Item = T> + 'a
-    where
-        T: 'a + Integer,
-    {
-        assert!(x >= T::zero());
-
-        let mut divisors = vec![T::one()];
-
-        for (factor, ex) in self.factors(x) {
+    #[inline]
+    fn divisors_impl(&self, x: usize) -> Vec<usize> {
+        let mut divisors = vec![1];
+        for (p, exp) in self.factors(x) {
             for i in 0..divisors.len() {
-                let mut v = T::one();
-                for _ in 0..ex {
-                    v = v * factor;
+                let mut v = 1;
+                for _ in 0..exp {
+                    v = v * p;
                     divisors.push(divisors[i] * v);
                 }
             }
         }
+        divisors
+    }
 
-        divisors.into_iter()
+    pub fn divisors_unsorted(&self, x: usize) -> impl DoubleEndedIterator<Item = usize> + '_ {
+        self.divisors_impl(x).into_iter()
+    }
+
+    pub fn divisors(&self, x: usize) -> impl DoubleEndedIterator<Item = usize> + '_ {
+        let mut d = self.divisors_impl(x);
+        d.sort_unstable();
+        d.into_iter()
     }
 }
 
-pub trait Integer: Sized + Copy + Ord + Mul<Output = Self> {
-    fn zero() -> Self;
-    fn one() -> Self;
-    fn from_usize(x: usize) -> Self;
-    fn as_usize(self) -> usize;
-}
-
-macro_rules! impl_integer {
-    ($($ty:ident),*) => {$(
-        impl Integer for $ty {
-            fn zero() -> Self {
-                0
-            }
-
-            fn one() -> Self {
-                1
-            }
-
-            fn from_usize(x: usize) -> Self {
-                x as $ty
-            }
-
-            fn as_usize(self) -> usize {
-                self as usize
-            }
-        }
-    )*};
-}
-
-impl_integer! { u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize }
-
 #[cfg(test)]
 mod tests {
-    use super::LinearSieve;
+    use super::*;
 
     #[test]
     fn test_is_prime() {
         let sieve = LinearSieve::new(300000);
 
-        let test_cases: Vec<(u64, bool)> = vec![
+        let test_cases = vec![
             (0, false),
             (1, false),
             (2, true),
@@ -266,7 +217,7 @@ mod tests {
         ];
 
         for (n, expected) in test_cases {
-            let mut result = sieve.divisors(n).collect::<Vec<_>>();
+            let mut result = sieve.divisors_unsorted(n).collect::<Vec<_>>();
             result.sort_unstable();
             assert_eq!(result, expected);
         }
