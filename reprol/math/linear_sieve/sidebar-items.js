@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["LinearSieve"],"trait":["Integer"]};
+window.SIDEBAR_ITEMS = {"struct":["LinearSieve"]};
