@@ -1,20 +1,16 @@
 use std::ops::Add;
 
-pub struct BellmanFord<T> {
-    n: usize,
-
+pub struct BellmanFord<C> {
     start: usize,
-
-    costs: Vec<Option<T>>,
-
+    costs: Vec<Option<C>>,
     has_negative_cycle: bool,
 }
 
-impl<T> BellmanFord<T>
+impl<C> BellmanFord<C>
 where
-    T: Clone + PartialOrd + Add<Output = T>,
+    C: Clone + PartialOrd + Add<Output = C>,
 {
-    pub fn new(g: &[Vec<(usize, T)>], start: usize, zero: T) -> Self {
+    pub fn new(g: &[Vec<(usize, C)>], start: usize, zero: &C) -> Self {
         let n = g.len();
 
         let mut costs = vec![None; n];
@@ -22,17 +18,14 @@ where
 
         for _ in 0..n {
             for v in 0..n {
-                for (nv, dcost) in &g[v] {
-                    let cost_v = if let Some(cost_v) = &costs[v] {
-                        cost_v
-                    } else {
-                        continue;
-                    };
-                    let new_cost = cost_v.clone() + dcost.clone();
-                    match &costs[*nv] {
-                        Some(cost_nv) if cost_nv <= &new_cost => {}
-                        _ => {
-                            costs[*nv] = Some(new_cost);
+                for &(nv, ref dcost) in &g[v] {
+                    if let Some(cost_v) = &costs[v] {
+                        let new_cost = cost_v.clone() + dcost.clone();
+                        match &costs[nv] {
+                            Some(cost_nv) if cost_nv <= &new_cost => {}
+                            _ => {
+                                costs[nv] = Some(new_cost);
+                            }
                         }
                     }
                 }
@@ -43,22 +36,19 @@ where
 
         for _ in 0..n {
             for v in 0..n {
-                for (nv, dcost) in &g[v] {
-                    let cost_v = if let Some(cost_v) = &costs[v] {
-                        cost_v
-                    } else {
-                        continue;
-                    };
-                    let new_cost = cost_v.clone() + dcost.clone();
-                    match &costs[*nv] {
-                        Some(cost_nv) if cost_nv <= &new_cost => {}
-                        _ => {
-                            costs[*nv] = Some(new_cost);
-                            is_negative[*nv] = true;
+                for &(nv, ref dcost) in &g[v] {
+                    if let Some(cost_v) = &costs[v] {
+                        let new_cost = cost_v.clone() + dcost.clone();
+                        match &costs[nv] {
+                            Some(cost_nv) if cost_nv <= &new_cost => {}
+                            _ => {
+                                costs[nv] = Some(new_cost);
+                                is_negative[nv] = true;
+                            }
                         }
-                    }
-                    if is_negative[v] {
-                        is_negative[*nv] = true;
+                        if is_negative[v] {
+                            is_negative[nv] = true;
+                        }
                     }
                 }
             }
@@ -67,22 +57,17 @@ where
         let has_negative_cycle = is_negative.into_iter().any(|f| f);
 
         Self {
-            n,
             start,
             costs,
             has_negative_cycle,
         }
     }
 
-    pub fn size(&self) -> usize {
-        self.n
-    }
-
     pub fn start(&self) -> usize {
         self.start
     }
 
-    pub fn cost(&self, v: usize) -> Option<&T> {
+    pub fn cost(&self, v: usize) -> Option<&C> {
         self.costs[v].as_ref()
     }
 
@@ -91,4 +76,74 @@ where
     }
 }
 
-// TODO:テストを書く
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_bellman_ford() {
+        {
+            let g = vec![
+                vec![(1, 2)],
+                vec![(2, 3), (4, 9)],
+                vec![(4, 4)],
+                vec![(0, 1)],
+                vec![],
+            ];
+            let start = 0;
+            let expected = vec![Some(&0), Some(&2), Some(&5), None, Some(&9)];
+
+            let bf = BellmanFord::new(&g, start, &0);
+            let result = (0..g.len()).map(|v| bf.cost(v)).collect::<Vec<_>>();
+            assert!(!bf.has_negative_cycle());
+            assert_eq!(result, expected);
+        }
+
+        {
+            let g = vec![vec![(1, 1)], vec![(2, 2)], vec![]];
+            let start = 0;
+            let expected = vec![Some(&0), Some(&1), Some(&3)];
+            let bf = BellmanFord::new(&g, start, &0);
+            let result = (0..g.len()).map(|v| bf.cost(v)).collect::<Vec<_>>();
+            assert!(!bf.has_negative_cycle());
+            assert_eq!(result, expected);
+        }
+
+        {
+            let g = vec![vec![(1, 4), (2, 5)], vec![(2, -2)], vec![]];
+            let start = 0;
+            let expected = vec![Some(&0), Some(&4), Some(&2)];
+            let bf = BellmanFord::new(&g, start, &0);
+            let result = (0..g.len()).map(|v| bf.cost(v)).collect::<Vec<_>>();
+            assert!(!bf.has_negative_cycle());
+            assert_eq!(result, expected);
+        }
+
+        {
+            let g = vec![vec![(1, 1)], vec![(2, -1)], vec![(0, -1)]];
+            let start = 0;
+            let bf = BellmanFord::new(&g, start, &0);
+            assert!(bf.has_negative_cycle());
+        }
+
+        {
+            let g = vec![vec![(1, 2)], vec![(2, 3)], vec![], vec![]];
+            let start = 0;
+            let expected = vec![Some(&0), Some(&2), Some(&5), None];
+            let bf = BellmanFord::new(&g, start, &0);
+            let result = (0..g.len()).map(|v| bf.cost(v)).collect::<Vec<_>>();
+            assert!(!bf.has_negative_cycle());
+            assert_eq!(result, expected);
+        }
+
+        {
+            let g = vec![vec![]];
+            let start = 0;
+            let expected = vec![Some(&0)];
+            let bf = BellmanFord::new(&g, start, &0);
+            let result = (0..g.len()).map(|v| bf.cost(v)).collect::<Vec<_>>();
+            assert!(!bf.has_negative_cycle());
+            assert_eq!(result, expected);
+        }
+    }
+}
