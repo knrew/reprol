@@ -1,66 +1,77 @@
 use std::{
     cmp::Reverse,
     collections::{BinaryHeap, VecDeque},
+    marker::PhantomData,
 };
 
-pub struct ToplogicalSort {
-    /// トポロジカル順序
-    order: Option<Vec<usize>>,
-
-    /// トポロジカル順序が一意かどうか
-    is_unique: bool,
+pub trait Queue {
+    fn new() -> Self;
+    fn len(&self) -> usize;
+    fn push(&mut self, v: usize);
+    fn pop(&mut self) -> Option<usize>;
 }
 
-impl ToplogicalSort {
-    /// 隣接リスト表現のグラフをトポロジカルソートする
-    /// 複数のトポロジカル順序が存在する場合は辞書順最小のものを求める
-    pub fn new(graph: &[Vec<usize>]) -> Self {
-        let mut indegrees = vec![0; graph.len()];
+// 辞書順最小用
+pub struct Ordered(BinaryHeap<Reverse<usize>>);
 
-        for v in graph {
-            for &nv in v {
-                indegrees[nv] += 1;
-            }
-        }
-
-        let mut heap = BinaryHeap::new();
-
-        for i in 0..graph.len() {
-            if indegrees[i] == 0 {
-                heap.push(Reverse(i));
-            }
-        }
-
-        let mut order = vec![];
-        let mut is_unique = true;
-
-        while let Some(Reverse(v)) = heap.pop() {
-            if heap.len() >= 1 {
-                is_unique = false;
-            }
-            order.push(v);
-
-            for &nv in &graph[v] {
-                indegrees[nv] -= 1;
-                if indegrees[nv] == 0 {
-                    heap.push(Reverse(nv));
-                }
-            }
-        }
-
-        let order = if order.len() == graph.len() {
-            Some(order)
-        } else {
-            None
-        };
-
-        Self { order, is_unique }
+impl Queue for Ordered {
+    #[inline(always)]
+    fn new() -> Self {
+        Self(BinaryHeap::new())
     }
 
-    /// 隣接リスト表現のグラフをトポロジカルソートする
-    /// 複数のトポロジカル順序が存在する場合でも辞書順を保証しない
-    pub fn new_unstable(graph: &[Vec<usize>]) -> Self {
-        let mut indegrees = vec![0; graph.len()];
+    #[inline(always)]
+    fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    #[inline(always)]
+    fn push(&mut self, v: usize) {
+        self.0.push(Reverse(v));
+    }
+
+    #[inline(always)]
+    fn pop(&mut self) -> Option<usize> {
+        self.0.pop().map(|Reverse(v)| v)
+    }
+}
+
+// 辞書順最小保証しない用
+pub struct Unordered(VecDeque<usize>);
+
+impl Queue for Unordered {
+    #[inline(always)]
+    fn new() -> Self {
+        Self(VecDeque::new())
+    }
+
+    #[inline(always)]
+    fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    #[inline(always)]
+    fn push(&mut self, v: usize) {
+        self.0.push_back(v);
+    }
+
+    #[inline(always)]
+    fn pop(&mut self) -> Option<usize> {
+        self.0.pop_front()
+    }
+}
+
+pub struct ToplogicalSortImpl<Q> {
+    order: Option<Vec<usize>>,
+    is_unique: bool,
+    phantom: PhantomData<Q>,
+}
+
+impl<Q: Queue> ToplogicalSortImpl<Q> {
+    pub fn new(graph: &[Vec<usize>]) -> Self {
+        let n = graph.len();
+
+        let mut indegrees = vec![0; n];
 
         for v in graph {
             for &nv in v {
@@ -68,40 +79,38 @@ impl ToplogicalSort {
             }
         }
 
-        let mut que = VecDeque::new();
+        let mut que = Q::new();
 
-        for i in 0..graph.len() {
+        for i in 0..n {
             if indegrees[i] == 0 {
-                que.push_back(i);
+                que.push(i);
             }
         }
 
-        let mut order = vec![];
+        let mut order = Vec::with_capacity(n);
         let mut is_unique = true;
 
-        while let Some(v) = que.pop_front() {
+        while let Some(v) = que.pop() {
             if que.len() >= 1 {
                 is_unique = false;
             }
-
             order.push(v);
 
             for &nv in &graph[v] {
                 indegrees[nv] -= 1;
                 if indegrees[nv] == 0 {
-                    que.push_back(nv);
+                    que.push(nv);
                 }
             }
         }
 
-        let order = if order.len() == graph.len() {
-            Some(order)
-        } else {
-            is_unique = false;
-            None
-        };
+        let order = (order.len() == n).then(|| order);
 
-        Self { order, is_unique }
+        Self {
+            order,
+            is_unique,
+            phantom: PhantomData,
+        }
     }
 
     /// トポロジカル順序
@@ -116,9 +125,15 @@ impl ToplogicalSort {
     }
 }
 
+/// 辞書順最小のものを求めるトポロジカルソート
+pub type ToplogicalSort = ToplogicalSortImpl<Ordered>;
+
+/// 辞書順最小を保証しないトポロジカルソート
+pub type ToplogicalSortUnordered = ToplogicalSortImpl<Unordered>;
+
 #[cfg(test)]
 mod tests {
-    use super::ToplogicalSort;
+    use super::*;
 
     #[test]
     fn test_topological_sort() {
