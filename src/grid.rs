@@ -1,85 +1,86 @@
 //! 2次元グリッド(配列)に対する操作群
 //!
-//! - [`rotate_clockwise`] : グリッドを時計回り90度回転．
-//! - [`rotate_anticlockwise`] : グリッドを反時計回り90度回転．
-//! - [`transpose`] : グリッドを転置する．
+//! - [`Grid::rotate_clockwise`] : グリッドを時計回り90度回転．
+//! - [`Grid::rotate_anticlockwise`] : グリッドを反時計回り90度回転．
+//! - [`Grid::transpose`] : グリッドを転置する．
 
-/// グリッドを時計回り(右回り)に90度回転させる．
-pub fn rotate_clockwise<T>(m: &[Vec<T>]) -> Vec<Vec<T>>
-where
-    T: Clone,
-{
-    if m.is_empty() || m[0].is_empty() {
-        return vec![];
-    }
+use std::mem::take;
 
-    debug_assert!(m.iter().all(|mi| mi.len() == m[0].len()));
-
-    let h = m[0].len();
-    let w = m.len();
-
-    let mut res = Vec::with_capacity(h);
-    for j in 0..h {
-        let mut row = Vec::with_capacity(w);
-        for i in (0..w).rev() {
-            row.push(m[i][j].clone());
-        }
-        res.push(row);
-    }
-
-    res
+pub trait Grid {
+    fn rotate_clockwise(&mut self);
+    fn rotate_anticlockwise(&mut self);
+    fn transpose(&mut self);
 }
 
-/// グリッドを反時計回りに90度回転させる．
-pub fn rotate_anticlockwise<T>(m: &[Vec<T>]) -> Vec<Vec<T>>
+impl<T> Grid for Vec<Vec<T>>
 where
     T: Clone,
 {
-    if m.is_empty() || m[0].is_empty() {
-        return vec![];
-    }
-
-    debug_assert!(m.iter().all(|mi| mi.len() == m[0].len()));
-
-    let h = m[0].len();
-    let w = m.len();
-
-    let mut res = Vec::with_capacity(h);
-    for j in (0..h).rev() {
-        let mut row = Vec::with_capacity(w);
-        for i in 0..w {
-            row.push(m[i][j].clone());
+    fn rotate_clockwise(&mut self) {
+        if self.is_empty() || self[0].is_empty() {
+            return;
         }
-        res.push(row);
-    }
 
-    res
-}
+        debug_assert!(self.iter().all(|r| r.len() == self[0].len()));
 
-/// グリッドを転置させる．
-pub fn transpose<T>(m: &[Vec<T>]) -> Vec<Vec<T>>
-where
-    T: Clone,
-{
-    if m.is_empty() || m[0].is_empty() {
-        return vec![];
-    }
+        let h = self[0].len();
+        let w = self.len();
 
-    debug_assert!(m.iter().all(|mi| mi.len() == m[0].len()));
+        let orig = take(self);
 
-    let h = m[0].len();
-    let w = m.len();
-
-    let mut res = Vec::with_capacity(h);
-    for j in 0..h {
-        let mut col = Vec::with_capacity(w);
-        for i in 0..w {
-            col.push(m[i][j].clone());
+        *self = Vec::with_capacity(h);
+        for j in 0..h {
+            let mut row = Vec::with_capacity(w);
+            for i in (0..w).rev() {
+                row.push(orig[i][j].clone());
+            }
+            self.push(row);
         }
-        res.push(col);
     }
 
-    res
+    fn rotate_anticlockwise(&mut self) {
+        if self.is_empty() || self.is_empty() {
+            return;
+        }
+
+        debug_assert!(self.iter().all(|mi| mi.len() == self[0].len()));
+
+        let h = self[0].len();
+        let w = self.len();
+
+        let orig = take(self);
+
+        *self = Vec::with_capacity(h);
+        for j in (0..h).rev() {
+            let mut row = Vec::with_capacity(w);
+            for i in 0..w {
+                row.push(orig[i][j].clone());
+            }
+            self.push(row);
+        }
+    }
+
+    fn transpose(&mut self) {
+        if self.is_empty() || self[0].is_empty() {
+            return;
+        }
+
+        debug_assert!(self.iter().all(|r| r.len() == self[0].len()));
+
+        let h = self[0].len();
+        let w = self.len();
+
+        let orig = take(self);
+
+        *self = Vec::with_capacity(h);
+        for j in 0..h {
+            let mut col = Vec::with_capacity(w);
+            for i in 0..w {
+                col.push(orig[i][j].clone());
+            }
+            self.push(col);
+        }
+    }
 }
 
 #[cfg(test)]
@@ -89,87 +90,114 @@ mod tests {
     #[test]
     fn test_rotate_clockwise() {
         {
-            let m = vec![vec![1, 2, 3], vec![4, 5, 6], vec![7, 8, 9]];
+            let mut m = vec![vec![1, 2, 3], vec![4, 5, 6], vec![7, 8, 9]];
             let expected = vec![vec![7, 4, 1], vec![8, 5, 2], vec![9, 6, 3]];
-            assert_eq!(rotate_clockwise(&m), expected);
+            m.rotate_clockwise();
+            assert_eq!(m, expected);
         }
 
         {
-            let m = vec![vec![1, 2, 3], vec![4, 5, 6]];
+            let mut m = vec![vec![1, 2, 3], vec![4, 5, 6]];
             let expected = vec![vec![4, 1], vec![5, 2], vec![6, 3]];
-            assert_eq!(rotate_clockwise(&m), expected);
+            m.rotate_clockwise();
+            assert_eq!(m, expected);
         }
 
         {
-            let m: Vec<Vec<i32>> = vec![];
+            let mut m: Vec<Vec<i32>> = vec![];
             let expected: Vec<Vec<i32>> = vec![];
-            assert_eq!(rotate_clockwise(&m), expected);
+            m.rotate_clockwise();
+            assert_eq!(m, expected);
         }
 
-        assert_eq!(rotate_clockwise(&vec![vec![30]]), vec![vec![30]]);
+        {
+            let mut m = vec![vec![30]];
+            let expected = vec![vec![30]];
+            m.rotate_clockwise();
+            assert_eq!(m, expected);
+        }
     }
 
     #[test]
     fn test_rotate_anticlockwise() {
         {
-            let m = vec![vec![1, 2, 3], vec![4, 5, 6], vec![7, 8, 9]];
-            let rotated = vec![vec![3, 6, 9], vec![2, 5, 8], vec![1, 4, 7]];
-            assert_eq!(rotate_anticlockwise(&m), rotated);
+            let mut m = vec![vec![1, 2, 3], vec![4, 5, 6], vec![7, 8, 9]];
+            let expected = vec![vec![3, 6, 9], vec![2, 5, 8], vec![1, 4, 7]];
+            m.rotate_anticlockwise();
+            assert_eq!(m, expected);
         }
 
         {
-            let m = vec![vec![1, 2, 3], vec![4, 5, 6]];
+            let mut m = vec![vec![1, 2, 3], vec![4, 5, 6]];
             let expected = vec![vec![3, 6], vec![2, 5], vec![1, 4]];
-            assert_eq!(rotate_anticlockwise(&m), expected);
+            m.rotate_anticlockwise();
+            assert_eq!(m, expected);
         }
 
         {
-            let m: Vec<Vec<i32>> = vec![];
+            let mut m: Vec<Vec<i32>> = vec![];
             let expected: Vec<Vec<i32>> = vec![];
-            assert_eq!(rotate_anticlockwise(&m), expected);
+            m.rotate_anticlockwise();
+            assert_eq!(m, expected);
         }
 
-        assert_eq!(rotate_anticlockwise(&vec![vec![30]]), vec![vec![30]]);
+        {
+            let mut m = vec![vec![30]];
+            let expected = vec![vec![30]];
+            m.rotate_anticlockwise();
+            assert_eq!(m, expected);
+        }
     }
 
     #[test]
     fn test_transpose() {
         {
-            let m = vec![vec![1, 2, 3], vec![4, 5, 6]];
+            let mut m = vec![vec![1, 2, 3], vec![4, 5, 6]];
             let expected = vec![vec![1, 4], vec![2, 5], vec![3, 6]];
-            assert_eq!(transpose(&m), expected);
+            m.transpose();
+            assert_eq!(m, expected);
         }
 
         {
-            let m = vec![vec![1, 2], vec![3, 4], vec![5, 6]];
+            let mut m = vec![vec![1, 2], vec![3, 4], vec![5, 6]];
             let expected = vec![vec![1, 3, 5], vec![2, 4, 6]];
-            assert_eq!(transpose(&m), expected);
+            m.transpose();
+            assert_eq!(m, expected);
         }
 
         {
-            let m = vec![vec![1, 2, 3], vec![4, 5, 6], vec![7, 8, 9]];
+            let mut m = vec![vec![1, 2, 3], vec![4, 5, 6], vec![7, 8, 9]];
             let expected = vec![vec![1, 4, 7], vec![2, 5, 8], vec![3, 6, 9]];
-            assert_eq!(transpose(&m), expected);
+            m.transpose();
+            assert_eq!(m, expected);
         }
 
         {
-            let m = vec![vec![1, 2, 3]];
+            let mut m = vec![vec![1, 2, 3]];
             let expected = vec![vec![1], vec![2], vec![3]];
-            assert_eq!(transpose(&m), expected);
+            m.transpose();
+            assert_eq!(m, expected);
         }
 
         {
-            let m = vec![vec![1], vec![2], vec![3]];
+            let mut m = vec![vec![1], vec![2], vec![3]];
             let expected = vec![vec![1, 2, 3]];
-            assert_eq!(transpose(&m), expected);
+            m.transpose();
+            assert_eq!(m, expected);
         }
 
         {
-            let m: Vec<Vec<i32>> = vec![];
+            let mut m: Vec<Vec<i32>> = vec![];
             let expected: Vec<Vec<i32>> = vec![];
-            assert_eq!(transpose(&m), expected);
+            m.transpose();
+            assert_eq!(m, expected);
         }
 
-        assert_eq!(transpose(&vec![vec![30]]), vec![vec![30]]);
+        {
+            let mut m = vec![vec![30]];
+            let expected = vec![vec![30]];
+            m.transpose();
+            assert_eq!(m, expected);
+        }
     }
 }
