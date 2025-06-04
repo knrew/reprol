@@ -21,11 +21,11 @@ where
                 for &(nv, ref dcost) in &g[v] {
                     if let Some(cost_v) = &costs[v] {
                         let new_cost = cost_v.clone() + dcost.clone();
-                        match &costs[nv] {
-                            Some(cost_nv) if cost_nv <= &new_cost => {}
-                            _ => {
-                                costs[nv] = Some(new_cost);
-                            }
+                        if !costs[nv]
+                            .as_ref()
+                            .is_some_and(|cost_nv| cost_nv <= &new_cost)
+                        {
+                            costs[nv] = Some(new_cost);
                         }
                     }
                 }
@@ -39,13 +39,14 @@ where
                 for &(nv, ref dcost) in &g[v] {
                     if let Some(cost_v) = &costs[v] {
                         let new_cost = cost_v.clone() + dcost.clone();
-                        match &costs[nv] {
-                            Some(cost_nv) if cost_nv <= &new_cost => {}
-                            _ => {
-                                costs[nv] = Some(new_cost);
-                                is_negative[nv] = true;
-                            }
+                        if !costs[nv]
+                            .as_ref()
+                            .is_some_and(|cost_nv| cost_nv <= &new_cost)
+                        {
+                            costs[nv] = Some(new_cost);
+                            is_negative[nv] = true;
                         }
+
                         if is_negative[v] {
                             is_negative[nv] = true;
                         }
@@ -92,7 +93,6 @@ mod tests {
             ];
             let start = 0;
             let expected = vec![Some(&0), Some(&2), Some(&5), None, Some(&9)];
-
             let bf = BellmanFord::new(&g, start, &0);
             let result = (0..g.len()).map(|v| bf.cost(v)).collect::<Vec<_>>();
             assert!(!bf.has_negative_cycle());

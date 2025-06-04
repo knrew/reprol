@@ -21,11 +21,8 @@ where
 
         for i in 0..n {
             for &(j, ref c) in &graph[i] {
-                match &costs[i][j] {
-                    Some(x) if x <= c => {}
-                    _ => {
-                        costs[i][j] = Some(c.clone());
-                    }
+                if !costs[i][j].as_ref().is_some_and(|cost_ij| cost_ij <= c) {
+                    costs[i][j] = Some(c.clone());
                 }
             }
         }
@@ -37,11 +34,11 @@ where
                     if let Some(cost_ik) = &costs[i][k] {
                         if let Some(cost_kj) = &costs[k][j] {
                             let new_cost = cost_ik.clone() + cost_kj.clone();
-                            match &costs[i][j] {
-                                Some(cost_ij) if cost_ij <= &new_cost => {}
-                                _ => {
-                                    costs[i][j] = Some(new_cost);
-                                }
+                            if !costs[i][j]
+                                .as_ref()
+                                .is_some_and(|cost_ij| cost_ij <= &new_cost)
+                            {
+                                costs[i][j] = Some(new_cost);
                             }
                         }
                     }

@@ -218,12 +218,12 @@ where
         let mut costs = vec![None; n];
         let mut path_tracker = P::new(n);
 
-        let mut que = VecDeque::new();
+        let mut queue = VecDeque::new();
 
         costs[to_index(&start)] = Some(0);
-        que.push_back(start.clone());
+        queue.push_back(start.clone());
 
-        while let Some(v) = que.pop_front() {
+        while let Some(v) = queue.pop_front() {
             let index_v = to_index(&v);
             let cost_v = costs[index_v].unwrap();
 
@@ -231,13 +231,10 @@ where
                 let index_nv = to_index(&nv);
                 let new_cost_nv = cost_v + 1;
 
-                match costs[index_nv] {
-                    Some(_) => {}
-                    _ => {
-                        costs[index_nv] = Some(new_cost_nv);
-                        path_tracker.set_previous(index_nv, &v);
-                        que.push_back(nv);
-                    }
+                if costs[index_nv].is_none() {
+                    costs[index_nv] = Some(new_cost_nv);
+                    path_tracker.set_previous(index_nv, &v);
+                    queue.push_back(nv);
                 }
             }
         }
@@ -279,16 +276,13 @@ where
                 let index_nv = to_index(&nv);
                 let new_cost_nv = cost_v + dcost;
 
-                match costs[index_nv] {
-                    Some(cost_nv) if cost_nv <= new_cost_nv => {}
-                    _ => {
-                        costs[index_nv] = Some(new_cost_nv);
-                        path_tracker.set_previous(index_nv, &v);
-                        if dcost == 0 {
-                            queue.push_front(nv);
-                        } else {
-                            queue.push_back(nv);
-                        }
+                if !costs[index_nv].is_some_and(|cost_nv| cost_nv <= new_cost_nv) {
+                    costs[index_nv] = Some(new_cost_nv);
+                    path_tracker.set_previous(index_nv, &v);
+                    if dcost == 0 {
+                        queue.push_front(nv);
+                    } else {
+                        queue.push_back(nv);
                     }
                 }
             }
