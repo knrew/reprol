@@ -6,6 +6,7 @@ pub mod dijkstra;
 pub mod ds;
 pub mod format;
 pub mod grid;
+pub mod inversion;
 pub mod lowlink;
 pub mod math;
 pub mod ops;
