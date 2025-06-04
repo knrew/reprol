@@ -38,7 +38,7 @@ trait Zero {
 macro_rules! impl_integer {
     ($($ty:ident),*) => {$(
         impl Zero for $ty {
-            #[inline]
+            #[inline(always)]
             fn zero() -> Self {
                 0
             }

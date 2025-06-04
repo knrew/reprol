@@ -33,6 +33,7 @@ pub trait Min {
 macro_rules! impl_integer {
     ($($ty:ident),*) => {$(
         impl Min for $ty {
+            #[inline(always)]
             fn min() -> Self {
                 $ty::MIN
             }

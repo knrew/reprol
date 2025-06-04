@@ -40,15 +40,15 @@ trait Integer {
 macro_rules! impl_unsigned {
     ($($ty:ident),*) => {$(
         impl Integer for $ty {
-            #[inline]
+            #[inline(always)]
             fn zero() -> Self {
                 0
             }
-            #[inline]
+            #[inline(always)]
             fn add_(self, rhs: Self) -> Self {
                 self + rhs
             }
-            #[inline]
+            #[inline(always)]
             fn neg_(self) -> Self{
                 -self
             }
@@ -61,15 +61,15 @@ impl_unsigned! { i8, i16, i32, i64, i128, isize }
 macro_rules! impl_signed {
     ($($ty:ident),*) => {$(
         impl Integer for $ty {
-            #[inline]
+            #[inline(always)]
             fn zero() -> Self {
                 0
             }
-            #[inline]
+            #[inline(always)]
             fn add_(self, rhs: Self) -> Self {
                 self.wrapping_add(rhs)
             }
-            #[inline]
+            #[inline(always)]
             fn neg_(self) -> Self{
                 self.wrapping_neg()
             }
@@ -80,15 +80,15 @@ macro_rules! impl_signed {
 impl_signed! { u8, u16, u32, u64, u128, usize }
 
 impl<const P: u64> Integer for ModInt<P> {
-    #[inline]
+    #[inline(always)]
     fn zero() -> Self {
         0.into()
     }
-    #[inline]
+    #[inline(always)]
     fn add_(self, rhs: Self) -> Self {
         self + rhs
     }
-    #[inline]
+    #[inline(always)]
     fn neg_(self) -> Self {
         -self
     }

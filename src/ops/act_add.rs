@@ -46,11 +46,11 @@ trait Integer {
 macro_rules! impl_unsigned {
     ($($ty:ident),*) => {$(
         impl Integer for $ty {
-            #[inline]
+            #[inline(always)]
             fn zero() -> Self {
                 0
             }
-            #[inline]
+            #[inline(always)]
             fn add_(self, rhs: Self) -> Self {
                 self + rhs
             }
@@ -63,11 +63,11 @@ impl_unsigned! { i8, i16, i32, i64, i128, isize }
 macro_rules! impl_signed {
     ($($ty:ident),*) => {$(
         impl Integer for $ty {
-            #[inline]
+            #[inline(always)]
             fn zero() -> Self {
                 0
             }
-            #[inline]
+            #[inline(always)]
             fn add_(self, rhs: Self) -> Self {
                 self.wrapping_add(rhs)
             }

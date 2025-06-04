@@ -33,6 +33,7 @@ pub trait Max {
 macro_rules! impl_integer {
     ($($ty:ident),*) => {$(
         impl Max for $ty {
+            #[inline(always)]
             fn max() -> Self {
                 $ty::MAX
             }
