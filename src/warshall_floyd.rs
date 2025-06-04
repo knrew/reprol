@@ -1,39 +1,30 @@
 use std::ops::Add;
 
 /// ワーシャルフロイド法によって頂点間の最小コストを計算する
-pub struct WarshallFloyd<T> {
-    /// 頂点の個数
-    n: usize,
-
-    /// cost[u][v]: u->vの最小コスト
-    costs: Vec<Vec<Option<T>>>,
-
-    // previous: Vec<Vec<Option<usize>>>,
-    /// 負の閉路が存在するか
+pub struct WarshallFloyd<C> {
+    costs: Vec<Vec<Option<C>>>,
     has_negative_cycle: bool,
 }
 
-impl<T> WarshallFloyd<T>
+impl<C> WarshallFloyd<C>
 where
-    T: Clone + PartialOrd + Add<Output = T>,
+    C: Clone + PartialOrd + Add<Output = C>,
 {
     /// 隣接リスト表現のグラフから最短経路を計算する
-    pub fn new(g: &[Vec<(usize, T)>], zero: T) -> Self {
-        let n = g.len();
+    pub fn new(graph: &[Vec<(usize, C)>], zero: &C) -> Self {
+        let n = graph.len();
         let mut costs = vec![vec![None; n]; n];
-        // let mut previous = vec![vec![None; n]; n];
 
         for i in 0..n {
             costs[i][i] = Some(zero.clone());
         }
 
         for i in 0..n {
-            for (j, c) in &g[i] {
+            for (j, c) in &graph[i] {
                 match &costs[i][*j] {
                     Some(x) if x <= c => {}
                     _ => {
                         costs[i][*j] = Some(c.clone());
-                        // previous[u][*v] = Some(u);
                     }
                 }
             }
@@ -50,7 +41,6 @@ where
                                 Some(cost_ij) if cost_ij <= &new_cost => {}
                                 _ => {
                                     costs[i][j] = Some(new_cost);
-                                    // previous[i][j] = previous[k][j];
                                 }
                             }
                         }
@@ -59,46 +49,18 @@ where
             }
         }
 
-        let has_negative_cycle = (0..n).any(|v| costs[v][v].as_ref().unwrap() < &zero);
+        let has_negative_cycle = (0..n).any(|v| costs[v][v].as_ref().is_some_and(|c| c < &zero));
 
         Self {
-            n,
             costs,
-            // previous,
             has_negative_cycle,
         }
     }
 
-    pub fn len(&self) -> usize {
-        self.n
-    }
-
     /// u->vの最小コスト
-    pub fn cost(&self, u: usize, v: usize) -> Option<&T> {
+    pub fn cost(&self, u: usize, v: usize) -> Option<&C> {
         self.costs[u][v].as_ref()
     }
-
-    /// u->vの最短経路においてvの1個前の頂点
-    // pub fn previous(&self, u: usize, v: usize) -> Option<usize> {
-    //     self.previous[u][v]
-    // }
-
-    /// 頂点uからvへ到達可能ならばその最短経路を構築する
-    /// uとvを含む
-    // pub fn path(&self, u: usize, v: usize) -> Option<Vec<usize>> {
-    //     if self.previous[u][v].is_none() {
-    //         return None;
-    //     }
-
-    //     let mut res = vec![v];
-
-    //     while let Some(x) = self.previous[u][*res.last().unwrap()] {
-    //         res.push(x);
-    //     }
-
-    //     res.reverse();
-    //     Some(res)
-    // }
 
     /// 負の閉路が存在するか
     pub fn has_negative_cycle(&self) -> bool {
@@ -108,7 +70,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::WarshallFloyd;
+    use super::*;
 
     #[test]
     fn test_warshall_floyd() {
@@ -124,7 +86,7 @@ mod tests {
                 }
                 g
             };
-            let wf = WarshallFloyd::new(&g, 0);
+            let wf = WarshallFloyd::new(&g, &0);
             assert!(!wf.has_negative_cycle());
             assert_eq!(wf.cost(0, 0), Some(&0));
             assert_eq!(wf.cost(0, 1), Some(&1));
@@ -149,7 +111,7 @@ mod tests {
                 }
                 g
             };
-            let wf = WarshallFloyd::new(&g, 0);
+            let wf = WarshallFloyd::new(&g, &0);
             assert!(!wf.has_negative_cycle());
             assert_eq!(wf.cost(0, 0), Some(&0));
             assert_eq!(wf.cost(0, 1), Some(&4));
@@ -182,7 +144,7 @@ mod tests {
                 }
                 g
             };
-            let wf = WarshallFloyd::new(&g, 0);
+            let wf = WarshallFloyd::new(&g, &0);
             assert!(wf.has_negative_cycle());
         }
     }
