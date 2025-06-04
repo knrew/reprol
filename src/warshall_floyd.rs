@@ -20,11 +20,11 @@ where
         }
 
         for i in 0..n {
-            for (j, c) in &graph[i] {
-                match &costs[i][*j] {
+            for &(j, ref c) in &graph[i] {
+                match &costs[i][j] {
                     Some(x) if x <= c => {}
                     _ => {
-                        costs[i][*j] = Some(c.clone());
+                        costs[i][j] = Some(c.clone());
                     }
                 }
             }
