@@ -1,42 +1,52 @@
 use std::cmp::Ordering;
 
-pub fn next_permutation<T: Ord>(v: &mut [T]) -> bool {
-    next_permutation_by(v, |x, y| x.cmp(y))
+pub trait Permutation {
+    type Item: Ord;
+    fn next_permutation(&mut self) -> bool;
+    fn next_permutation_by(&mut self, f: impl FnMut(&Self::Item, &Self::Item) -> Ordering) -> bool;
+    fn next_permutation_by_key<K: Ord>(&mut self, f: impl FnMut(&Self::Item) -> K) -> bool;
 }
 
-pub fn next_permutation_by<T, F>(v: &mut [T], mut f: F) -> bool
-where
-    F: FnMut(&T, &T) -> Ordering,
-{
-    if v.len() < 2 {
-        return false;
+impl<T: Ord> Permutation for [T] {
+    type Item = T;
+
+    fn next_permutation(&mut self) -> bool {
+        self.next_permutation_by(|x, y| x.cmp(y))
     }
 
-    if let Some(i) = v
-        .windows(2)
-        .rposition(|w| f(&w[0], &w[1]) == Ordering::Less)
-    {
-        if let Some(j) = v.iter().rposition(|x| f(&x, &v[i]) == Ordering::Greater) {
-            v.swap(i, j);
-            v[i + 1..].reverse();
-            return true;
+    fn next_permutation_by(
+        &mut self,
+        mut f: impl FnMut(&Self::Item, &Self::Item) -> Ordering,
+    ) -> bool {
+        if self.len() < 2 {
+            return false;
         }
+
+        if let Some(i) = self
+            .windows(2)
+            .rposition(|w| f(&w[0], &w[1]) == Ordering::Less)
+        {
+            if let Some(j) = self
+                .iter()
+                .rposition(|x| f(&x, &self[i]) == Ordering::Greater)
+            {
+                self.swap(i, j);
+                self[i + 1..].reverse();
+                return true;
+            }
+        }
+
+        false
     }
 
-    false
-}
-
-pub fn next_permutation_by_key<T, F, K>(v: &mut [T], mut f: F) -> bool
-where
-    F: FnMut(&T) -> K,
-    K: Ord,
-{
-    next_permutation_by(v, |x, y| f(x).cmp(&f(y)))
+    fn next_permutation_by_key<K: Ord>(&mut self, mut f: impl FnMut(&Self::Item) -> K) -> bool {
+        self.next_permutation_by(|x, y| f(x).cmp(&f(y)))
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::next_permutation;
+    use super::*;
 
     #[test]
     fn test_next_permutation() {
@@ -72,7 +82,7 @@ mod tests {
         loop {
             assert_eq!(v, expected[count]);
             count += 1;
-            if !next_permutation(&mut v) {
+            if !v.next_permutation() {
                 break;
             }
         }
