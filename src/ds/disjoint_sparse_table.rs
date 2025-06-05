@@ -108,12 +108,14 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::ops::op_min::OpMin;
+    use rand::{rngs::StdRng, Rng, SeedableRng};
 
-    use super::DisjointSparseTable;
+    use crate::ops::{op_add::OpAdd, op_max::OpMax, op_min::OpMin};
+
+    use super::*;
 
     #[test]
-    fn test_disjoint_sparse_table() {
+    fn test_min() {
         let v = vec![2, 10, 1, 100];
         let test_cases = vec![
             ([0, 1], 2),
@@ -131,6 +133,91 @@ mod tests {
         let dst = DisjointSparseTable::<OpMin<i64>>::new(v);
         for ([l, r], expected) in test_cases {
             assert_eq!(dst.fold(l..r), expected);
+        }
+    }
+
+    #[test]
+    fn test_sum_random() {
+        let mut rng = StdRng::seed_from_u64(30);
+
+        for _ in 0..100 {
+            let v = (0..100)
+                .map(|_| rng.gen_range(-1000000000..=1000000000))
+                .collect::<Vec<i64>>();
+            let dst = DisjointSparseTable::<OpAdd<_>>::from(v.clone());
+            for l in 0..v.len() {
+                for r in l..=v.len() {
+                    let naive = (l..r).map(|i| v[i]).sum::<i64>();
+                    assert_eq!(dst.fold(l..r), naive);
+                }
+            }
+        }
+
+        for _ in 0..100 {
+            let v = (0..100)
+                .map(|_| rng.gen_range(0..=1000000000))
+                .collect::<Vec<u64>>();
+            let dst = DisjointSparseTable::<OpAdd<_>>::from(v.clone());
+            for l in 0..v.len() {
+                for r in l..=v.len() {
+                    let naive = (l..r).map(|i| v[i]).sum::<u64>();
+                    assert_eq!(dst.fold(l..r), naive);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_min_random() {
+        let mut rng = StdRng::seed_from_u64(30);
+
+        for _ in 0..100 {
+            let v = (0..100).map(|_| rng.gen()).collect::<Vec<i64>>();
+            let dst = DisjointSparseTable::<OpMin<_>>::from(v.clone());
+            for l in 0..v.len() {
+                for r in l..=v.len() {
+                    let naive = (l..r).map(|i| v[i]).min().unwrap_or(i64::MAX);
+                    assert_eq!(dst.fold(l..r), naive);
+                }
+            }
+        }
+
+        for _ in 0..100 {
+            let v = (0..100).map(|_| rng.gen()).collect::<Vec<u64>>();
+            let dst = DisjointSparseTable::<OpMin<_>>::from(v.clone());
+            for l in 0..v.len() {
+                for r in l..=v.len() {
+                    let naive = (l..r).map(|i| v[i]).min().unwrap_or(u64::MAX);
+                    assert_eq!(dst.fold(l..r), naive);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_max_random() {
+        let mut rng = StdRng::seed_from_u64(30);
+
+        for _ in 0..100 {
+            let v = (0..100).map(|_| rng.gen()).collect::<Vec<i64>>();
+            let dst = DisjointSparseTable::<OpMax<_>>::from(v.clone());
+            for l in 0..v.len() {
+                for r in l..=v.len() {
+                    let naive = (l..r).map(|i| v[i]).max().unwrap_or(i64::MIN);
+                    assert_eq!(dst.fold(l..r), naive);
+                }
+            }
+        }
+
+        for _ in 0..100 {
+            let v = (0..100).map(|_| rng.gen()).collect::<Vec<u64>>();
+            let dst = DisjointSparseTable::<OpMax<_>>::from(v.clone());
+            for l in 0..v.len() {
+                for r in l..=v.len() {
+                    let naive = (l..r).map(|i| v[i]).max().unwrap_or(u64::MIN);
+                    assert_eq!(dst.fold(l..r), naive);
+                }
+            }
         }
     }
 }
