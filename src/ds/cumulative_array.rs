@@ -223,7 +223,9 @@ pub type CumulativeSum<T> = CumulativeArray<OpAdd<T>>;
 
 #[cfg(test)]
 mod tests {
-    use crate::ops::op_min::OpMin;
+    use rand::{rngs::StdRng, Rng, SeedableRng};
+
+    use crate::ops::{op_max::OpMax, op_min::OpMin};
 
     use super::*;
 
@@ -268,6 +270,83 @@ mod tests {
         let cum = CumulativeArray::<OpMin<i32>>::new(v);
         for (r, expected) in testcases {
             assert_eq!(cum.get(r), &expected);
+        }
+    }
+
+    #[test]
+    fn test_sum_random() {
+        let mut rng = StdRng::seed_from_u64(30);
+
+        for _ in 0..100 {
+            let v = (0..100)
+                .map(|_| rng.gen_range(-1000000000..=1000000000))
+                .collect::<Vec<i64>>();
+            let cum = CumulativeSum::from(v.clone());
+            for l in 0..v.len() {
+                for r in l..=v.len() {
+                    let naive = (l..r).map(|i| v[i]).sum::<i64>();
+                    assert_eq!(cum.fold(l..r), naive);
+                }
+            }
+        }
+
+        for _ in 0..100 {
+            let v = (0..100)
+                .map(|_| rng.gen_range(0..=1000000000))
+                .collect::<Vec<u64>>();
+            let cum = CumulativeSum::from(v.clone());
+            for l in 0..v.len() {
+                for r in l..=v.len() {
+                    let naive = (l..r).map(|i| v[i]).sum::<u64>();
+                    assert_eq!(cum.fold(l..r), naive);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_min_random() {
+        let mut rng = StdRng::seed_from_u64(30);
+
+        for _ in 0..100 {
+            let v = (0..100).map(|_| rng.gen()).collect::<Vec<i64>>();
+            let cum = CumulativeArray::<OpMin<_>>::from(v.clone());
+            for r in 0..=v.len() {
+                let naive = (0..r).map(|i| v[i]).min().unwrap_or(i64::MAX);
+                assert_eq!(cum[r], naive);
+            }
+        }
+
+        for _ in 0..100 {
+            let v = (0..100).map(|_| rng.gen()).collect::<Vec<u64>>();
+            let cum = CumulativeArray::<OpMin<_>>::from(v.clone());
+            for r in 0..=v.len() {
+                let naive = (0..r).map(|i| v[i]).min().unwrap_or(u64::MAX);
+                assert_eq!(cum[r], naive);
+            }
+        }
+    }
+
+    #[test]
+    fn test_max_random() {
+        let mut rng = StdRng::seed_from_u64(30);
+
+        for _ in 0..100 {
+            let v = (0..100).map(|_| rng.gen()).collect::<Vec<i64>>();
+            let cum = CumulativeArray::<OpMax<_>>::from(v.clone());
+            for r in 0..=v.len() {
+                let naive = (0..r).map(|i| v[i]).max().unwrap_or(i64::MIN);
+                assert_eq!(cum[r], naive);
+            }
+        }
+
+        for _ in 0..100 {
+            let v = (0..100).map(|_| rng.gen()).collect::<Vec<u64>>();
+            let cum = CumulativeArray::<OpMax<_>>::from(v.clone());
+            for r in 0..=v.len() {
+                let naive = (0..r).map(|i| v[i]).max().unwrap_or(u64::MIN);
+                assert_eq!(cum[r], naive);
+            }
         }
     }
 }
