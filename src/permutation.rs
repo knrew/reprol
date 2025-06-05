@@ -5,6 +5,9 @@ pub trait Permutation {
     fn next_permutation(&mut self) -> bool;
     fn next_permutation_by(&mut self, f: impl FnMut(&Self::Item, &Self::Item) -> Ordering) -> bool;
     fn next_permutation_by_key<K: Ord>(&mut self, f: impl FnMut(&Self::Item) -> K) -> bool;
+    fn prev_permutation(&mut self) -> bool;
+    fn prev_permutation_by(&mut self, f: impl FnMut(&Self::Item, &Self::Item) -> Ordering) -> bool;
+    fn prev_permutation_by_key<K: Ord>(&mut self, f: impl FnMut(&Self::Item) -> K) -> bool;
 }
 
 impl<T: Ord> Permutation for [T] {
@@ -41,6 +44,21 @@ impl<T: Ord> Permutation for [T] {
 
     fn next_permutation_by_key<K: Ord>(&mut self, mut f: impl FnMut(&Self::Item) -> K) -> bool {
         self.next_permutation_by(|x, y| f(x).cmp(&f(y)))
+    }
+
+    fn prev_permutation(&mut self) -> bool {
+        self.prev_permutation_by(|x, y| x.cmp(y))
+    }
+
+    fn prev_permutation_by(
+        &mut self,
+        mut f: impl FnMut(&Self::Item, &Self::Item) -> Ordering,
+    ) -> bool {
+        self.next_permutation_by(|x, y| f(y, x))
+    }
+
+    fn prev_permutation_by_key<K: Ord>(&mut self, mut f: impl FnMut(&Self::Item) -> K) -> bool {
+        self.prev_permutation_by(|x, y| f(x).cmp(&f(y)))
     }
 }
 
@@ -83,6 +101,46 @@ mod tests {
             assert_eq!(v, expected[count]);
             count += 1;
             if !v.next_permutation() {
+                break;
+            }
+        }
+        assert_eq!(count, expected.len());
+    }
+
+    #[test]
+    fn test_prev_permutation() {
+        let mut v = vec![3, 2, 1, 0];
+        let expected = vec![
+            vec![3, 2, 1, 0],
+            vec![3, 2, 0, 1],
+            vec![3, 1, 2, 0],
+            vec![3, 1, 0, 2],
+            vec![3, 0, 2, 1],
+            vec![3, 0, 1, 2],
+            vec![2, 3, 1, 0],
+            vec![2, 3, 0, 1],
+            vec![2, 1, 3, 0],
+            vec![2, 1, 0, 3],
+            vec![2, 0, 3, 1],
+            vec![2, 0, 1, 3],
+            vec![1, 3, 2, 0],
+            vec![1, 3, 0, 2],
+            vec![1, 2, 3, 0],
+            vec![1, 2, 0, 3],
+            vec![1, 0, 3, 2],
+            vec![1, 0, 2, 3],
+            vec![0, 3, 2, 1],
+            vec![0, 3, 1, 2],
+            vec![0, 2, 3, 1],
+            vec![0, 2, 1, 3],
+            vec![0, 1, 3, 2],
+            vec![0, 1, 2, 3],
+        ];
+        let mut count = 0;
+        loop {
+            assert_eq!(v, expected[count]);
+            count += 1;
+            if !v.prev_permutation() {
                 break;
             }
         }
