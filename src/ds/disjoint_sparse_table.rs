@@ -1,3 +1,23 @@
+//! Disjoint Sparse Table
+//!
+//! 静的なモノイド列の区間積を計算するデータ構造．
+//!
+//! # 計算量
+//! - 構築(前計算): `O(N log N)`
+//! - 区間積の取得: `O(1)`
+//!
+//! # 使用例
+//! ```
+//! use reprol::ds::disjoint_sparse_table::DisjointSparseTable;
+//! use reprol::ops::op_min::OpMin;
+//! let dst  =DisjointSparseTable::<OpMin<i64>>::new(vec![3, 5, 4, 100, 1]);
+//! assert_eq!(dst.fold(1..4), 4); // 区間`[1, 4)`の最小値
+//! assert_eq!(dst.fold(0..5), 1); // 区間`[0, 5)`の最小値
+//! ```
+//!
+//! # Reference
+//! - [Disjoint Sparse Table と セグ木に関するポエム - noshi91のメモ](https://noshi91.hatenablog.com/entry/2018/05/08/183946)
+
 use std::{
     iter::FromIterator,
     ops::{Range, RangeBounds},
@@ -12,6 +32,7 @@ pub struct DisjointSparseTable<O: Monoid> {
 }
 
 impl<O: Monoid> DisjointSparseTable<O> {
+    /// 配列`v`からDisjoint Sparse Tableを構築する．
     pub fn new(v: Vec<O::Value>) -> Self
     where
         O: Default,
@@ -19,6 +40,7 @@ impl<O: Monoid> DisjointSparseTable<O> {
         Self::with_op(v, O::default())
     }
 
+    /// 演算`op`を指定して，配列`v`からDisjoint Sparse Tableを構築する．
     pub fn with_op(v: Vec<O::Value>, op: O) -> Self {
         assert!(!v.is_empty());
 
@@ -50,12 +72,12 @@ impl<O: Monoid> DisjointSparseTable<O> {
         }
     }
 
-    /// i番目の要素を取得する
+    /// 指定したindexの値を返す．
     pub fn get(&self, index: usize) -> O::Value {
         self.fold(index..=index)
     }
 
-    /// `dst.fold(l..r)`で [l, r)の区間積を計算する
+    /// 区間`[l, r)`の区間積を返す．
     pub fn fold(&self, range: impl RangeBounds<usize>) -> O::Value {
         let Range {
             start: l,
