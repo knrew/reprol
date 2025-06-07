@@ -2,8 +2,8 @@
 //!
 //! 最小値・最大値の更新に関するトレイト．
 //!
-//! - [`ChangeMinMax`]：最小値・最大値更新．
-//! - [`ChangeMinMaxOrInsert`]：`Option<T>`に対して，代入or最小値・最大値更新．
+//! - [`ChangeMinMax`] : 最小値・最大値更新．
+//! - [`ChangeMinMaxOrInsert`] : `Option<T>`に対して，代入or最小値・最大値更新．
 //!
 //! # 使用例
 //! ```

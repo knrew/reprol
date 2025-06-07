@@ -1,17 +1,17 @@
 //! 二分探索(Binary Search)
 //!
-//! - [`Bisect`](Bisect): 整数範囲上の二分探索
-//! - [`Bounds`](Bounds): ソート済み配列上のlower_bound/upper_bound
+//! - [`Bisect`] : 整数範囲上の二分探索
+//! - [`Bounds`] : ソート済み配列上のlower_bound/upper_bound
 //!
 //! # 使用例
-//! ## Bisect
+//! ## [`Bisect`]
 //! ```
 //! use reprol::bisect::Bisect;
 //! let result = (1..=100).bisect(|&x| x * x < 30);
 //! assert_eq!(result, 6);
 //! ```
 //!
-//! ## Bounds
+//! ## [`Bounds`]
 //! ```
 //! use reprol::bisect::Bounds;
 //! let v = [1, 3, 3, 5, 7];
