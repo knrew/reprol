@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"trait":["ChangeMinMax","ChangeMinMaxOrSet"]};
+window.SIDEBAR_ITEMS = {"trait":["ChangeMinMax","ChangeMinMaxOrInsert"]};
