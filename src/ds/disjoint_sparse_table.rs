@@ -10,7 +10,7 @@
 //! ```
 //! use reprol::ds::disjoint_sparse_table::DisjointSparseTable;
 //! use reprol::ops::op_min::OpMin;
-//! let dst  =DisjointSparseTable::<OpMin<i64>>::new(vec![3, 5, 4, 100, 1]);
+//! let dst = DisjointSparseTable::<OpMin<i64>>::new(vec![3, 5, 4, 100, 1]);
 //! assert_eq!(dst.fold(1..4), 4); // 区間`[1, 4)`の最小値
 //! assert_eq!(dst.fold(0..5), 1); // 区間`[0, 5)`の最小値
 //! ```
