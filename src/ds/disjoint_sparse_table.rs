@@ -1,4 +1,7 @@
-use std::ops::{Range, RangeBounds};
+use std::{
+    iter::FromIterator,
+    ops::{Range, RangeBounds},
+};
 
 use crate::{ops::monoid::Monoid, range::to_open_range};
 
@@ -13,7 +16,6 @@ impl<O: Monoid> DisjointSparseTable<O> {
     where
         O: Default,
     {
-        assert!(!v.is_empty());
         Self::with_op(v, O::default())
     }
 
@@ -42,7 +44,7 @@ impl<O: Monoid> DisjointSparseTable<O> {
         }
 
         Self {
-            len: n - 2,
+            len: v.len(),
             data,
             op,
         }
@@ -80,10 +82,9 @@ where
 impl<O, const N: usize> From<([O::Value; N], O)> for DisjointSparseTable<O>
 where
     O: Monoid,
-    O::Value: Clone,
 {
     fn from((v, op): ([O::Value; N], O)) -> Self {
-        Self::with_op(v.to_vec(), op)
+        Self::with_op(v.into_iter().collect(), op)
     }
 }
 
@@ -99,10 +100,18 @@ where
 impl<O, const N: usize> From<[O::Value; N]> for DisjointSparseTable<O>
 where
     O: Monoid + Default,
-    O::Value: Clone,
 {
     fn from(v: [O::Value; N]) -> Self {
-        Self::new(v.to_vec())
+        Self::new(v.into_iter().collect())
+    }
+}
+
+impl<O> FromIterator<O::Value> for DisjointSparseTable<O>
+where
+    O: Monoid + Default,
+{
+    fn from_iter<I: IntoIterator<Item = O::Value>>(iter: I) -> Self {
+        Self::new(iter.into_iter().collect())
     }
 }
 
