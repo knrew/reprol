@@ -143,6 +143,8 @@ impl<T: Ord> Bounds for [T] {
 
 #[cfg(test)]
 mod tests {
+    use rand::{rngs::StdRng, Rng, SeedableRng};
+
     use super::*;
 
     #[test]
@@ -270,5 +272,44 @@ mod tests {
         assert_eq!(v.upper_bound_by_key(&25, |&(_, y)| y), 2);
         assert_eq!(v.upper_bound_by_key(&30, |&(_, y)| y), 3);
         assert_eq!(v.upper_bound_by_key(&35, |&(_, y)| y), 3);
+    }
+
+    #[test]
+    fn test_bounds_random() {
+        fn naive_lower_bound<T: Ord>(v: &[T], x: &T) -> usize {
+            for i in 0..v.len() {
+                if &v[i] >= x {
+                    return i;
+                }
+            }
+            v.len()
+        }
+
+        fn naive_upper_bound<T: Ord>(v: &[T], x: &T) -> usize {
+            for i in 0..v.len() {
+                if &v[i] > x {
+                    return i;
+                }
+            }
+            v.len()
+        }
+
+        let mut rng = StdRng::seed_from_u64(30);
+
+        for _ in 0..100 {
+            let mut v: Vec<i64> = (0..1000).map(|_| rng.gen_range(-1000..=1000)).collect();
+            v.sort_unstable();
+            let target = rng.gen_range(-1000..=1000);
+            assert_eq!(v.lower_bound(&target), naive_lower_bound(&v, &target));
+            assert_eq!(v.upper_bound(&target), naive_upper_bound(&v, &target));
+        }
+
+        for _ in 0..100 {
+            let mut v: Vec<u64> = (0..1000).map(|_| rng.gen_range(0..=1000)).collect();
+            v.sort_unstable();
+            let target = rng.gen_range(0..=1000);
+            assert_eq!(v.lower_bound(&target), naive_lower_bound(&v, &target));
+            assert_eq!(v.upper_bound(&target), naive_upper_bound(&v, &target));
+        }
     }
 }
