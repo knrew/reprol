@@ -189,25 +189,6 @@ where
         }
     }
 
-    /// `v`の直前の頂点を返す．
-    ///
-    /// 以下の条件を満たす場合，その時に限り，Noneを返す．
-    /// - `end`に到達できない場合
-    /// - 経路を保存していない場合(`P`が`NoPath`である場合)
-    pub fn previous(&self, v: &V) -> Option<&V> {
-        self.path_tracker.get_previous((self.to_index)(v))
-    }
-
-    /// 始点から`end`までの経路を構築する．
-    ///
-    /// 以下の条件を満たす場合，その時に限り，Noneを返す．
-    /// - `end`に到達できない場合
-    /// - 経路を保存していない場合(`P`が`NoPath`である場合)
-    pub fn path(&self, end: &V) -> Option<Vec<V>> {
-        self.path_tracker
-            .construct_path(&self.to_index, &self.costs, end)
-    }
-
     /// 始点．
     pub fn start(&self) -> &V {
         &self.start
@@ -216,6 +197,24 @@ where
     /// 始点から`v`へのコストを返す．
     pub fn cost(&self, v: &V) -> Option<&C> {
         self.costs[(self.to_index)(v)].as_ref()
+    }
+}
+
+impl<V, C, I> DijkstraImpl<V, C, I, WithPath<V>>
+where
+    V: Clone + Ord,
+    C: Clone + Ord + Add<Output = C>,
+    I: Fn(&V) -> usize,
+{
+    /// `v`の直前の頂点を返す．
+    pub fn previous(&self, v: &V) -> Option<&V> {
+        self.path_tracker.get_previous((self.to_index)(v))
+    }
+
+    /// 始点から`end`までの経路を構築する．
+    pub fn path(&self, end: &V) -> Option<Vec<V>> {
+        self.path_tracker
+            .construct_path(&self.to_index, &self.costs, end)
     }
 }
 
