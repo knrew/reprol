@@ -294,22 +294,28 @@
 <a href=#294 id=294 data-nosnippet>294</a>            v.len()
 <a href=#295 id=295 data-nosnippet>295</a>        }
 <a href=#296 id=296 data-nosnippet>296</a>
-<a href=#297 id=297 data-nosnippet>297</a>        <span class="kw">let </span><span class="kw-2">mut </span>rng = StdRng::seed_from_u64(<span class="number">30</span>);
-<a href=#298 id=298 data-nosnippet>298</a>
-<a href=#299 id=299 data-nosnippet>299</a>        <span class="kw">for _ in </span><span class="number">0</span>..<span class="number">100 </span>{
-<a href=#300 id=300 data-nosnippet>300</a>            <span class="kw">let </span><span class="kw-2">mut </span>v: Vec&lt;i64&gt; = (<span class="number">0</span>..<span class="number">1000</span>).map(|<span class="kw">_</span>| rng.gen_range(-<span class="number">1000</span>..=<span class="number">1000</span>)).collect();
-<a href=#301 id=301 data-nosnippet>301</a>            v.sort_unstable();
-<a href=#302 id=302 data-nosnippet>302</a>            <span class="kw">let </span>target = rng.gen_range(-<span class="number">1000</span>..=<span class="number">1000</span>);
-<a href=#303 id=303 data-nosnippet>303</a>            <span class="macro">assert_eq!</span>(v.lower_bound(<span class="kw-2">&amp;</span>target), naive_lower_bound(<span class="kw-2">&amp;</span>v, <span class="kw-2">&amp;</span>target));
-<a href=#304 id=304 data-nosnippet>304</a>            <span class="macro">assert_eq!</span>(v.upper_bound(<span class="kw-2">&amp;</span>target), naive_upper_bound(<span class="kw-2">&amp;</span>v, <span class="kw-2">&amp;</span>target));
-<a href=#305 id=305 data-nosnippet>305</a>        }
-<a href=#306 id=306 data-nosnippet>306</a>
-<a href=#307 id=307 data-nosnippet>307</a>        <span class="kw">for _ in </span><span class="number">0</span>..<span class="number">100 </span>{
-<a href=#308 id=308 data-nosnippet>308</a>            <span class="kw">let </span><span class="kw-2">mut </span>v: Vec&lt;u64&gt; = (<span class="number">0</span>..<span class="number">1000</span>).map(|<span class="kw">_</span>| rng.gen_range(<span class="number">0</span>..=<span class="number">1000</span>)).collect();
-<a href=#309 id=309 data-nosnippet>309</a>            v.sort_unstable();
-<a href=#310 id=310 data-nosnippet>310</a>            <span class="kw">let </span>target = rng.gen_range(<span class="number">0</span>..=<span class="number">1000</span>);
-<a href=#311 id=311 data-nosnippet>311</a>            <span class="macro">assert_eq!</span>(v.lower_bound(<span class="kw-2">&amp;</span>target), naive_lower_bound(<span class="kw-2">&amp;</span>v, <span class="kw-2">&amp;</span>target));
-<a href=#312 id=312 data-nosnippet>312</a>            <span class="macro">assert_eq!</span>(v.upper_bound(<span class="kw-2">&amp;</span>target), naive_upper_bound(<span class="kw-2">&amp;</span>v, <span class="kw-2">&amp;</span>target));
-<a href=#313 id=313 data-nosnippet>313</a>        }
-<a href=#314 id=314 data-nosnippet>314</a>    }
-<a href=#315 id=315 data-nosnippet>315</a>}</code></pre></div></section></main></body></html>
+<a href=#297 id=297 data-nosnippet>297</a>        <span class="macro">macro_rules!</span> define_test_function {
+<a href=#298 id=298 data-nosnippet>298</a>            (<span class="macro-nonterminal">$name</span>:ident, <span class="macro-nonterminal">$ty</span>:ident) =&gt; {
+<a href=#299 id=299 data-nosnippet>299</a>                <span class="kw">fn </span><span class="macro-nonterminal">$name</span>(rng: <span class="kw-2">&amp;mut </span>StdRng, mn: <span class="macro-nonterminal">$ty</span>, mx: <span class="macro-nonterminal">$ty</span>) {
+<a href=#300 id=300 data-nosnippet>300</a>                    <span class="kw">const </span>T: usize = <span class="number">100</span>;
+<a href=#301 id=301 data-nosnippet>301</a>                    <span class="kw">const </span>N: usize = <span class="number">1000</span>;
+<a href=#302 id=302 data-nosnippet>302</a>                    <span class="kw">for _ in </span><span class="number">0</span>..T {
+<a href=#303 id=303 data-nosnippet>303</a>                        <span class="kw">let </span><span class="kw-2">mut </span>v = (<span class="number">0</span>..N).map(|<span class="kw">_</span>| rng.gen_range(mn..=mx)).collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
+<a href=#304 id=304 data-nosnippet>304</a>                        v.sort_unstable();
+<a href=#305 id=305 data-nosnippet>305</a>                        <span class="kw">let </span>target = rng.gen_range(mn..=mx);
+<a href=#306 id=306 data-nosnippet>306</a>                        <span class="macro">assert_eq!</span>(v.lower_bound(<span class="kw-2">&amp;</span>target), naive_lower_bound(<span class="kw-2">&amp;</span>v, <span class="kw-2">&amp;</span>target));
+<a href=#307 id=307 data-nosnippet>307</a>                        <span class="macro">assert_eq!</span>(v.upper_bound(<span class="kw-2">&amp;</span>target), naive_upper_bound(<span class="kw-2">&amp;</span>v, <span class="kw-2">&amp;</span>target));
+<a href=#308 id=308 data-nosnippet>308</a>                    }
+<a href=#309 id=309 data-nosnippet>309</a>                }
+<a href=#310 id=310 data-nosnippet>310</a>            };
+<a href=#311 id=311 data-nosnippet>311</a>        }
+<a href=#312 id=312 data-nosnippet>312</a>
+<a href=#313 id=313 data-nosnippet>313</a>        <span class="macro">define_test_function!</span>(test_i64, i64);
+<a href=#314 id=314 data-nosnippet>314</a>        <span class="macro">define_test_function!</span>(test_u64, u64);
+<a href=#315 id=315 data-nosnippet>315</a>
+<a href=#316 id=316 data-nosnippet>316</a>        <span class="kw">let </span><span class="kw-2">mut </span>rng = StdRng::seed_from_u64(<span class="number">30</span>);
+<a href=#317 id=317 data-nosnippet>317</a>
+<a href=#318 id=318 data-nosnippet>318</a>        test_i64(<span class="kw-2">&amp;mut </span>rng, -<span class="number">1000</span>, <span class="number">1000</span>);
+<a href=#319 id=319 data-nosnippet>319</a>        test_u64(<span class="kw-2">&amp;mut </span>rng, <span class="number">0</span>, <span class="number">1000</span>);
+<a href=#320 id=320 data-nosnippet>320</a>    }
+<a href=#321 id=321 data-nosnippet>321</a>}</code></pre></div></section></main></body></html>
