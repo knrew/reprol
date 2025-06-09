@@ -1,3 +1,19 @@
+//! Permutation
+//!
+//! 配列の次または前の順列を生成するためのトレイト．
+//!
+//! # 使用例
+//! ```
+//! use reprol::permutation::Permutation;
+//! let mut v = vec![3, 2, 0, 1];
+//!
+//! assert!(v.next_permutation()); // vが更新された場合はtrue
+//! assert_eq!(v, vec![3, 2, 1, 0]);
+//! assert!(!v.next_permutation()); // vが更新されなかった場合はfalse
+//!
+//! assert!(v.prev_permutation());
+//! assert_eq!(v, vec![3, 2, 0, 1]);
+//!```
 use std::cmp::Ordering;
 
 pub trait Permutation {
