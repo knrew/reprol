@@ -10,7 +10,7 @@
 <a href=#10 id=10 data-nosnippet>10</a>//! ```
 <a href=#11 id=11 data-nosnippet>11</a>//! use reprol::ds::disjoint_sparse_table::DisjointSparseTable;
 <a href=#12 id=12 data-nosnippet>12</a>//! use reprol::ops::op_min::OpMin;
-<a href=#13 id=13 data-nosnippet>13</a>//! let dst  =DisjointSparseTable::&lt;OpMin&lt;i64&gt;&gt;::new(vec![3, 5, 4, 100, 1]);
+<a href=#13 id=13 data-nosnippet>13</a>//! let dst = DisjointSparseTable::&lt;OpMin&lt;i64&gt;&gt;::new(vec![3, 5, 4, 100, 1]);
 <a href=#14 id=14 data-nosnippet>14</a>//! assert_eq!(dst.fold(1..4), 4); // 区間`[1, 4)`の最小値
 <a href=#15 id=15 data-nosnippet>15</a>//! assert_eq!(dst.fold(0..5), 1); // 区間`[0, 5)`の最小値
 <a href=#16 id=16 data-nosnippet>16</a>//! ```

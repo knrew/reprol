@@ -8,7 +8,7 @@
 <h2 id="使用例"><a class="doc-anchor" href="#使用例">§</a>使用例</h2>
 <div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>reprol::ds::disjoint_sparse_table::DisjointSparseTable;
 <span class="kw">use </span>reprol::ops::op_min::OpMin;
-<span class="kw">let </span>dst  =DisjointSparseTable::&lt;OpMin&lt;i64&gt;&gt;::new(<span class="macro">vec!</span>[<span class="number">3</span>, <span class="number">5</span>, <span class="number">4</span>, <span class="number">100</span>, <span class="number">1</span>]);
+<span class="kw">let </span>dst = DisjointSparseTable::&lt;OpMin&lt;i64&gt;&gt;::new(<span class="macro">vec!</span>[<span class="number">3</span>, <span class="number">5</span>, <span class="number">4</span>, <span class="number">100</span>, <span class="number">1</span>]);
 <span class="macro">assert_eq!</span>(dst.fold(<span class="number">1</span>..<span class="number">4</span>), <span class="number">4</span>); <span class="comment">// 区間`[1, 4)`の最小値
 </span><span class="macro">assert_eq!</span>(dst.fold(<span class="number">0</span>..<span class="number">5</span>), <span class="number">1</span>); <span class="comment">// 区間`[0, 5)`の最小値</span></code></pre></div>
 <h2 id="reference"><a class="doc-anchor" href="#reference">§</a>Reference</h2>
