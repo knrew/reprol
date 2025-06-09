@@ -15,49 +15,42 @@ pub trait ModOp {
     fn inv_mod(self, p: Self) -> Self;
 }
 
-trait ModInitialize {
-    fn initialize(self, p: Self) -> Self;
-}
-
 macro_rules! impl_integer {
     ($($ty:ident),*) => {$(
-        impl ModInitialize for $ty {
-            #[inline(always)]
-            fn initialize(self, p: Self) -> Self {
-                assert!(p > 0);
-                self.rem_euclid(p)
-            }
-        }
-
         impl ModOp for $ty {
             fn add_mod(self, rhs: Self, p: Self) -> Self {
-                (self.initialize(p) + rhs.initialize(p)) % p
+                assert!(p > 0);
+                (self % p + rhs % p).rem_euclid(p)
             }
 
             fn sub_mod(self, rhs: Self, p: Self) -> Self {
-                (self.initialize(p) + p - rhs.initialize(p)) % p
+                assert!(p > 0);
+                (p + self % p - rhs % p).rem_euclid(p)
             }
 
             fn mul_mod(self, rhs: Self, p: Self) -> Self {
-                self.initialize(p) * rhs.initialize(p) % p
+                assert!(p > 0);
+                (self % p * (rhs % p)).rem_euclid(p)
             }
 
             fn div_mod(self, rhs: Self, p: Self) -> Self {
-                self.initialize(p) * rhs.initialize(p).inv_mod(p) % p
+                self.mul_mod(rhs.inv_mod(p), p)
             }
 
             fn neg_mod(self, p: Self) -> Self {
-                let x = self.initialize(p);
-                (p - x) % p
+                assert!(p > 0);
+                (p - self.rem_euclid(p)) % p
             }
 
             fn pow_mod(self, mut exp: u64, p: Self) -> Self {
+                assert!(p > 0);
+
                 if p == 1 {
                     return 0;
                 }
 
                 let mut res = 1;
-                let mut base = self.initialize(p);
+                let mut base = self.rem_euclid(p);
 
                 while exp > 0 {
                     if exp % 2 == 1 {
@@ -71,7 +64,8 @@ macro_rules! impl_integer {
             }
 
             fn inv_mod(self, p: Self) -> Self {
-                let mut a = self.initialize(p) as i64;
+                assert!(p > 0);
+                let mut a = self.rem_euclid(p) as i64;
                 let mut b = p as i64;
                 let mut u = 1;
                 let mut v = 0;
@@ -80,7 +74,7 @@ macro_rules! impl_integer {
                     (a, b) = (b, a - q * b);
                     (u, v) = (v, u - q * v);
                 }
-                u.initialize(p as i64) as $ty
+                u.rem_euclid(p as i64) as $ty
             }
         }
     )*};
@@ -259,15 +253,26 @@ pub type ModInt1000000007 = ModInt<1000000007>;
 
 #[cfg(test)]
 mod tests {
+    use std::ops::RangeInclusive;
+
+    use rand::{rngs::StdRng, Rng, SeedableRng};
+
+    const P1: u64 = 998244353;
+    const P2: u64 = 1000000007;
+    const P3: u64 = 2147483647;
+    const P: [u64; 3] = [P1, P2, P3];
+
+    const RANGE_I64: RangeInclusive<i64> = i64::MIN..=i64::MAX;
+    const RANGE_U64: RangeInclusive<u64> = u64::MIN..=u64::MAX;
+
+    const SEED: u64 = 30;
+
+    // ランダムテストの試行回数
+    const Q: usize = 10000;
+
+    // NOTE: assertで確かめてる式が実装とほぼ一緒
     mod tests_mod_op {
-        use rand::{rngs::StdRng, Rng, SeedableRng};
-
-        use super::super::ModOp;
-
-        const P: [u64; 4] = [998244353, 1000000007, 1000000009, 2147483647];
-
-        // ランダムテストの試行回数
-        const N: usize = 10000;
+        use super::{super::ModOp, *};
 
         #[test]
         fn test_add_mod() {
@@ -277,24 +282,24 @@ mod tests {
             assert_eq!(0.add_mod(0, 3), 0);
             assert_eq!(7.add_mod(7, 7), 0);
 
-            let mut rng = StdRng::seed_from_u64(30);
-            for _ in 0..N {
+            let mut rng = StdRng::seed_from_u64(SEED);
+            for _ in 0..Q {
                 // u64
                 {
-                    let lhs = rng.gen_range(0..1000000000);
-                    let rhs = rng.gen_range(0..1000000000);
+                    let lhs = rng.gen_range(RANGE_U64);
+                    let rhs = rng.gen_range(RANGE_U64);
                     for p in P {
-                        assert_eq!(lhs.add_mod(rhs, p), (lhs + rhs) % p);
+                        assert_eq!(lhs.add_mod(rhs, p), (lhs % p + rhs % p) % p);
                     }
                 }
 
                 // i64
                 {
-                    let lhs: i64 = rng.gen_range(-1000000000..1000000000);
-                    let rhs: i64 = rng.gen_range(-1000000000..1000000000);
+                    let lhs: i64 = rng.gen_range(RANGE_I64);
+                    let rhs: i64 = rng.gen_range(RANGE_I64);
                     for p in P {
                         let p = p as i64;
-                        assert_eq!(lhs.add_mod(rhs, p), (lhs + rhs).rem_euclid(p));
+                        assert_eq!(lhs.add_mod(rhs, p), (lhs % p + rhs % p).rem_euclid(p));
                     }
                 }
             }
@@ -307,12 +312,12 @@ mod tests {
             assert_eq!((-5).sub_mod(3, 11), 3);
             assert_eq!(0.sub_mod(0, 13), 0);
 
-            let mut rng = StdRng::seed_from_u64(30);
-            for _ in 0..N {
+            let mut rng = StdRng::seed_from_u64(SEED);
+            for _ in 0..Q {
                 // u64
                 {
-                    let lhs = rng.gen_range(0..1000000000);
-                    let rhs = rng.gen_range(0..1000000000);
+                    let lhs = rng.gen_range(RANGE_U64);
+                    let rhs = rng.gen_range(RANGE_U64);
                     for p in P {
                         assert_eq!(lhs.sub_mod(rhs, p), (p + lhs % p - rhs % p) % p);
                     }
@@ -320,11 +325,11 @@ mod tests {
 
                 // i64
                 {
-                    let lhs: i64 = rng.gen_range(-1000000000..1000000000);
-                    let rhs: i64 = rng.gen_range(-1000000000..1000000000);
+                    let lhs: i64 = rng.gen_range(RANGE_I64);
+                    let rhs: i64 = rng.gen_range(RANGE_I64);
                     for p in P {
                         let p = p as i64;
-                        assert_eq!(lhs.sub_mod(rhs, p), (lhs - rhs).rem_euclid(p));
+                        assert_eq!(lhs.sub_mod(rhs, p), (lhs % p - rhs % p).rem_euclid(p));
                     }
                 }
             }
@@ -337,24 +342,24 @@ mod tests {
             assert_eq!(0.mul_mod(12345, 7), 0);
             assert_eq!(123.mul_mod(456, 1), 0);
 
-            let mut rng = StdRng::seed_from_u64(30);
-            for _ in 0..N {
+            let mut rng = StdRng::seed_from_u64(SEED);
+            for _ in 0..Q {
                 // u64
                 {
-                    let lhs = rng.gen_range(0..1000000000);
-                    let rhs = rng.gen_range(0..1000000000);
+                    let lhs = rng.gen_range(RANGE_U64);
+                    let rhs = rng.gen_range(RANGE_U64);
                     for p in P {
-                        assert_eq!(lhs.mul_mod(rhs, p), lhs * rhs % p);
+                        assert_eq!(lhs.mul_mod(rhs, p), lhs % p * (rhs % p) % p);
                     }
                 }
 
                 // i64
                 {
-                    let lhs: i64 = rng.gen_range(-1000000000..1000000000);
-                    let rhs: i64 = rng.gen_range(-1000000000..1000000000);
+                    let lhs: i64 = rng.gen_range(RANGE_I64);
+                    let rhs: i64 = rng.gen_range(RANGE_I64);
                     for p in P {
                         let p = p as i64;
-                        assert_eq!(lhs.mul_mod(rhs, p), (lhs * rhs).rem_euclid(p));
+                        assert_eq!(lhs.mul_mod(rhs, p), (lhs % p * (rhs % p)).rem_euclid(p));
                     }
                 }
             }
@@ -366,12 +371,12 @@ mod tests {
             assert_eq!(9.div_mod(2, 5), 2);
             assert_eq!(0.div_mod(1, 7), 0);
 
-            let mut rng = StdRng::seed_from_u64(30);
-            for _ in 0..N {
+            let mut rng = StdRng::seed_from_u64(SEED);
+            for _ in 0..Q {
                 // u64
                 {
-                    let lhs = rng.gen_range(0..1000000000);
-                    let rhs = rng.gen_range(0..1000000000);
+                    let lhs = rng.gen_range(RANGE_U64);
+                    let rhs = rng.gen_range(RANGE_U64);
                     for p in P {
                         assert_eq!(lhs.div_mod(rhs, p), lhs % p * (rhs % p).inv_mod(p) % p);
                     }
@@ -379,8 +384,8 @@ mod tests {
 
                 // i64
                 {
-                    let lhs: i64 = rng.gen_range(-1000000000..1000000000);
-                    let rhs: i64 = rng.gen_range(-1000000000..1000000000);
+                    let lhs: i64 = rng.gen_range(RANGE_I64);
+                    let rhs: i64 = rng.gen_range(RANGE_I64);
                     for p in P {
                         let p = p as i64;
 
@@ -400,22 +405,22 @@ mod tests {
             assert_eq!((-1).neg_mod(5), 1);
             assert_eq!(10.neg_mod(7), 4);
 
-            let mut rng = StdRng::seed_from_u64(30);
-            for _ in 0..N {
+            let mut rng = StdRng::seed_from_u64(SEED);
+            for _ in 0..Q {
                 // u64
                 {
-                    let lhs = rng.gen_range(0..1000000000);
+                    let lhs = rng.gen_range(RANGE_U64);
                     for p in P {
-                        assert_eq!((lhs + lhs.neg_mod(p)) % p, 0);
+                        assert_eq!(lhs.add_mod(lhs.neg_mod(p), p), 0);
                     }
                 }
 
                 // i64
                 {
-                    let lhs: i64 = rng.gen_range(-1000000000..1000000000);
+                    let lhs: i64 = rng.gen_range(RANGE_I64);
                     for p in P {
                         let p = p as i64;
-                        assert_eq!((lhs + lhs.neg_mod(p)).rem_euclid(p), 0);
+                        assert_eq!(lhs.add_mod(lhs.neg_mod(p), p), 0);
                     }
                 }
             }
@@ -432,7 +437,7 @@ mod tests {
             fn naive_pow_u64(base: u64, exp: u64, p: u64) -> u64 {
                 let mut res = 1;
                 for _ in 0..exp {
-                    res *= base;
+                    res *= base % p;
                     res %= p;
                 }
                 res
@@ -441,16 +446,16 @@ mod tests {
             fn naive_pow_i64(base: i64, exp: u64, p: i64) -> i64 {
                 let mut res = 1;
                 for _ in 0..exp {
-                    res = (res * base).rem_euclid(p);
+                    res = (res * (base % p)).rem_euclid(p);
                 }
                 res
             }
 
-            let mut rng = StdRng::seed_from_u64(30);
-            for _ in 0..N {
+            let mut rng = StdRng::seed_from_u64(SEED);
+            for _ in 0..Q {
                 // u64
                 {
-                    let base = rng.gen_range(0..1000000000);
+                    let base = rng.gen_range(RANGE_U64);
                     let exp = rng.gen_range(0..100);
                     for p in P {
                         assert_eq!(base.pow_mod(exp, p), naive_pow_u64(base, exp, p));
@@ -459,7 +464,7 @@ mod tests {
 
                 // i64
                 {
-                    let base: i64 = rng.gen_range(-1000000000..1000000000);
+                    let base: i64 = rng.gen_range(RANGE_I64);
                     let exp = rng.gen_range(0..100);
                     for p in P {
                         let p = p as i64;
@@ -476,21 +481,22 @@ mod tests {
             assert_eq!(1.inv_mod(5), 1);
             assert_eq!(7.inv_mod(13), 2);
 
-            let mut rng = StdRng::seed_from_u64(30);
-            for _ in 0..N {
+            let mut rng = StdRng::seed_from_u64(SEED);
+            for _ in 0..Q {
                 // u64
                 {
-                    let lhs = rng.gen_range(0..1000000000);
+                    let lhs = rng.gen_range(RANGE_U64);
                     for p in P {
-                        assert_eq!(lhs % p * lhs.inv_mod(p) % p, 1);
+                        assert_eq!(lhs.mul_mod(lhs.inv_mod(p), p), 1);
                     }
                 }
+
                 // i64
                 {
-                    let lhs = rng.gen_range(-1000000000..1000000000);
+                    let lhs = rng.gen_range(RANGE_I64);
                     for p in P {
                         let p = p as i64;
-                        assert_eq!((lhs % p * lhs.inv_mod(p)).rem_euclid(p), 1);
+                        assert_eq!(lhs.mul_mod(lhs.inv_mod(p), p), 1);
                     }
                 }
             }
@@ -498,29 +504,20 @@ mod tests {
     }
 
     mod tests_modint {
-        use rand::{rngs::StdRng, Rng, SeedableRng};
-
-        use super::super::*;
-
-        const P1: u64 = 998244353;
-        const P2: u64 = 1000000007;
-        const P3: u64 = 2147483647;
-
-        // ランダムテストの試行回数
-        const N: usize = 10000;
+        use super::{super::*, *};
 
         #[test]
         fn test_add() {
             fn check<const P: u64>(lhs: u64, rhs: u64) {
                 assert_eq!(
                     (ModInt::<P>::new(lhs) + ModInt::<P>::new(rhs)).value(),
-                    (lhs + rhs) % P
+                    (lhs % P + rhs % P) % P
                 );
             }
-            let mut rng = StdRng::seed_from_u64(30);
-            for _ in 0..N {
-                let lhs = rng.gen_range(0..1000000000);
-                let rhs = rng.gen_range(0..1000000000);
+            let mut rng = StdRng::seed_from_u64(SEED);
+            for _ in 0..Q {
+                let lhs = rng.gen_range(RANGE_U64);
+                let rhs = rng.gen_range(RANGE_U64);
                 check::<P1>(lhs, rhs);
                 check::<P2>(lhs, rhs);
                 check::<P3>(lhs, rhs);
@@ -535,10 +532,10 @@ mod tests {
                     (P + lhs % P - rhs % P) % P
                 );
             }
-            let mut rng = StdRng::seed_from_u64(30);
-            for _ in 0..N {
-                let lhs = rng.gen_range(0..1000000000);
-                let rhs = rng.gen_range(0..1000000000);
+            let mut rng = StdRng::seed_from_u64(SEED);
+            for _ in 0..Q {
+                let lhs = rng.gen_range(RANGE_U64);
+                let rhs = rng.gen_range(RANGE_U64);
                 check::<P1>(lhs, rhs);
                 check::<P2>(lhs, rhs);
                 check::<P3>(lhs, rhs);
@@ -550,13 +547,13 @@ mod tests {
             fn check<const P: u64>(lhs: u64, rhs: u64) {
                 assert_eq!(
                     (ModInt::<P>::new(lhs) * ModInt::<P>::new(rhs)).value(),
-                    lhs * rhs % P
+                    (lhs % P * (rhs % P)) % P
                 );
             }
-            let mut rng = StdRng::seed_from_u64(30);
-            for _ in 0..N {
-                let lhs = rng.gen_range(0..1000000000);
-                let rhs = rng.gen_range(0..1000000000);
+            let mut rng = StdRng::seed_from_u64(SEED);
+            for _ in 0..Q {
+                let lhs = rng.gen_range(RANGE_U64);
+                let rhs = rng.gen_range(RANGE_U64);
                 check::<P1>(lhs, rhs);
                 check::<P2>(lhs, rhs);
                 check::<P3>(lhs, rhs);
@@ -571,10 +568,10 @@ mod tests {
                     lhs % P * (rhs % P).inv_mod(P) % P
                 );
             }
-            let mut rng = StdRng::seed_from_u64(30);
-            for _ in 0..N {
-                let lhs = rng.gen_range(0..1000000000);
-                let rhs = rng.gen_range(0..1000000000);
+            let mut rng = StdRng::seed_from_u64(SEED);
+            for _ in 0..Q {
+                let lhs = rng.gen_range(RANGE_U64);
+                let rhs = rng.gen_range(RANGE_U64);
                 check::<P1>(lhs, rhs);
                 check::<P2>(lhs, rhs);
                 check::<P3>(lhs, rhs);
@@ -586,9 +583,9 @@ mod tests {
             fn check<const P: u64>(lhs: u64) {
                 assert_eq!((-ModInt::<P>::new(lhs) + ModInt::<P>::new(lhs)).value(), 0);
             }
-            let mut rng = StdRng::seed_from_u64(30);
-            for _ in 0..N {
-                let lhs = rng.gen_range(0..1000000000);
+            let mut rng = StdRng::seed_from_u64(SEED);
+            for _ in 0..Q {
+                let lhs = rng.gen_range(RANGE_U64);
                 check::<P1>(lhs);
                 check::<P2>(lhs);
                 check::<P3>(lhs);
@@ -603,7 +600,7 @@ mod tests {
             fn naive_pow(base: u64, exp: u64, p: u64) -> u64 {
                 let mut res = 1;
                 for _ in 0..exp {
-                    res *= base;
+                    res *= base % p;
                     res %= p;
                 }
                 res
@@ -614,9 +611,9 @@ mod tests {
                     naive_pow(base, exp, P)
                 );
             }
-            let mut rng = StdRng::seed_from_u64(30);
-            for _ in 0..N {
-                let base = rng.gen_range(0..1000000000);
+            let mut rng = StdRng::seed_from_u64(SEED);
+            for _ in 0..Q {
+                let base = rng.gen_range(RANGE_U64);
                 let exp = rng.gen_range(0..100);
                 check::<P1>(base, exp);
                 check::<P2>(base, exp);
@@ -632,9 +629,9 @@ mod tests {
                     1
                 );
             }
-            let mut rng = StdRng::seed_from_u64(30);
-            for _ in 0..N {
-                let lhs = rng.gen_range(0..1000000000);
+            let mut rng = StdRng::seed_from_u64(SEED);
+            for _ in 0..Q {
+                let lhs = rng.gen_range(RANGE_U64);
                 check::<P1>(lhs);
                 check::<P2>(lhs);
                 check::<P3>(lhs);
