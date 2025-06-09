@@ -97,16 +97,24 @@ mod tests {
             res
         }
 
+        macro_rules! define_test_function {
+            ($name:ident, $ty:ident) => {
+                fn $name(rng: &mut StdRng) {
+                    const T: usize = 100;
+                    const N: usize = 100;
+                    for _ in 0..T {
+                        let v = (0..N).map(|_| rng.gen()).collect::<Vec<$ty>>();
+                        assert_eq!(v.inversion(), naive(&v));
+                    }
+                }
+            };
+        }
+
+        define_test_function!(test_i64, i64);
+        define_test_function!(test_u64, u64);
+
         let mut rng = StdRng::seed_from_u64(30);
-
-        for _ in 0..50 {
-            let v = (0..100).map(|_| rng.gen()).collect::<Vec<i64>>();
-            assert_eq!(v.inversion(), naive(&v));
-        }
-
-        for _ in 0..50 {
-            let v = (0..100).map(|_| rng.gen()).collect::<Vec<u64>>();
-            assert_eq!(v.inversion(), naive(&v));
-        }
+        test_i64(&mut rng);
+        test_u64(&mut rng);
     }
 }

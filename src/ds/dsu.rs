@@ -143,22 +143,20 @@ mod tests {
 
         let mut rng = StdRng::seed_from_u64(30);
 
-        // 要素数
-        let n = 100;
+        const T: usize = 10;
+        const N: usize = 100;
+        const Q: usize = 10000;
 
-        // クエリ数
-        let q = 10000;
-
-        for _ in 0..10 {
-            let mut dsu = Dsu::new(n);
+        for _ in 0..T {
+            let mut dsu = Dsu::new(N);
 
             // 愚直実装
             // naive[v]: vが属する集合の代表元
-            let mut naive_parents = (0..n).collect::<Vec<_>>();
+            let mut naive_parents = (0..N).collect::<Vec<_>>();
 
-            for _ in 0..q {
-                let u = rng.gen_range(0..n);
-                let v = rng.gen_range(0..n);
+            for _ in 0..Q {
+                let u = rng.gen_range(0..N);
+                let v = rng.gen_range(0..N);
 
                 if rng.gen_ratio(1, 2) {
                     // merge

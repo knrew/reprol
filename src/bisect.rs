@@ -294,22 +294,28 @@ mod tests {
             v.len()
         }
 
+        macro_rules! define_test_function {
+            ($name:ident, $ty:ident) => {
+                fn $name(rng: &mut StdRng, mn: $ty, mx: $ty) {
+                    const T: usize = 100;
+                    const N: usize = 1000;
+                    for _ in 0..T {
+                        let mut v = (0..N).map(|_| rng.gen_range(mn..=mx)).collect::<Vec<_>>();
+                        v.sort_unstable();
+                        let target = rng.gen_range(mn..=mx);
+                        assert_eq!(v.lower_bound(&target), naive_lower_bound(&v, &target));
+                        assert_eq!(v.upper_bound(&target), naive_upper_bound(&v, &target));
+                    }
+                }
+            };
+        }
+
+        define_test_function!(test_i64, i64);
+        define_test_function!(test_u64, u64);
+
         let mut rng = StdRng::seed_from_u64(30);
 
-        for _ in 0..100 {
-            let mut v: Vec<i64> = (0..1000).map(|_| rng.gen_range(-1000..=1000)).collect();
-            v.sort_unstable();
-            let target = rng.gen_range(-1000..=1000);
-            assert_eq!(v.lower_bound(&target), naive_lower_bound(&v, &target));
-            assert_eq!(v.upper_bound(&target), naive_upper_bound(&v, &target));
-        }
-
-        for _ in 0..100 {
-            let mut v: Vec<u64> = (0..1000).map(|_| rng.gen_range(0..=1000)).collect();
-            v.sort_unstable();
-            let target = rng.gen_range(0..=1000);
-            assert_eq!(v.lower_bound(&target), naive_lower_bound(&v, &target));
-            assert_eq!(v.upper_bound(&target), naive_upper_bound(&v, &target));
-        }
+        test_i64(&mut rng, -1000, 1000);
+        test_u64(&mut rng, 0, 1000);
     }
 }

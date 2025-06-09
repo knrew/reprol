@@ -275,78 +275,86 @@ mod tests {
 
     #[test]
     fn test_sum_random() {
+        macro_rules! define_test_function {
+            ($name:ident, $ty:ident) => {
+                fn $name(rng: &mut StdRng, mn: $ty, mx: $ty) {
+                    const T: usize = 100;
+                    const N: usize = 100;
+                    for _ in 0..T {
+                        let v = (0..N).map(|_| rng.gen_range(mn..=mx)).collect::<Vec<_>>();
+                        let cum = CumulativeSum::new(v.clone());
+                        for l in 0..v.len() {
+                            for r in l..=v.len() {
+                                assert_eq!(cum.fold(l..r), v[l..r].iter().sum());
+                            }
+                        }
+                    }
+                }
+            };
+        }
+
+        define_test_function!(test_i64, i64);
+        define_test_function!(test_u64, u64);
+
         let mut rng = StdRng::seed_from_u64(30);
 
-        for _ in 0..100 {
-            let v = (0..100)
-                .map(|_| rng.gen_range(-1000000000..=1000000000))
-                .collect::<Vec<i64>>();
-            let cum = CumulativeSum::from(v.clone());
-            for l in 0..v.len() {
-                for r in l..=v.len() {
-                    let naive = (l..r).map(|i| v[i]).sum::<i64>();
-                    assert_eq!(cum.fold(l..r), naive);
-                }
-            }
-        }
-
-        for _ in 0..100 {
-            let v = (0..100)
-                .map(|_| rng.gen_range(0..=1000000000))
-                .collect::<Vec<u64>>();
-            let cum = CumulativeSum::from(v.clone());
-            for l in 0..v.len() {
-                for r in l..=v.len() {
-                    let naive = (l..r).map(|i| v[i]).sum::<u64>();
-                    assert_eq!(cum.fold(l..r), naive);
-                }
-            }
-        }
+        test_i64(&mut rng, -1000000000, 1000000000);
+        test_u64(&mut rng, 0, 1000000000);
     }
 
     #[test]
     fn test_min_random() {
+        macro_rules! define_test_function {
+            ($name:ident, $ty:ident) => {
+                fn $name(rng: &mut StdRng) {
+                    const T: usize = 100;
+                    const N: usize = 100;
+
+                    for _ in 0..T {
+                        let v = (0..N).map(|_| rng.gen()).collect::<Vec<_>>();
+                        let cum = CumulativeArray::<OpMin<_>>::new(v.clone());
+                        for r in 0..=v.len() {
+                            let naive = *v[..r].iter().min().unwrap_or(&$ty::MAX);
+                            assert_eq!(cum[r], naive);
+                        }
+                    }
+                }
+            };
+        }
+
+        define_test_function!(test_i64, i64);
+        define_test_function!(test_u64, u64);
+
         let mut rng = StdRng::seed_from_u64(30);
-
-        for _ in 0..100 {
-            let v = (0..100).map(|_| rng.gen()).collect::<Vec<i64>>();
-            let cum = CumulativeArray::<OpMin<_>>::from(v.clone());
-            for r in 0..=v.len() {
-                let naive = (0..r).map(|i| v[i]).min().unwrap_or(i64::MAX);
-                assert_eq!(cum[r], naive);
-            }
-        }
-
-        for _ in 0..100 {
-            let v = (0..100).map(|_| rng.gen()).collect::<Vec<u64>>();
-            let cum = CumulativeArray::<OpMin<_>>::from(v.clone());
-            for r in 0..=v.len() {
-                let naive = (0..r).map(|i| v[i]).min().unwrap_or(u64::MAX);
-                assert_eq!(cum[r], naive);
-            }
-        }
+        test_i64(&mut rng);
+        test_u64(&mut rng);
     }
 
     #[test]
     fn test_max_random() {
+        macro_rules! define_test_function {
+            ($name:ident, $ty:ident) => {
+                fn $name(rng: &mut StdRng) {
+                    const T: usize = 100;
+                    const N: usize = 100;
+
+                    for _ in 0..T {
+                        let v = (0..N).map(|_| rng.gen()).collect::<Vec<_>>();
+                        let cum = CumulativeArray::<OpMax<_>>::new(v.clone());
+                        for r in 0..=v.len() {
+                            let naive = *v[..r].iter().max().unwrap_or(&$ty::MIN);
+                            assert_eq!(cum[r], naive);
+                        }
+                    }
+                }
+            };
+        }
+
+        define_test_function!(test_i64, i64);
+        define_test_function!(test_u64, u64);
+
         let mut rng = StdRng::seed_from_u64(30);
-
-        for _ in 0..100 {
-            let v = (0..100).map(|_| rng.gen()).collect::<Vec<i64>>();
-            let cum = CumulativeArray::<OpMax<_>>::from(v.clone());
-            for r in 0..=v.len() {
-                let naive = (0..r).map(|i| v[i]).max().unwrap_or(i64::MIN);
-                assert_eq!(cum[r], naive);
-            }
-        }
-
-        for _ in 0..100 {
-            let v = (0..100).map(|_| rng.gen()).collect::<Vec<u64>>();
-            let cum = CumulativeArray::<OpMax<_>>::from(v.clone());
-            for r in 0..=v.len() {
-                let naive = (0..r).map(|i| v[i]).max().unwrap_or(u64::MIN);
-                assert_eq!(cum[r], naive);
-            }
-        }
+        test_i64(&mut rng);
+        test_u64(&mut rng);
     }
 }
