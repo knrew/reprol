@@ -82,14 +82,6 @@ impl<O: Monoid> CumulativeArray<O> {
         Self::with_op(v, O::default())
     }
 
-    /// `i`番目の要素が`f(i)`であるような累積配列を構築する．
-    pub fn construct(len: usize, f: impl FnMut(usize) -> O::Value) -> Self
-    where
-        O: Default,
-    {
-        Self::construct_with_op(len, O::default(), f)
-    }
-
     /// 演算`op`を明示的に渡して配列の累積配列を構築する．
     pub fn with_op(v: Vec<O::Value>, op: O) -> Self {
         assert!(!v.is_empty());
@@ -99,16 +91,6 @@ impl<O: Monoid> CumulativeArray<O> {
             data.push(op.op(&data[i], &v[i]));
         }
         Self { data, op }
-    }
-
-    /// 演算`op`を明示的に渡して`i`番目の要素が`f(i)`であるような累積配列を構築する．
-    pub fn construct_with_op(len: usize, op: O, mut f: impl FnMut(usize) -> O::Value) -> Self {
-        assert!(len > 0);
-        Self::with_op((0..len).map(|i| f(i)).collect(), op)
-    }
-
-    pub fn len(&self) -> usize {
-        self.data.len()
     }
 
     /// 累積配列の`r`番目の要素を返す(区間`[0, r)`の区間積を返す)．
@@ -248,7 +230,7 @@ mod tests {
             assert_eq!(cum.fold(l..r), expected);
         }
 
-        let cum = CumulativeSum::construct(5, |i| i as i64 + 1);
+        let cum = CumulativeSum::from_iter((0..5).map(|i| i as i64 + 1));
         let testcases = vec![
             ((0, 5), 15),
             ((0, 1), 1),

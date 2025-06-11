@@ -47,18 +47,6 @@ impl<O: Monoid> CumulativeArray2d<O> {
         Self::with_op(v, O::default())
     }
 
-    /// 要素`(i, j)`の値が`f(i, j)`であるような累積配列を構築する．
-    pub fn construct(
-        row_len: usize,
-        col_len: usize,
-        f: impl FnMut(usize, usize) -> O::Value,
-    ) -> Self
-    where
-        O: Group + Default,
-    {
-        Self::construct_with_op(row_len, col_len, O::default(), f)
-    }
-
     /// 演算`op`を明示的に渡して2次元配列の累積配列を構築する．
     pub fn with_op(v: Vec<Vec<O::Value>>, op: O) -> Self
     where
@@ -70,9 +58,9 @@ impl<O: Monoid> CumulativeArray2d<O> {
 
         let row_len = v.len();
         let col_len = v[0].len();
-        let mut data = (0..row_len + 1)
-            .map(|_| (0..col_len + 1).map(|_| op.identity()).collect::<Vec<_>>())
-            .collect::<Vec<_>>();
+        let mut data: Vec<Vec<O::Value>> = (0..row_len + 1)
+            .map(|_| (0..col_len + 1).map(|_| op.identity()).collect())
+            .collect();
 
         for i in 0..row_len {
             for j in 0..col_len {
@@ -84,24 +72,6 @@ impl<O: Monoid> CumulativeArray2d<O> {
         }
 
         Self { data, op }
-    }
-
-    /// 演算`op`を明示的に渡して要素`(i, j)`の値が`f(i, j)`であるような累積配列を構築する．
-    pub fn construct_with_op(
-        row_len: usize,
-        col_len: usize,
-        op: O,
-        mut f: impl FnMut(usize, usize) -> O::Value,
-    ) -> Self
-    where
-        O: Group,
-    {
-        assert!(row_len > 0);
-        assert!(col_len > 0);
-        let v = (0..row_len)
-            .map(|i| (0..col_len).map(|j| f(i, j)).collect())
-            .collect();
-        Self::with_op(v, op)
     }
 
     /// `[0, i) x [0, j)`の累積積を返す．
