@@ -13,10 +13,12 @@ where
 {
     type Value = T;
 
+    #[inline]
     fn identity(&self) -> Self::Value {
         T::min()
     }
 
+    #[inline]
     fn op(&self, &x: &Self::Value, &y: &Self::Value) -> Self::Value {
         if x > y {
             x

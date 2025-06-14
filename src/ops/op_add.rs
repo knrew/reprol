@@ -13,10 +13,12 @@ where
 {
     type Value = T;
 
+    #[inline]
     fn identity(&self) -> Self::Value {
         T::zero()
     }
 
+    #[inline]
     fn op(&self, &lhs: &Self::Value, &rhs: &Self::Value) -> Self::Value {
         lhs.add_(rhs)
     }
@@ -26,6 +28,7 @@ impl<T> Group for OpAdd<T>
 where
     T: Copy + Integer,
 {
+    #[inline]
     fn inv(&self, &x: &Self::Value) -> Self::Value {
         x.neg_()
     }

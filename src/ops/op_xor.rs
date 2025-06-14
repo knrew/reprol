@@ -13,10 +13,12 @@ where
 {
     type Value = T;
 
+    #[inline]
     fn identity(&self) -> Self::Value {
         T::zero()
     }
 
+    #[inline]
     fn op(&self, &lhs: &Self::Value, &rhs: &Self::Value) -> Self::Value {
         lhs ^ rhs
     }
@@ -26,6 +28,7 @@ impl<T> Group for OpXor<T>
 where
     T: Copy + BitXor<Output = T> + Zero,
 {
+    #[inline]
     fn inv(&self, &x: &Self::Value) -> Self::Value {
         x
     }

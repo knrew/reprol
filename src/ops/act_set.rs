@@ -16,10 +16,12 @@ where
 {
     type Value = Option<T>;
 
+    #[inline]
     fn identity(&self) -> Self::Value {
         None
     }
 
+    #[inline]
     fn op(&self, g: &Self::Value, f: &Self::Value) -> Self::Value {
         if g.is_none() { f } else { g }.clone()
     }
@@ -30,6 +32,7 @@ where
     O: Monoid,
     O::Value: Clone,
 {
+    #[inline]
     fn act(&self, f: &Self::Value, x: &<O as Monoid>::Value) -> <O as Monoid>::Value {
         if let Some(f) = f { f } else { x }.clone()
     }

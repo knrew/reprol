@@ -19,10 +19,12 @@ where
 {
     type Value = T;
 
+    #[inline]
     fn identity(&self) -> Self::Value {
         T::zero()
     }
 
+    #[inline]
     fn op(&self, &lhs: &Self::Value, &rhs: &Self::Value) -> Self::Value {
         lhs.add_(rhs)
     }
@@ -33,6 +35,7 @@ where
     O: Monoid,
     O::Value: Copy + Integer,
 {
+    #[inline]
     fn act(&self, &f: &Self::Value, &x: &<O as Monoid>::Value) -> <O as Monoid>::Value {
         x.add_(f)
     }
@@ -43,7 +46,7 @@ trait Integer {
     fn add_(self, rhs: Self) -> Self;
 }
 
-macro_rules! impl_unsigned {
+macro_rules! impl_signed {
     ($($ty:ident),*) => {$(
         impl Integer for $ty {
             #[inline(always)]
@@ -58,9 +61,9 @@ macro_rules! impl_unsigned {
     )*};
 }
 
-impl_unsigned! { i8, i16, i32, i64, i128, isize }
+impl_signed! { i8, i16, i32, i64, i128, isize }
 
-macro_rules! impl_signed {
+macro_rules! impl_unsigned {
     ($($ty:ident),*) => {$(
         impl Integer for $ty {
             #[inline(always)]
@@ -75,14 +78,14 @@ macro_rules! impl_signed {
     )*};
 }
 
-impl_signed! { u8, u16, u32, u64, u128, usize }
+impl_unsigned! { u8, u16, u32, u64, u128, usize }
 
 impl<const P: u64> Integer for ModInt<P> {
-    #[inline]
+    #[inline(always)]
     fn zero() -> Self {
         0.into()
     }
-    #[inline]
+    #[inline(always)]
     fn add_(self, rhs: Self) -> Self {
         self + rhs
     }
