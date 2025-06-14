@@ -16,21 +16,24 @@
 <a href=#16 id=16 data-nosnippet>16</a>{
 <a href=#17 id=17 data-nosnippet>17</a>    <span class="kw">type </span>Value = <span class="prelude-ty">Option</span>&lt;T&gt;;
 <a href=#18 id=18 data-nosnippet>18</a>
-<a href=#19 id=19 data-nosnippet>19</a>    <span class="kw">fn </span>identity(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self</span>::Value {
-<a href=#20 id=20 data-nosnippet>20</a>        <span class="prelude-val">None
-<a href=#21 id=21 data-nosnippet>21</a>    </span>}
-<a href=#22 id=22 data-nosnippet>22</a>
-<a href=#23 id=23 data-nosnippet>23</a>    <span class="kw">fn </span>op(<span class="kw-2">&amp;</span><span class="self">self</span>, g: <span class="kw-2">&amp;</span><span class="self">Self</span>::Value, f: <span class="kw-2">&amp;</span><span class="self">Self</span>::Value) -&gt; <span class="self">Self</span>::Value {
-<a href=#24 id=24 data-nosnippet>24</a>        <span class="kw">if </span>g.is_none() { f } <span class="kw">else </span>{ g }.clone()
-<a href=#25 id=25 data-nosnippet>25</a>    }
-<a href=#26 id=26 data-nosnippet>26</a>}
-<a href=#27 id=27 data-nosnippet>27</a>
-<a href=#28 id=28 data-nosnippet>28</a><span class="kw">impl</span>&lt;O&gt; Action&lt;O&gt; <span class="kw">for </span>ActSet&lt;O::Value&gt;
-<a href=#29 id=29 data-nosnippet>29</a><span class="kw">where
-<a href=#30 id=30 data-nosnippet>30</a>    </span>O: Monoid,
-<a href=#31 id=31 data-nosnippet>31</a>    O::Value: Clone,
-<a href=#32 id=32 data-nosnippet>32</a>{
-<a href=#33 id=33 data-nosnippet>33</a>    <span class="kw">fn </span>act(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;</span><span class="self">Self</span>::Value, x: <span class="kw-2">&amp;</span>&lt;O <span class="kw">as </span>Monoid&gt;::Value) -&gt; &lt;O <span class="kw">as </span>Monoid&gt;::Value {
-<a href=#34 id=34 data-nosnippet>34</a>        <span class="kw">if let </span><span class="prelude-val">Some</span>(f) = f { f } <span class="kw">else </span>{ x }.clone()
-<a href=#35 id=35 data-nosnippet>35</a>    }
-<a href=#36 id=36 data-nosnippet>36</a>}</code></pre></div></section></main></body></html>
+<a href=#19 id=19 data-nosnippet>19</a>    <span class="attr">#[inline]
+<a href=#20 id=20 data-nosnippet>20</a>    </span><span class="kw">fn </span>identity(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self</span>::Value {
+<a href=#21 id=21 data-nosnippet>21</a>        <span class="prelude-val">None
+<a href=#22 id=22 data-nosnippet>22</a>    </span>}
+<a href=#23 id=23 data-nosnippet>23</a>
+<a href=#24 id=24 data-nosnippet>24</a>    <span class="attr">#[inline]
+<a href=#25 id=25 data-nosnippet>25</a>    </span><span class="kw">fn </span>op(<span class="kw-2">&amp;</span><span class="self">self</span>, g: <span class="kw-2">&amp;</span><span class="self">Self</span>::Value, f: <span class="kw-2">&amp;</span><span class="self">Self</span>::Value) -&gt; <span class="self">Self</span>::Value {
+<a href=#26 id=26 data-nosnippet>26</a>        <span class="kw">if </span>g.is_none() { f } <span class="kw">else </span>{ g }.clone()
+<a href=#27 id=27 data-nosnippet>27</a>    }
+<a href=#28 id=28 data-nosnippet>28</a>}
+<a href=#29 id=29 data-nosnippet>29</a>
+<a href=#30 id=30 data-nosnippet>30</a><span class="kw">impl</span>&lt;O&gt; Action&lt;O&gt; <span class="kw">for </span>ActSet&lt;O::Value&gt;
+<a href=#31 id=31 data-nosnippet>31</a><span class="kw">where
+<a href=#32 id=32 data-nosnippet>32</a>    </span>O: Monoid,
+<a href=#33 id=33 data-nosnippet>33</a>    O::Value: Clone,
+<a href=#34 id=34 data-nosnippet>34</a>{
+<a href=#35 id=35 data-nosnippet>35</a>    <span class="attr">#[inline]
+<a href=#36 id=36 data-nosnippet>36</a>    </span><span class="kw">fn </span>act(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;</span><span class="self">Self</span>::Value, x: <span class="kw-2">&amp;</span>&lt;O <span class="kw">as </span>Monoid&gt;::Value) -&gt; &lt;O <span class="kw">as </span>Monoid&gt;::Value {
+<a href=#37 id=37 data-nosnippet>37</a>        <span class="kw">if let </span><span class="prelude-val">Some</span>(f) = f { f } <span class="kw">else </span>{ x }.clone()
+<a href=#38 id=38 data-nosnippet>38</a>    }
+<a href=#39 id=39 data-nosnippet>39</a>}</code></pre></div></section></main></body></html>
