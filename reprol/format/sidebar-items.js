@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"trait":["ArrayFormatter","CharsFormatter","IterFormatter","Usize1ArrayFormatter"]};
+window.SIDEBAR_ITEMS = {"struct":["FormatBytes","FormatChars","FormatIter","FormatUsize1Vec","FormatVec"]};
