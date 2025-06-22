@@ -1,52 +1,50 @@
-/// 例: `let mut trie = Trie::new(26, b'a');`
-pub struct Trie<T> {
-    sigma: usize,
-    offset: T,
-    child: Vec<Vec<Option<usize>>>,
-    parent: Vec<Option<usize>>,
+const SIGMA: usize = 26;
+const OFFSET: usize = b'A' as usize;
+
+#[derive(Debug, Clone)]
+struct Node {
+    childs: [Option<usize>; SIGMA],
+    parent: Option<usize>,
 }
 
-impl<T> Trie<T>
-where
-    T: Char,
-{
-    pub fn new(sigma: usize, offset: T) -> Self {
+impl Node {
+    fn new() -> Self {
         Self {
-            sigma,
-            offset,
-            child: vec![vec![None; sigma]],
-            parent: vec![None],
+            childs: [None; SIGMA],
+            parent: None,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+struct Trie {
+    nodes: Vec<Node>,
+}
+
+impl Trie {
+    fn new() -> Self {
+        Trie {
+            nodes: vec![Node::new()],
         }
     }
 
-    pub fn insert(&mut self, str: &[T]) -> usize {
-        let mut cur = 0;
-        for &c in str {
-            let c = c.sub_as_usize(self.offset);
-            if self.child[cur][c].is_none() {
-                self.parent.push(Some(cur));
-                self.child[cur][c] = Some(self.child.len());
-                self.child.push(vec![None; self.sigma]);
-            }
-            cur = self.child[cur][c].unwrap();
+    fn insert(&mut self, s: &[u8]) -> usize {
+        let mut v = 0;
+
+        for &c in s {
+            let c = c as usize - OFFSET;
+            v = match self.nodes[v].childs[c] {
+                Some(nv) => nv,
+                None => {
+                    let new_id = self.nodes.len();
+                    self.nodes.push(Node::new());
+                    self.nodes[new_id].parent = Some(v);
+                    self.nodes[v].childs[c] = Some(new_id);
+                    new_id
+                }
+            };
         }
-        cur
-    }
-}
 
-#[allow(private_in_public)]
-trait Char: Copy {
-    fn sub_as_usize(self, rhs: Self) -> usize;
-}
-
-impl Char for u8 {
-    fn sub_as_usize(self, rhs: u8) -> usize {
-        (self - rhs) as usize
-    }
-}
-
-impl Char for char {
-    fn sub_as_usize(self, rhs: Self) -> usize {
-        (self as u8 - rhs as u8) as usize
+        v
     }
 }
