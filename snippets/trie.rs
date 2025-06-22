@@ -5,6 +5,7 @@ const OFFSET: usize = b'A' as usize;
 struct Node {
     childs: [Option<usize>; SIGMA],
     parent: Option<usize>,
+    is_terminal: bool,
 }
 
 impl Node {
@@ -12,6 +13,7 @@ impl Node {
         Self {
             childs: [None; SIGMA],
             parent: None,
+            is_terminal: false,
         }
     }
 }
@@ -28,8 +30,9 @@ impl Trie {
         }
     }
 
-    fn insert(&mut self, s: &[u8]) -> usize {
+    fn insert(&mut self, s: &[u8]) {
         let mut v = 0;
+        let mut path = vec![v];
 
         for &c in s {
             let c = c as usize - OFFSET;
@@ -43,8 +46,9 @@ impl Trie {
                     new_id
                 }
             };
+            path.push(v);
         }
 
-        v
+        self.nodes[v].is_terminal = true;
     }
 }
