@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["rolling_hash","z_algorithm"]};
+window.SIDEBAR_ITEMS = {"mod":["rolling_hash","suffix_array","z_algorithm"]};
