@@ -2,8 +2,8 @@
 //!
 //! 非負整数の 10 進法と任意の n 進法との相互変換を行う機能を提供する．
 //!
-//! [`RadixDecomposer`] : 10進数の非負整数を指定した基数で分解して桁ごとに分解する．
-//! [`RadixComposer`] : 指定された基数で分解された配列から10進数の値を再構成する．
+//! - [`RadixDecomposer`] : 10進数の非負整数を指定した基数で分解して桁ごとに分解する．
+//! - [`RadixComposer`] : 指定された基数で分解された配列から10進数の値を再構成する．
 
 pub trait RadixDecomposer {
     /// 非負整数を基数`base`で桁に分解し，上位桁から順に並べた配列を返す．
@@ -25,24 +25,23 @@ impl RadixDecomposer for u64 {
     fn radix_decompose(self, base: u32) -> Vec<u32> {
         assert!(base >= 2);
         let mut n = self;
+
         if n == 0 {
-            vec![0]
-        } else {
-            let base = base as u64;
-            let mut data = vec![];
-            while n > 0 {
-                data.push((n % base) as u32);
-                n /= base;
-            }
-            data.reverse();
-            data
+            return vec![0];
         }
+
+        let base = base as u64;
+        let mut res = vec![];
+        while n > 0 {
+            res.push((n % base) as u32);
+            n /= base;
+        }
+        res.reverse();
+        res
     }
 }
 
 pub trait RadixComposer {
-    type Output;
-
     /// 基数`base`で桁ごとに分解された配列を10進数として再構成する．
     /// 上位桁から順に並んでいる必要がある．
     ///
@@ -56,15 +55,13 @@ pub trait RadixComposer {
     /// let value = vec![1, 0, 1].radix_compose(2);
     /// assert_eq!(value, 5);
     /// ```
-    fn radix_compose(&self, base: u32) -> Self::Output;
+    fn radix_compose(&self, base: u32) -> u64;
 
-    fn checked_radix_compose(&self, base: u32) -> Option<Self::Output>;
+    fn checked_radix_compose(&self, base: u32) -> Option<u64>;
 }
 
 impl RadixComposer for [u32] {
-    type Output = u64;
-
-    fn radix_compose(&self, base: u32) -> Self::Output {
+    fn radix_compose(&self, base: u32) -> u64 {
         assert!(base >= 2);
         let base = base as u64;
         let mut res = 0;
@@ -75,7 +72,7 @@ impl RadixComposer for [u32] {
         res
     }
 
-    fn checked_radix_compose(&self, base: u32) -> Option<Self::Output> {
+    fn checked_radix_compose(&self, base: u32) -> Option<u64> {
         assert!(base >= 2);
         let base = base as u64;
         let mut res = 0u64;
@@ -87,13 +84,11 @@ impl RadixComposer for [u32] {
 }
 
 impl RadixComposer for &str {
-    type Output = u64;
-
-    fn radix_compose(&self, base: u32) -> Self::Output {
+    fn radix_compose(&self, base: u32) -> u64 {
         u64::from_str_radix(self, base).unwrap()
     }
 
-    fn checked_radix_compose(&self, base: u32) -> Option<Self::Output> {
+    fn checked_radix_compose(&self, base: u32) -> Option<u64> {
         u64::from_str_radix(self, base).ok()
     }
 }
