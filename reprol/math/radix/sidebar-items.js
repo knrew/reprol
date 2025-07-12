@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"trait":["FromRadix","ToRadix"]};
+window.SIDEBAR_ITEMS = {"trait":["RadixComposer","RadixDecomposer"]};
