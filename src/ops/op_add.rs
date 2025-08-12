@@ -9,7 +9,7 @@ pub struct OpAdd<T> {
 
 impl<T> Monoid for OpAdd<T>
 where
-    T: Copy + Integer,
+    T: Copy + ZeroAddNeg,
 {
     type Value = T;
 
@@ -26,7 +26,7 @@ where
 
 impl<T> Group for OpAdd<T>
 where
-    T: Copy + Integer,
+    T: Copy + ZeroAddNeg,
 {
     #[inline]
     fn inv(&self, &x: &Self::Value) -> Self::Value {
@@ -34,63 +34,77 @@ where
     }
 }
 
-trait Integer {
+trait ZeroAddNeg {
     fn zero() -> Self;
     fn add_(self, rhs: Self) -> Self;
     fn neg_(self) -> Self;
 }
 
-macro_rules! impl_unsigned {
-    ($($ty:ident),*) => {$(
-        impl Integer for $ty {
+macro_rules! impl_zeroaddneg_signed {
+    ($ty: ty) => {
+        impl ZeroAddNeg for $ty {
             #[inline(always)]
             fn zero() -> Self {
                 0
             }
+
             #[inline(always)]
             fn add_(self, rhs: Self) -> Self {
                 self + rhs
             }
+
             #[inline(always)]
-            fn neg_(self) -> Self{
+            fn neg_(self) -> Self {
                 -self
             }
         }
-    )*};
+    };
 }
 
-impl_unsigned! { i8, i16, i32, i64, i128, isize }
-
-macro_rules! impl_signed {
-    ($($ty:ident),*) => {$(
-        impl Integer for $ty {
+macro_rules! impl_zeroaddneg_unsigned {
+    ($ty: ty) => {
+        impl ZeroAddNeg for $ty {
             #[inline(always)]
             fn zero() -> Self {
                 0
             }
+
             #[inline(always)]
             fn add_(self, rhs: Self) -> Self {
                 self.wrapping_add(rhs)
             }
+
             #[inline(always)]
-            fn neg_(self) -> Self{
+            fn neg_(self) -> Self {
                 self.wrapping_neg()
             }
         }
-    )*};
+    };
 }
 
-impl_signed! { u8, u16, u32, u64, u128, usize }
+macro_rules! impl_zeroaddneg_for {
+    (unsigned: [$($u:ty),* $(,)?], signed: [$($i:ty),* $(,)?]$(,)?) => {
+        $( impl_zeroaddneg_unsigned!($u); )*
+        $( impl_zeroaddneg_signed!($i); )*
+    };
+}
 
-impl<const P: u64> Integer for ModInt<P> {
+impl_zeroaddneg_for! {
+    unsigned: [u8, u16, u32, u64, u128, usize],
+    signed:   [i8, i16, i32, i64, i128, isize],
+}
+
+impl<const P: u64> ZeroAddNeg for ModInt<P> {
     #[inline(always)]
     fn zero() -> Self {
         0.into()
     }
+
     #[inline(always)]
     fn add_(self, rhs: Self) -> Self {
         self + rhs
     }
+
     #[inline(always)]
     fn neg_(self) -> Self {
         -self

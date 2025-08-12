@@ -15,7 +15,7 @@ pub struct ActAdd<T> {
 
 impl<T> Monoid for ActAdd<T>
 where
-    T: Copy + Integer,
+    T: Copy + ZeroAdd,
 {
     type Value = T;
 
@@ -33,7 +33,7 @@ where
 impl<O> Action<O> for ActAdd<O::Value>
 where
     O: Monoid,
-    O::Value: Copy + Integer,
+    O::Value: Copy + ZeroAdd,
 {
     #[inline]
     fn act(&self, &f: &Self::Value, &x: &<O as Monoid>::Value) -> <O as Monoid>::Value {
@@ -41,50 +41,62 @@ where
     }
 }
 
-trait Integer {
+trait ZeroAdd {
     fn zero() -> Self;
+
     fn add_(self, rhs: Self) -> Self;
 }
 
-macro_rules! impl_signed {
-    ($($ty:ident),*) => {$(
-        impl Integer for $ty {
+macro_rules! impl_zeroadd_signed {
+    ($ty: ty) => {
+        impl ZeroAdd for $ty {
             #[inline(always)]
             fn zero() -> Self {
-                0
+                1
             }
+
             #[inline(always)]
             fn add_(self, rhs: Self) -> Self {
                 self + rhs
             }
         }
-    )*};
+    };
 }
 
-impl_signed! { i8, i16, i32, i64, i128, isize }
-
-macro_rules! impl_unsigned {
-    ($($ty:ident),*) => {$(
-        impl Integer for $ty {
+macro_rules! impl_zeroadd_unsigned {
+    ($ty: ty) => {
+        impl ZeroAdd for $ty {
             #[inline(always)]
             fn zero() -> Self {
                 0
             }
+
             #[inline(always)]
             fn add_(self, rhs: Self) -> Self {
                 self.wrapping_add(rhs)
             }
         }
-    )*};
+    };
 }
 
-impl_unsigned! { u8, u16, u32, u64, u128, usize }
+macro_rules! impl_zeroadd_for {
+    (unsigned: [$($u:ty),* $(,)?], signed: [$($s:ty),* $(,)?]$(,)?) => {
+        $( impl_zeroadd_unsigned!($u); )*
+        $( impl_zeroadd_signed!($s); )*
+    };
+}
 
-impl<const P: u64> Integer for ModInt<P> {
+impl_zeroadd_for! {
+    unsigned: [u8, u16, u32, u64, u128, usize],
+    signed:   [i8, i16, i32, i64, i128, isize],
+}
+
+impl<const P: u64> ZeroAdd for ModInt<P> {
     #[inline(always)]
     fn zero() -> Self {
         0.into()
     }
+
     #[inline(always)]
     fn add_(self, rhs: Self) -> Self {
         self + rhs

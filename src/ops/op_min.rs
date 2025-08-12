@@ -32,24 +32,33 @@ pub trait Max {
     fn max() -> Self;
 }
 
-macro_rules! impl_integer {
-    ($($ty:ident),*) => {$(
+macro_rules! impl_max {
+    ($ty: ty) => {
         impl Max for $ty {
             #[inline(always)]
             fn max() -> Self {
-                $ty::MAX
+                <$ty>::MAX
             }
         }
-    )*};
+    };
 }
 
-impl_integer! { u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize }
+macro_rules! impl_max_for {
+    ($($ty: ty),* $(,)?) => {
+        $( impl_max!($ty); )*
+    };
+}
+
+impl_max_for! {
+    i8, i16, i32, i64, i128, isize,
+    u8, u16, u32, u64, u128, usize,
+}
 
 #[cfg(test)]
 mod tests {
     use crate::ops::monoid::Monoid;
 
-    use super::OpMin;
+    use super::*;
 
     #[test]
     fn test_opmin() {

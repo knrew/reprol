@@ -34,19 +34,28 @@ where
     }
 }
 
-trait Zero {
+pub trait Zero {
     fn zero() -> Self;
 }
 
-macro_rules! impl_integer {
-    ($($ty:ident),*) => {$(
+macro_rules! impl_zero {
+    ($ty: ty) => {
         impl Zero for $ty {
             #[inline(always)]
             fn zero() -> Self {
                 0
             }
         }
-    )*};
+    };
 }
 
-impl_integer! { i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize  }
+macro_rules! impl_zero_for {
+    ($($ty: ty),* $(,)?) => {
+        $( impl_zero!($ty); )*
+    };
+}
+
+impl_zero_for! {
+    i8, i16, i32, i64, i128, isize,
+    u8, u16, u32, u64, u128, usize,
+}
