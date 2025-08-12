@@ -37,8 +37,8 @@ pub trait Bisect {
     fn bisect(&self, f: impl FnMut(&Self::Item) -> bool) -> Self::Item;
 }
 
-macro_rules! impl_integer {
-    ($($ty:ident),*) => {$(
+macro_rules! impl_bisect {
+    ($ty: ty) => {
         impl Bisect for Range<$ty> {
             type Item = $ty;
             fn bisect(&self, mut f: impl FnMut(&Self::Item) -> bool) -> Self::Item {
@@ -68,14 +68,23 @@ macro_rules! impl_integer {
                 let l = *self.start();
                 let u = *self.end();
                 assert!(l <= u);
-                assert!(u < $ty::MAX);
+                assert!(u < <$ty>::MAX);
                 (l..u + 1).bisect(f)
             }
         }
-    )*};
+    };
 }
 
-impl_integer! { u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize }
+macro_rules! impl_bisect_for {
+    ($($ty: ty),* $(,)?) => {
+        $( impl_bisect!($ty); )*
+    };
+}
+
+impl_bisect_for! {
+    i8, i16, i32, i64, i128, isize,
+    u8, u16, u32, u64, u128, usize,
+}
 
 /// ソート済み配列に対して，境界探索を行うためのトレイト．
 pub trait Bounds {
