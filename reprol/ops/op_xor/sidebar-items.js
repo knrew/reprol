@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["OpXor"]};
+window.SIDEBAR_ITEMS = {"struct":["OpXor"],"trait":["Zero"]};
