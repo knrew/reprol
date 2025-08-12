@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"trait":["Factors"]};
+window.SIDEBAR_ITEMS = {"struct":["I128FactorIter","I16FactorIter","I32FactorIter","I64FactorIter","I8FactorIter","IsizeFactorIter","U128FactorIter","U16FactorIter","U32FactorIter","U64FactorIter","U8FactorIter","UsizeFactorIter"],"trait":["Factors"]};
