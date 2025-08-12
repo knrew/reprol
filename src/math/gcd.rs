@@ -1,42 +1,60 @@
+//! 最大公約数(greatest common divisor)
+//!
+//! 最大公約数(gcd)を計算する．
+//!
+//! # 使用例
+//! ```
+//! use reprol::math::gcd::Gcd;
+//! assert_eq!(48u64.gcd(18), 6);
+//! ```
+
 pub trait Gcd {
     fn gcd(self, rhs: Self) -> Self;
 }
 
-macro_rules! impl_signed {
-    ($($ty:ident),*) => {$(
+macro_rules! impl_gcd_unsigned {
+    ($ty: ty) => {
         impl Gcd for $ty {
             fn gcd(self, rhs: Self) -> Self {
-                if rhs == 0 {
-                    self.abs()
-                } else {
-                    rhs.gcd(self % rhs)
+                let (mut a, mut b) = (self, rhs);
+                while b != 0 {
+                    (a, b) = (b, a % b)
                 }
+                a
             }
         }
-    )*};
+    };
 }
 
-impl_signed! { i8, i16, i32, i64, i128, isize }
-
-macro_rules! impl_unsigned {
-    ($($ty:ident),*) => {$(
+macro_rules! impl_gcd_signed {
+    ($ty: ty) => {
         impl Gcd for $ty {
             fn gcd(self, rhs: Self) -> Self {
-                if rhs == 0 {
-                    self
-                } else {
-                    rhs.gcd(self % rhs)
+                let (mut a, mut b) = (self, rhs);
+                while b != 0 {
+                    (a, b) = (b, a.rem_euclid(b));
                 }
+                a.abs()
             }
         }
-    )*};
+    };
 }
 
-impl_unsigned! { u8, u16, u32, u64, u128, usize }
+macro_rules! impl_gcd_for {
+    (unsigned: [$($u:ty),* $(,)?], signed: [$($s:ty),* $(,)?]$(,)?) => {
+        $( impl_gcd_unsigned!($u); )*
+        $( impl_gcd_signed!($s); )*
+    };
+}
+
+impl_gcd_for! {
+    unsigned: [u8, u16, u32, u64, u128, usize],
+    signed:   [i8, i16, i32, i64, i128, isize],
+}
 
 #[cfg(test)]
 mod tests {
-    use super::Gcd;
+    use super::*;
 
     #[test]
     fn test_gcd_i32() {

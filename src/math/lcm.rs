@@ -1,11 +1,35 @@
+//! 最小公倍数(least common multiple)
+//!
+//! 最小公倍数(lcm)を計算する．
+//!
+//! # 使用例
+//! ```
+//! use reprol::math::lcm::Lcm;
+//! assert_eq!(6u64.lcm(8), 24);
+//! ```
+
 use crate::math::gcd::Gcd;
 
 pub trait Lcm: Gcd {
     fn lcm(self, rhs: Self) -> Self;
 }
 
-macro_rules! impl_signed {
-    ($($ty:ident),*) => {$(
+macro_rules! impl_lcm_unsigned {
+    ($ty: ty) => {
+        impl Lcm for $ty {
+            fn lcm(self, rhs: Self) -> Self {
+                if self == 0 || rhs == 0 {
+                    0
+                } else {
+                    self / self.gcd(rhs) * rhs
+                }
+            }
+        }
+    };
+}
+
+macro_rules! impl_lcm_signed {
+    ($ty: ty) => {
         impl Lcm for $ty {
             fn lcm(self, rhs: Self) -> Self {
                 let m = self.abs();
@@ -17,31 +41,24 @@ macro_rules! impl_signed {
                 }
             }
         }
-    )*};
+    };
 }
 
-impl_signed! { i8, i16, i32, i64, i128, isize }
-
-macro_rules! impl_unsigned {
-    ($($ty:ident),*) => {$(
-        impl Lcm for $ty {
-            fn lcm(self, rhs: Self) -> Self {
-                if self == 0 || rhs == 0 {
-                    0
-                } else {
-                    self / self.gcd(rhs) * rhs
-                }
-            }
-        }
-
-    )*};
+macro_rules! impl_lcm_for {
+    (unsigned: [$($u:ty),* $(,)?], signed: [$($s:ty),* $(,)?]$(,)?) => {
+        $( impl_lcm_unsigned!($u); )*
+        $( impl_lcm_signed!($s); )*
+    };
 }
 
-impl_unsigned! { u8, u16, u32, u64, u128, usize }
+impl_lcm_for! {
+    unsigned: [u8, u16, u32, u64, u128, usize],
+    signed:   [i8, i16, i32, i64, i128, isize],
+}
 
 #[cfg(test)]
 mod tests {
-    use super::Lcm;
+    use super::*;
 
     #[test]
     fn test_lcm_i32() {
