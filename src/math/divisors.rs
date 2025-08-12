@@ -1,6 +1,6 @@
 //! 約数列挙(divisors enumerator)
 //!
-//! 非負整数の約数を列挙する．
+//! 正の整数の約数を列挙する．
 //!
 //! ## 使用例
 //! ```
@@ -8,9 +8,6 @@
 //! let d = 12u64.divisors().collect::<Vec<_>>();
 //! assert_eq!(d, vec![1, 2, 3, 4, 6, 12]);
 //! ```
-//!
-//! ## NOTE
-//! AtCoderジャッジのRustバージョンアップデート後にイテレータまわりを修正する．
 
 pub trait Divisors: Sized {
     type Output: Iterator<Item = Self>;
@@ -18,47 +15,91 @@ pub trait Divisors: Sized {
     /// 約数を列挙する．
     /// 返り値は昇順にソート済みのイテレータ．
     fn divisors(self) -> Self::Output;
-
-    /// 約数を列挙する．
-    /// 返り値はソートされているとは限らない．
-    fn divisors_unsorted(self) -> Self::Output;
 }
 
 macro_rules! impl_divisors {
-    ($ty: ty) => {
-        impl Divisors for $ty {
-            type Output = <Vec<Self> as IntoIterator>::IntoIter;
+    ($divisor_iter: ident, $ty: ty) => {
+        pub struct $divisor_iter {
+            n: $ty,
+            i: $ty,
+            ascending_phase: bool,
+        }
 
-            #[allow(unused_comparisons)]
-            fn divisors_unsorted(self) -> Self::Output {
-                debug_assert!(self >= 0);
-                let n = self;
-                (1..)
-                    .take_while(|i| i * i <= n)
-                    .filter(|i| n % i == 0)
-                    .flat_map(|i| if n / i == i { vec![i] } else { vec![i, n / i] }.into_iter())
-                    .collect::<Vec<_>>()
-                    .into_iter()
+        impl Iterator for $divisor_iter {
+            type Item = $ty;
+
+            fn next(&mut self) -> Option<Self::Item> {
+                let $divisor_iter {
+                    n,
+                    i,
+                    ascending_phase,
+                } = self;
+                let n = *n;
+
+                if *ascending_phase {
+                    // 昇順に走査．
+                    while *i * *i <= n {
+                        let j = *i;
+                        *i += 1;
+                        if n % j == 0 {
+                            return Some(j);
+                        }
+                    }
+
+                    *i -= 1;
+                    *ascending_phase = false;
+                }
+
+                // 降順に走査しながらn/iを収集．
+                while *i >= 1 {
+                    let j = *i;
+                    *i -= 1;
+                    if n % j == 0 {
+                        let d = n / j;
+                        if d != j {
+                            return Some(d);
+                        }
+                    }
+                }
+
+                None
             }
+        }
+
+        impl Divisors for $ty {
+            type Output = $divisor_iter;
 
             fn divisors(self) -> Self::Output {
-                let mut res = self.divisors_unsorted().collect::<Vec<_>>();
-                res.sort_unstable();
-                res.into_iter()
+                assert!(self > 0);
+                $divisor_iter {
+                    n: self,
+                    i: 1,
+                    ascending_phase: true,
+                }
             }
         }
     };
 }
 
 macro_rules! impl_divisors_for {
-    ($($ty: ty),* $(,)?) => {
-        $( impl_divisors!($ty); )*
+    ($([$divisor_iter: ident, $ty: ty]),* $(,)?) => {
+        $( impl_divisors!($divisor_iter, $ty); )*
     };
 }
 
 impl_divisors_for! {
-    i8, i16, i32, i64, i128, isize,
-    u8, u16, u32, u64, u128, usize,
+    [I8DivisorIter, i8],
+    [I16DivisorIter, i16],
+    [I32DivisorIter, i32],
+    [I64DivisorIter, i64],
+    [I128DivisorIter, i128],
+    [IsizeDivisorIter, isize],
+    [U8DivisorIter, u8],
+    [U16DivisorIter, u16],
+    [U32DivisorIter, u32],
+    [U64DivisorIter, u64],
+    [U128DivisorIter, u128],
+    [UsizeDivisorIter, usize],
 }
 
 #[cfg(test)]
