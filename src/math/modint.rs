@@ -15,8 +15,8 @@ pub trait ModOp {
     fn inv_mod(self, p: Self) -> Self;
 }
 
-macro_rules! impl_integer {
-    ($($ty:ident),*) => {$(
+macro_rules! impl_modop {
+    ($ty: ty) => {
         impl ModOp for $ty {
             fn add_mod(self, rhs: Self, p: Self) -> Self {
                 assert!(p > 0);
@@ -77,10 +77,19 @@ macro_rules! impl_integer {
                 u.rem_euclid(p as i64) as $ty
             }
         }
-    )*};
+    };
 }
 
-impl_integer! { i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize }
+macro_rules! impl_modop_for {
+    ($($ty: ty),* $(,)?) => {
+        $( impl_modop!($ty); )*
+    };
+}
+
+impl_modop_for! {
+    i8, i16, i32, i64, i128, isize,
+    u8, u16, u32, u64, u128, usize,
+}
 
 #[derive(Default, Clone, Copy, PartialEq, Eq)]
 pub struct ModInt<const P: u64> {
@@ -218,35 +227,37 @@ impl<const P: u64> Display for ModInt<P> {
     }
 }
 
-macro_rules! impl_unsigned {
-    ($($ty:ident),*) => {$(
+macro_rules! impl_modint_from_unsigned {
+    ($ty:ty) => {
         impl<const P: u64> From<$ty> for ModInt<P> {
             fn from(value: $ty) -> Self {
                 Self::new(value as u64)
             }
         }
-    )*};
+    };
 }
 
-impl_unsigned! { u8, u16, u32, u64, usize }
-
-impl<const P: u64> From<u128> for ModInt<P> {
-    fn from(value: u128) -> Self {
-        Self::new((value % P as u128) as u64)
-    }
-}
-
-macro_rules! impl_signed {
-    ($($ty:ident),*) => {$(
+macro_rules! impl_modint_from_signed {
+    ($ty: ty) => {
         impl<const P: u64> From<$ty> for ModInt<P> {
             fn from(value: $ty) -> Self {
                 Self::new(value.rem_euclid(P as $ty) as u64)
             }
         }
-    )*};
+    };
 }
 
-impl_signed! { i8, i16, i32, i64, i128, isize }
+macro_rules! impl_modint_from_for {
+    (unsigned: [$($u:ty),* $(,)?], signed: [$($i:ty),* $(,)?]$(,)?) => {
+        $( impl_modint_from_unsigned!($u); )*
+        $( impl_modint_from_signed!($i); )*
+    };
+}
+
+impl_modint_from_for! {
+    unsigned: [u8, u16, u32, u64, u128, usize],
+    signed:   [i8, i16, i32, i64, i128, isize],
+}
 
 pub type ModInt998244353 = ModInt<998244353>;
 pub type ModInt1000000007 = ModInt<1000000007>;
