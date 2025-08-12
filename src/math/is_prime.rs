@@ -1,26 +1,46 @@
+//! 素数判定
+//!
+//! 整数が素数かどうか判定する．
+//!
+//! ## 使用例
+//! ```
+//! use reprol::math::is_prime::IsPrime;
+//! assert!(7u32.is_prime());
+//! assert!(!12u32.is_prime());
+//! ```
+
 pub trait IsPrime {
     fn is_prime(self) -> bool;
 }
 
-macro_rules! impl_integer {
-    ($($ty:ident),*) => {$(
+macro_rules! impl_is_prime {
+    ($ty: ty) => {
         impl IsPrime for $ty {
             fn is_prime(self) -> bool {
                 self >= 2 && (2..).take_while(|i| i * i <= self).all(|i| self % i != 0)
             }
         }
-    )*};
+    };
 }
 
-impl_integer! { u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize }
+macro_rules! impl_is_prime_for {
+    ($($ty: ty),* $(,)?) => {
+        $( impl_is_prime!($ty); )*
+    };
+}
+
+impl_is_prime_for! {
+    i8, i16, i32, i64, i128, isize,
+    u8, u16, u32, u64, u128, usize,
+}
 
 #[cfg(test)]
 mod tests {
-    use super::IsPrime;
+    use super::*;
 
     #[test]
     fn test_is_prime() {
-        let test_cases: Vec<(u64, bool)> = vec![
+        let test_cases: &[(u64, bool)] = &[
             (0, false),
             (1, false),
             (2, true),
@@ -124,8 +144,24 @@ mod tests {
             (100, false),
         ];
 
-        for (n, ans) in test_cases {
-            assert_eq!(n.is_prime(), ans);
+        for &(n, expected) in test_cases {
+            assert_eq!(n.is_prime(), expected, "failed to case: {}", n);
         }
+    }
+
+    #[test]
+    fn test_smoke_all_types() {
+        assert!(13i8.is_prime());
+        assert!(13i16.is_prime());
+        assert!(13i32.is_prime());
+        assert!(13i64.is_prime());
+        assert!(13i128.is_prime());
+        assert!(13isize.is_prime());
+        assert!(13u8.is_prime());
+        assert!(13u16.is_prime());
+        assert!(13u32.is_prime());
+        assert!(13u64.is_prime());
+        assert!(13u128.is_prime());
+        assert!(13usize.is_prime());
     }
 }

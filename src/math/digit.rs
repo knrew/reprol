@@ -1,10 +1,19 @@
+//! digit
+//!
+//! 非負整数の桁数を数える．
+//!
+//! ## 使用例
+//! ```
+//! use reprol::math::digit::Digit;
+//! assert_eq!(123u64.digit(), 3);
+//! ```
+
 pub trait Digit {
-    /// 整数の桁数を計算する
     fn digit(self) -> usize;
 }
 
-macro_rules! impl_integer {
-    ($($ty:ident),*) => {$(
+macro_rules! impl_digit {
+    ($ty: ty) => {
         impl Digit for $ty {
             #[allow(unused_comparisons)]
             fn digit(self) -> usize {
@@ -21,18 +30,27 @@ macro_rules! impl_integer {
                 res
             }
         }
-    )*};
+    };
 }
 
-impl_integer! { u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize }
+macro_rules! impl_digit_for {
+    ($($ty: ty),* $(,)?) => {
+        $( impl_digit!($ty); )*
+    };
+}
+
+impl_digit_for! {
+    i8, i16, i32, i64, i128, isize,
+    u8, u16, u32, u64, u128, usize,
+}
 
 #[cfg(test)]
 mod tests {
-    use super::Digit;
+    use super::*;
 
     #[test]
     fn test_digit() {
-        let test_cases_u64: Vec<u64> = vec![
+        let test_cases_u64: &[u64] = &[
             0,
             1,
             14,
@@ -58,11 +76,11 @@ mod tests {
             u64::MAX,
         ];
 
-        for x in &test_cases_u64 {
+        for x in test_cases_u64 {
             assert_eq!(x.digit(), x.to_string().len());
         }
 
-        let test_cases_u128 = vec![
+        let test_cases_u128: &[u128] = &[
             45509468001592877595755948073788932500,
             65248981567317200482825491029219331650,
             212554951304541671265400278240829527704,
@@ -70,9 +88,25 @@ mod tests {
             u128::MAX,
         ];
 
-        for x in &test_cases_u128 {
+        for x in test_cases_u128 {
             assert_eq!(x.digit(), x.to_string().len());
         }
+    }
+
+    #[test]
+    fn test_smoke_all_types() {
+        assert_eq!(123i8.digit(), 3);
+        assert_eq!(123i16.digit(), 3);
+        assert_eq!(123i32.digit(), 3);
+        assert_eq!(123i64.digit(), 3);
+        assert_eq!(123i128.digit(), 3);
+        assert_eq!(123isize.digit(), 3);
+        assert_eq!(123u8.digit(), 3);
+        assert_eq!(123u16.digit(), 3);
+        assert_eq!(123u32.digit(), 3);
+        assert_eq!(123u64.digit(), 3);
+        assert_eq!(123u128.digit(), 3);
+        assert_eq!(123usize.digit(), 3);
     }
 
     #[test]
