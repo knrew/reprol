@@ -16,8 +16,8 @@ pub trait IRoot: Sized {
     fn nth_iroot(self, n: u32) -> Self;
 }
 
-macro_rules! impl_integer {
-    ($($ty:ident),*) => {$(
+macro_rules! impl_iroot {
+    ($ty: ty) => {
         impl IRoot for $ty {
             #[allow(unused_comparisons)]
             fn nth_iroot(self, n: u32) -> Self {
@@ -32,14 +32,23 @@ macro_rules! impl_integer {
                 }
             }
         }
-    )*};
+    };
 }
 
-impl_integer! { u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize }
+macro_rules! impl_iroot_for {
+    ($($ty: ty),* $(,)?) => {
+        $( impl_iroot!($ty); )*
+    };
+}
+
+impl_iroot_for! {
+    i8, i16, i32, i64, i128, isize,
+    u8, u16, u32, u64, u128, usize,
+}
 
 #[cfg(test)]
 mod tests {
-    use super::IRoot;
+    use super::*;
 
     #[test]
     fn test_isqrt() {
