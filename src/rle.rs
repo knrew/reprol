@@ -84,7 +84,10 @@ pub trait Rle {
 
 impl<T: PartialEq> Rle for [T] {
     type Item = T;
-    type Iter<'a> = RleIter<'a, T> where T:'a;
+    type Iter<'a>
+        = RleIter<'a, T>
+    where
+        T: 'a;
 
     fn rle(&self) -> Self::Iter<'_> {
         RleIter::new(self)
