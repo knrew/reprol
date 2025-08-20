@@ -108,6 +108,27 @@ mod tests {
         let expected = vec![(&'a', 1), (&'b', 1), (&'c', 1), (&'d', 1), (&'e', 1)];
         assert!(s.rle().eq(expected));
 
+        let v = [1, 2, 2, 3, 3, 3];
+        let expected = vec![(&1, 1), (&2, 2), (&3, 3)];
+        assert!(v.rle().eq(expected));
+
         assert!(Vec::<char>::new().rle().eq(vec![]));
+    }
+
+    #[test]
+    fn test_rle_rev() {
+        let s = "aaabbbcccddeee".chars().collect::<Vec<char>>();
+        let expected = vec![(&'a', 3), (&'b', 3), (&'c', 3), (&'d', 2), (&'e', 3)];
+        assert!(s.rle().rev().eq(expected.into_iter().rev()));
+
+        let s = "abcde".chars().collect::<Vec<char>>();
+        let expected = vec![(&'a', 1), (&'b', 1), (&'c', 1), (&'d', 1), (&'e', 1)];
+        assert!(s.rle().rev().eq(expected.into_iter().rev()));
+
+        let v = [1, 2, 2, 3, 3, 3];
+        let expected = vec![(&1, 1), (&2, 2), (&3, 3)];
+        assert!(v.rle().rev().eq(expected.into_iter().rev()));
+
+        assert!(Vec::<char>::new().rle().rev().eq(vec![]));
     }
 }
