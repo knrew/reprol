@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["LinearSieve"]};
+window.SIDEBAR_ITEMS = {"struct":["FactorIter","LinearSieve"]};

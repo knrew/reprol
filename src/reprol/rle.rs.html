@@ -108,6 +108,27 @@
 <a href=#108 id=108 data-nosnippet>108</a>        <span class="kw">let </span>expected = <span class="macro">vec!</span>[(<span class="kw-2">&amp;</span><span class="string">'a'</span>, <span class="number">1</span>), (<span class="kw-2">&amp;</span><span class="string">'b'</span>, <span class="number">1</span>), (<span class="kw-2">&amp;</span><span class="string">'c'</span>, <span class="number">1</span>), (<span class="kw-2">&amp;</span><span class="string">'d'</span>, <span class="number">1</span>), (<span class="kw-2">&amp;</span><span class="string">'e'</span>, <span class="number">1</span>)];
 <a href=#109 id=109 data-nosnippet>109</a>        <span class="macro">assert!</span>(s.rle().eq(expected));
 <a href=#110 id=110 data-nosnippet>110</a>
-<a href=#111 id=111 data-nosnippet>111</a>        <span class="macro">assert!</span>(Vec::&lt;char&gt;::new().rle().eq(<span class="macro">vec!</span>[]));
-<a href=#112 id=112 data-nosnippet>112</a>    }
-<a href=#113 id=113 data-nosnippet>113</a>}</code></pre></div></section></main></body></html>
+<a href=#111 id=111 data-nosnippet>111</a>        <span class="kw">let </span>v = [<span class="number">1</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">3</span>, <span class="number">3</span>];
+<a href=#112 id=112 data-nosnippet>112</a>        <span class="kw">let </span>expected = <span class="macro">vec!</span>[(<span class="kw-2">&amp;</span><span class="number">1</span>, <span class="number">1</span>), (<span class="kw-2">&amp;</span><span class="number">2</span>, <span class="number">2</span>), (<span class="kw-2">&amp;</span><span class="number">3</span>, <span class="number">3</span>)];
+<a href=#113 id=113 data-nosnippet>113</a>        <span class="macro">assert!</span>(v.rle().eq(expected));
+<a href=#114 id=114 data-nosnippet>114</a>
+<a href=#115 id=115 data-nosnippet>115</a>        <span class="macro">assert!</span>(Vec::&lt;char&gt;::new().rle().eq(<span class="macro">vec!</span>[]));
+<a href=#116 id=116 data-nosnippet>116</a>    }
+<a href=#117 id=117 data-nosnippet>117</a>
+<a href=#118 id=118 data-nosnippet>118</a>    <span class="attr">#[test]
+<a href=#119 id=119 data-nosnippet>119</a>    </span><span class="kw">fn </span>test_rle_rev() {
+<a href=#120 id=120 data-nosnippet>120</a>        <span class="kw">let </span>s = <span class="string">"aaabbbcccddeee"</span>.chars().collect::&lt;Vec&lt;char&gt;&gt;();
+<a href=#121 id=121 data-nosnippet>121</a>        <span class="kw">let </span>expected = <span class="macro">vec!</span>[(<span class="kw-2">&amp;</span><span class="string">'a'</span>, <span class="number">3</span>), (<span class="kw-2">&amp;</span><span class="string">'b'</span>, <span class="number">3</span>), (<span class="kw-2">&amp;</span><span class="string">'c'</span>, <span class="number">3</span>), (<span class="kw-2">&amp;</span><span class="string">'d'</span>, <span class="number">2</span>), (<span class="kw-2">&amp;</span><span class="string">'e'</span>, <span class="number">3</span>)];
+<a href=#122 id=122 data-nosnippet>122</a>        <span class="macro">assert!</span>(s.rle().rev().eq(expected.into_iter().rev()));
+<a href=#123 id=123 data-nosnippet>123</a>
+<a href=#124 id=124 data-nosnippet>124</a>        <span class="kw">let </span>s = <span class="string">"abcde"</span>.chars().collect::&lt;Vec&lt;char&gt;&gt;();
+<a href=#125 id=125 data-nosnippet>125</a>        <span class="kw">let </span>expected = <span class="macro">vec!</span>[(<span class="kw-2">&amp;</span><span class="string">'a'</span>, <span class="number">1</span>), (<span class="kw-2">&amp;</span><span class="string">'b'</span>, <span class="number">1</span>), (<span class="kw-2">&amp;</span><span class="string">'c'</span>, <span class="number">1</span>), (<span class="kw-2">&amp;</span><span class="string">'d'</span>, <span class="number">1</span>), (<span class="kw-2">&amp;</span><span class="string">'e'</span>, <span class="number">1</span>)];
+<a href=#126 id=126 data-nosnippet>126</a>        <span class="macro">assert!</span>(s.rle().rev().eq(expected.into_iter().rev()));
+<a href=#127 id=127 data-nosnippet>127</a>
+<a href=#128 id=128 data-nosnippet>128</a>        <span class="kw">let </span>v = [<span class="number">1</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">3</span>, <span class="number">3</span>];
+<a href=#129 id=129 data-nosnippet>129</a>        <span class="kw">let </span>expected = <span class="macro">vec!</span>[(<span class="kw-2">&amp;</span><span class="number">1</span>, <span class="number">1</span>), (<span class="kw-2">&amp;</span><span class="number">2</span>, <span class="number">2</span>), (<span class="kw-2">&amp;</span><span class="number">3</span>, <span class="number">3</span>)];
+<a href=#130 id=130 data-nosnippet>130</a>        <span class="macro">assert!</span>(v.rle().rev().eq(expected.into_iter().rev()));
+<a href=#131 id=131 data-nosnippet>131</a>
+<a href=#132 id=132 data-nosnippet>132</a>        <span class="macro">assert!</span>(Vec::&lt;char&gt;::new().rle().rev().eq(<span class="macro">vec!</span>[]));
+<a href=#133 id=133 data-nosnippet>133</a>    }
+<a href=#134 id=134 data-nosnippet>134</a>}</code></pre></div></section></main></body></html>
