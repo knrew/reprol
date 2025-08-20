@@ -1,9 +1,39 @@
+//! 線形篩(Linear Sieve)
+//!
+//! `n`以下の素数をO(n)で列挙する．
+//! 各整数の最小素因数(lpf)を保持し，高速な素因数分解，約数列挙も可能．
+//!
+//! # 使用例
+//! ```
+//! use reprol::math::linear_sieve::LinearSieve;
+//!
+//! let sieve = LinearSieve::new(100);
+//!
+//! // 素数判定
+//! assert!(sieve.is_prime(97));
+//! assert!(!sieve.is_prime(100));
+//!
+//! // 最小素因数
+//! assert_eq!(sieve.lpf(100), 2);
+//! assert_eq!(sieve.lpf(99), 3);
+//!
+//! // 素因数分解
+//! let factors = sieve.factors(100).collect::<Vec<_>>();
+//! assert_eq!(factors, vec![(2, 2), (5, 2)]);
+//!
+//! // 約数列挙(ソート済み)
+//! let divisors = sieve.divisors(36).collect::<Vec<_>>();
+//! assert_eq!(divisors, vec![1, 2, 3, 4, 6, 9, 12, 18, 36]);
+//! ```
+
+#[derive(Debug)]
 pub struct LinearSieve {
     lpf: Vec<usize>,
     primes: Vec<usize>,
 }
 
 impl LinearSieve {
+    /// `n`までの線形篩を構築する．
     pub fn new(n: usize) -> Self {
         const UNASSIGNED: usize = usize::MAX;
 
@@ -27,36 +57,32 @@ impl LinearSieve {
         Self { lpf, primes }
     }
 
+    /// `x`の最小素因数(lpf)を返す．
+    #[inline]
     pub fn lpf(&self, x: usize) -> usize {
         self.lpf[x]
     }
 
-    pub fn primes(&self) -> impl DoubleEndedIterator<Item = usize> + '_ {
-        self.primes.iter().cloned()
+    /// 素数のイテレータを返す．
+    #[inline]
+    pub fn primes(&self) -> impl DoubleEndedIterator<Item = &usize> + '_ {
+        self.primes.iter()
     }
 
+    /// `x`が素数かどうかを判定する．
+    #[inline]
     pub fn is_prime(&self, x: usize) -> bool {
         x >= 2 && self.lpf[x] == x
     }
 
-    pub fn factors(&self, mut x: usize) -> impl DoubleEndedIterator<Item = (usize, u32)> + '_ {
-        let mut factors = vec![];
-
-        while x > 1 {
-            let p = self.lpf[x];
-            let mut exp = 0;
-            while self.lpf[x] == p {
-                x /= p;
-                exp += 1;
-            }
-            factors.push((p, exp));
-        }
-
-        factors.into_iter()
+    /// `x`を素因数分解する．
+    /// (素数, 指数)の形で列挙するイテレータを返す．
+    #[inline]
+    pub fn factors(&self, x: usize) -> FactorIter<'_> {
+        FactorIter { sieve: self, x }
     }
 
-    #[inline]
-    fn divisors_impl(&self, x: usize) -> Vec<usize> {
+    fn divisors_vec(&self, x: usize) -> Vec<usize> {
         let mut divisors = vec![1];
         for (p, exp) in self.factors(x) {
             for i in 0..divisors.len() {
@@ -70,14 +96,47 @@ impl LinearSieve {
         divisors
     }
 
-    pub fn divisors_unsorted(&self, x: usize) -> impl DoubleEndedIterator<Item = usize> + '_ {
-        self.divisors_impl(x).into_iter()
+    /// `x`の約数を列挙するイテレータを返す(未ソート)．
+    #[inline]
+    pub fn divisors_unsorted(&self, x: usize) -> impl Iterator<Item = usize> + '_ {
+        self.divisors_vec(x).into_iter()
     }
 
+    /// `x`の約数を昇順にソートして列挙するイテレータを返す．
+    #[inline]
     pub fn divisors(&self, x: usize) -> impl DoubleEndedIterator<Item = usize> + '_ {
-        let mut d = self.divisors_impl(x);
+        let mut d = self.divisors_vec(x);
         d.sort_unstable();
         d.into_iter()
+    }
+}
+
+/// 素因数分解の結果を列挙するためのイテレータ．
+pub struct FactorIter<'a> {
+    sieve: &'a LinearSieve,
+    x: usize,
+}
+
+impl<'a> Iterator for FactorIter<'a> {
+    type Item = (usize, u32);
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        let Self { sieve, x } = self;
+
+        if *x <= 1 {
+            return None;
+        }
+
+        let p = sieve.lpf[*x];
+        let mut exp = 0;
+
+        while *x > 1 && sieve.lpf[*x] == p {
+            *x /= p;
+            exp += 1;
+        }
+
+        Some((p, exp))
     }
 }
 
