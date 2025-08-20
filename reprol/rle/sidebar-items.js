@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"trait":["Rle"]};
+window.SIDEBAR_ITEMS = {"struct":["RleIter"],"trait":["Rle"]};
