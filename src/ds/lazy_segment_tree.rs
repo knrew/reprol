@@ -1,3 +1,77 @@
+//! 遅延評価付きセグメント木(Lazy Segment Tree)
+//!
+//! 要素としてモノイドを持つ配列を管理するデータ構造．
+//! 以下の操作をいずれも O(log n) で処理できる．
+//! - 任意区間の要素に対する作用を一括適用．
+//! - 任意の区間の要素の総積(和，最小値など)の取得．
+//!
+//! # 使用例
+//!
+//! ## 区間加算・区間最大値取得
+//! ```
+//! use reprol::{
+//!     ds::lazy_segment_tree::LazySegmentTree,
+//!     ops::{action::Action, monoid::Monoid},
+//! };
+//!
+//! #[derive(Default)]
+//! struct Op;
+//!
+//! impl Monoid for Op {
+//!     type Value = i64;
+//!
+//!     fn identity(&self) -> Self::Value {
+//!         0
+//!     }
+//!
+//!     fn op(&self, lhs: &Self::Value, rhs: &Self::Value) -> Self::Value {
+//!         *lhs.max(rhs)
+//!     }
+//! }
+//!
+//! #[derive(Default)]
+//! struct Act;
+//!
+//! impl Monoid for Act {
+//!     type Value = i64;
+//!
+//!     fn identity(&self) -> Self::Value {
+//!         0
+//!     }
+//!
+//!     fn op(&self, g: &Self::Value, f: &Self::Value) -> Self::Value {
+//!         f + g
+//!     }
+//! }
+//!
+//! impl Action<Op> for Act {
+//!     fn act(&self, f: &Self::Value, x: &<Op as Monoid>::Value) -> <Op as Monoid>::Value {
+//!         x + f
+//!     }
+//! }
+//!
+//! let v = vec![4, 4, 4, 4, 4];
+//! let mut seg = LazySegmentTree::<Op, Act>::from(v);
+//!
+//! seg.act(1..4, &2);
+//! assert_eq!(seg.get(0), &4);
+//! assert_eq!(seg.get(1), &6);
+//! assert_eq!(seg.get(2), &6);
+//! assert_eq!(seg.get(3), &6);
+//! assert_eq!(seg.get(4), &4);
+//!
+//! assert_eq!(seg.fold(0..=2), 6);
+//!
+//! seg.act(.., &(-1));
+//! assert_eq!(seg.get(0), &3);
+//! assert_eq!(seg.get(1), &5);
+//! assert_eq!(seg.get(2), &5);
+//! assert_eq!(seg.get(3), &5);
+//! assert_eq!(seg.get(4), &3);
+//!
+//! assert_eq!(seg.fold(..), 5);
+//! ```
+
 use std::{
     iter::FromIterator,
     mem::replace,
@@ -9,8 +83,7 @@ use crate::{
     range::to_open_range,
 };
 
-/// 要素にモノイドを持つ配列を管理するデータ構造
-/// 区間に対する作用と区間積を$O(\log N)$で行う
+/// 遅延評価付きセグメント木
 pub struct LazySegmentTree<O: Monoid, A: Action<O>> {
     /// 列の長さ(nodesの長さではない)
     len: usize,
@@ -31,6 +104,7 @@ pub struct LazySegmentTree<O: Monoid, A: Action<O>> {
 }
 
 impl<O: Monoid, A: Action<O>> LazySegmentTree<O, A> {
+    /// 長さ`len`のセグメント木を単位元で初期化して生成する．
     pub fn new(len: usize) -> Self
     where
         O: Default,
@@ -39,6 +113,7 @@ impl<O: Monoid, A: Action<O>> LazySegmentTree<O, A> {
         Self::with_op(len, O::default(), A::default())
     }
 
+    /// 長さ`len`のセグメント木を、モノイド`op`と作用`action`を指定して生成する．
     pub fn with_op(len: usize, op: O, action: A) -> Self {
         let offset = len.next_power_of_two();
         Self {
@@ -51,6 +126,7 @@ impl<O: Monoid, A: Action<O>> LazySegmentTree<O, A> {
         }
     }
 
+    /// `index`番目の要素を返す．
     pub fn get(&mut self, index: usize) -> &O::Value
     where
         A::Value: PartialEq,
@@ -63,6 +139,7 @@ impl<O: Monoid, A: Action<O>> LazySegmentTree<O, A> {
         &self.nodes[index]
     }
 
+    /// `index`番目の要素を`value`に更新する．
     pub fn set(&mut self, index: usize, value: O::Value)
     where
         A::Value: PartialEq,
@@ -79,7 +156,7 @@ impl<O: Monoid, A: Action<O>> LazySegmentTree<O, A> {
         }
     }
 
-    /// `seg.act(l..r, f)`: 区間[l, r)にfを作用させる
+    /// 区間`range`の要素に作用`f`を適用する．
     pub fn act(&mut self, range: impl RangeBounds<usize>, f: &A::Value)
     where
         A::Value: PartialEq,
@@ -133,7 +210,7 @@ impl<O: Monoid, A: Action<O>> LazySegmentTree<O, A> {
         }
     }
 
-    /// `seg.fold(l..r)`で区間[l, r)の区間積を求める
+    /// 区間`range`の要素の総積を返す．
     pub fn fold(&mut self, range: impl RangeBounds<usize>) -> O::Value
     where
         A::Value: PartialEq,
@@ -174,10 +251,17 @@ impl<O: Monoid, A: Action<O>> LazySegmentTree<O, A> {
         self.op.op(&res_l, &res_r)
     }
 
-    /// セグ木上の二分探索(max_right)
-    /// l以降でf(v[r])=falseを満たす最小のrを求める
-    /// すなわち，[f(v[l]), f(v[l+1]), \ldots, f(v[r-1])]がすべてtrueかつf(v[r])=falseとなるrを求める
-    /// すべてのi \in [l, n)でf(v[i])=trueならばnを返す
+    /// セグメント木上の二分探索(max_right)．
+    ///
+    /// `g(r) = f(fold(l..r))`として，
+    /// 単調な`g`に対して，`g(r) = true`となる最大の`r`を返す．
+    ///
+    /// # 計算量
+    /// - O(log n)
+    ///
+    /// # 制約
+    /// - `0 <= l <= len`
+    /// - `f(identity()) = true`
     pub fn bisect_right(&mut self, l: usize, mut f: impl FnMut(&O::Value) -> bool) -> usize
     where
         A::Value: PartialEq,
@@ -229,10 +313,17 @@ impl<O: Monoid, A: Action<O>> LazySegmentTree<O, A> {
         self.len
     }
 
-    /// セグ木上の二分探索(min_left)
-    /// rより前でf(v[l-1])=falseを満たす最小のlを求める
-    /// すなわち，f(v[l-1])=falseかつ[f(v[l]), f(v[l+2]), \ldots, f(v[r-1])]がすべてtrueとなるlを求める
-    /// すべてのi \in [0, r)でf(v[i])=trueならば0を返す
+    /// セグメント木上の二分探索(min_left)．
+    ///
+    /// `g(l) = f(fold(l..r))`として，
+    /// 単調な`g`に対して，`g(l) = true`となる最小の`l`を返す．
+    ///
+    /// # 計算量
+    /// - O(log n)
+    ///
+    /// # 制約
+    /// - `0 <= r <= len`
+    /// - `f(identity()) = true`
     pub fn bisect_left(&mut self, r: usize, mut f: impl FnMut(&O::Value) -> bool) -> usize
     where
         A::Value: PartialEq,
@@ -282,7 +373,6 @@ impl<O: Monoid, A: Action<O>> LazySegmentTree<O, A> {
         0
     }
 
-    /// ノードkの遅延作用を子ノードに伝播させる
     fn propagate(&mut self, k: usize)
     where
         A::Value: PartialEq,

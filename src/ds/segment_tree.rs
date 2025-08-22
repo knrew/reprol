@@ -1,3 +1,40 @@
+//! セグメント木(Segment Tree)
+//!
+//! 要素としてモノイドを持つ配列を管理するデータ構造．
+//! 以下の操作をいずれも O(log n) で処理できる．
+//! - 要素の1点変更．
+//! - 任意の区間の要素の総積(和，最小値など)の取得．
+//!
+//! # 使用例
+//! ```
+//! use reprol::{ds::segment_tree::SegmentTree, ops::monoid::Monoid};
+//!
+//! #[derive(Default)]
+//! struct Op;
+//!
+//! impl Monoid for Op {
+//!     type Value = i64;
+//!
+//!     fn identity(&self) -> Self::Value {
+//!         0
+//!     }
+//!
+//!     fn op(&self, lhs: &Self::Value, rhs: &Self::Value) -> Self::Value {
+//!         lhs + rhs
+//!     }
+//! }
+//!
+//! // 区間和を計算するセグメント木
+//! let v = vec![1, 3, 5, 7, 9, 11];
+//! let mut seg = SegmentTree::<Op>::from(v);
+//! assert_eq!(seg.fold(0..3), 9); // 1 + 3 + 5 = 9
+//! assert_eq!(seg.fold(1..=4), 24); // 3 + 5 + 7 + 9 = 24
+//! assert_eq!(seg.fold(..), 36);
+//! seg.set(2, 6);
+//! assert_eq!(seg.fold(0..3), 10); // 1 + 3 + 6 = 10
+//! assert_eq!(seg.get(5), &11);
+//! ```
+
 use std::{
     iter::FromIterator,
     ops::{Index, Range, RangeBounds},
@@ -5,8 +42,7 @@ use std::{
 
 use crate::{ops::monoid::Monoid, range::to_open_range};
 
-/// 要素にモノイドを持つ配列を管理するデータ構造
-/// 要素の1点変更と区間積を$O(\log N)$で行う
+/// セグメント木
 pub struct SegmentTree<O: Monoid> {
     /// 列の長さ(nodesの長さではない)
     len: usize,
@@ -19,6 +55,7 @@ pub struct SegmentTree<O: Monoid> {
 }
 
 impl<O: Monoid> SegmentTree<O> {
+    /// 長さ`len`のセグメント木を単位元で初期化して生成する．
     pub fn new(len: usize) -> Self
     where
         O: Default,
@@ -26,6 +63,7 @@ impl<O: Monoid> SegmentTree<O> {
         Self::with_op(len, O::default())
     }
 
+    /// 長さ`len`のセグメント木を，モノイド`op`を指定して生成する．
     pub fn with_op(len: usize, op: O) -> Self {
         let offset = len.next_power_of_two();
         Self {
@@ -35,11 +73,13 @@ impl<O: Monoid> SegmentTree<O> {
         }
     }
 
+    /// `index`番目の要素を返す．
     pub fn get(&self, index: usize) -> &O::Value {
         assert!(index < self.len);
         &self.nodes[index + self.nodes.len() / 2]
     }
 
+    /// `index`番目の要素を`value`に更新する．
     pub fn set(&mut self, index: usize, value: O::Value) {
         assert!(index < self.len);
         let mut index = index + self.nodes.len() / 2;
@@ -52,7 +92,7 @@ impl<O: Monoid> SegmentTree<O> {
         }
     }
 
-    /// `seg.fold(l..r)`で区間[l, r)の区間積を求める
+    /// 区間`range`の要素の総積を返す．
     pub fn fold(&self, range: impl RangeBounds<usize>) -> O::Value {
         let Range { start: l, end: r } = to_open_range(range, self.len);
         assert!(l <= r);
@@ -81,10 +121,17 @@ impl<O: Monoid> SegmentTree<O> {
         self.op.op(&res_l, &res_r)
     }
 
-    /// セグ木上の二分探索(max_right)
-    /// l以降でf(v[r])=falseを満たす最小のrを求める
-    /// すなわち，[f(v[l]), f(v[l+1]), \ldots, f(v[r-1])]がすべてtrueかつf(v[r])=falseとなるrを求める
-    /// すべてのi \in [l, n)でf(v[i])=trueならばnを返す
+    /// セグメント木上の二分探索(max_right)．
+    ///
+    /// `g(r) = f(fold(l..r))`として，
+    /// 単調な`g`に対して，`g(r) = true`となる最大の`r`を返す．
+    ///
+    /// # 計算量
+    /// - O(log n)
+    ///
+    /// # 制約
+    /// - `0 <= l <= len`
+    /// - `f(identity()) = true`
     pub fn bisect_right(&self, l: usize, mut f: impl FnMut(&O::Value) -> bool) -> usize {
         assert!(l <= self.len);
         debug_assert!(f(&self.op.identity()));
@@ -128,10 +175,17 @@ impl<O: Monoid> SegmentTree<O> {
         self.len
     }
 
-    /// セグ木上の二分探索(min_left)
-    /// rより前でf(v[l-1])=falseを満たす最小のlを求める
-    /// すなわち，f(v[l-1])=falseかつ[f(v[l]), f(v[l+2]), \ldots, f(v[r-1])]がすべてtrueとなるlを求める
-    /// すべてのi \in [0, r)でf(v[i])=trueならば0を返す
+    /// セグメント木上の二分探索(min_left)．
+    ///
+    /// `g(l) = f(fold(l..r))`として，
+    /// 単調な`g`に対して，`g(l) = true`となる最小の`l`を返す．
+    ///
+    /// # 計算量
+    /// - O(log n)
+    ///
+    /// # 制約
+    /// - `0 <= r <= len`
+    /// - `f(identity()) = true`
     pub fn bisect_left(&self, r: usize, mut f: impl FnMut(&O::Value) -> bool) -> usize {
         assert!(r <= self.len);
         debug_assert!(f(&self.op.identity()));
