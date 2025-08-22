@@ -1,18 +1,20 @@
 use crate::bisect::Bisect;
 
 pub trait IRoot: Sized {
-    /// $\lfloor \sqrt{x} \rfloor$
+    /// `floor(sqrt(x))`
     fn isqrt(self) -> Self {
         self.nth_iroot(2)
     }
 
-    /// $\lfloor \sqrt[3]{x} \rfloor$
+    /// `floor(cbrt(x))`
     fn icbrt(self) -> Self {
         self.nth_iroot(3)
     }
 
-    /// 非負整数$x$に対して$n$乗根の整数部分$\lfloor \sqrt[n]{x} \rfloor$を計算する
-    /// $n$乗数$x^n$に対しては$x$を返すことが保証される
+    /// floor(nth_root(x, n))
+    ///
+    /// 非負整数`x`に対して，`n`乗根の整数部分を計算する．
+    /// `n`乗数`x^n`に対してこの関数を呼び出したとき，`x`を返すことが保証される．
     fn nth_iroot(self, n: u32) -> Self;
 }
 
