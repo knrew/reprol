@@ -71,7 +71,7 @@ impl<O: Group> PotentializedDsu<O> {
     }
 
     /// 要素`u`と`v`が属する集合を統合する．
-    /// potental[u]+d=potential[v]となるようにポテンシャルを更新する．
+    /// `potential[u]+d=potential[v]`となるようにポテンシャルを更新する．
     /// すでに`u`と`v`が同じ集合に属しており，既存の差と矛盾があれば更新は行われずfalseを返す．
     /// そうでない場合にはtrueを返す．
     pub fn merge(&mut self, u: usize, v: usize, d: O::Value) -> bool
@@ -124,7 +124,7 @@ impl<O: Group> PotentializedDsu<O> {
     }
 
     /// 要素`u`と`v`が同じ集合に属している場合に，
-    /// それらのポテンシャルの差(potential[v] - potential[u])を返す．
+    /// それらのポテンシャルの差(`potential[v] - potential[u]`)を返す．
     /// `u`と`v`が同じ集合に属していない場合はpanicする．
     pub fn diff_potential(&mut self, u: usize, v: usize) -> O::Value {
         assert!(self.connected(u, v));
