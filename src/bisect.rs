@@ -55,7 +55,11 @@ macro_rules! impl_bisect {
 
                 while ng > ok + 1 {
                     let mid = ok + (ng - ok) / 2;
-                    *if f(&mid) { &mut ok } else { &mut ng } = mid;
+                    if f(&mid) {
+                        ok = mid;
+                    } else {
+                        ng = mid;
+                    }
                 }
 
                 ng
@@ -84,6 +88,54 @@ macro_rules! impl_bisect_for {
 impl_bisect_for! {
     i8, i16, i32, i64, i128, isize,
     u8, u16, u32, u64, u128, usize,
+}
+
+/// 浮動小数点数の二分探索．
+/// u64に変換して整数の二分探索として実装．
+///
+/// ## Reference
+/// - [Re: 浮動小数点数の二分探索 - えびちゃんの日記](https://rsk0315.hatenablog.com/entry/2022/04/07/004618)
+impl Bisect for Range<f64> {
+    type Item = f64;
+
+    fn bisect(&self, mut f: impl FnMut(&Self::Item) -> bool) -> Self::Item {
+        #[inline]
+        fn f2u(f: f64) -> u64 {
+            let u = f.to_bits();
+            if u >> 63 == 1 {
+                !u
+            } else {
+                u ^ 1 << 63
+            }
+        }
+
+        #[inline]
+        fn u2f(u: u64) -> f64 {
+            f64::from_bits(if u >> 63 == 1 { u ^ 1 << 63 } else { !u })
+        }
+
+        let Range { start: ok, end: ng } = *self;
+
+        assert!(ok < ng);
+
+        if !f(&ok) {
+            return ok;
+        }
+
+        let mut ok = f2u(ok);
+        let mut ng = f2u(ng);
+
+        while ng > ok + 1 {
+            let mid = ok + (ng - ok) / 2;
+            if f(&u2f(mid)) {
+                ok = mid;
+            } else {
+                ng = mid;
+            }
+        }
+
+        u2f(ng)
+    }
 }
 
 /// ソート済み配列に対して，境界探索を行うためのトレイト．
