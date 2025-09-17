@@ -12,6 +12,9 @@ use crate::math::gcd::Gcd;
 
 pub trait Lcm: Gcd {
     fn lcm(self, rhs: Self) -> Self;
+    fn checked_lcm(self, rhs: Self) -> Option<Self>
+    where
+        Self: Sized;
 }
 
 macro_rules! impl_lcm_unsigned {
@@ -24,6 +27,14 @@ macro_rules! impl_lcm_unsigned {
                     self / self.gcd(rhs) * rhs
                 }
             }
+
+            fn checked_lcm(self, rhs: Self) -> Option<Self> {
+                if self == 0 || rhs == 0 {
+                    Some(0)
+                } else {
+                    self.checked_div(self.gcd(rhs))?.checked_mul(rhs)
+                }
+            }
         }
     };
 }
@@ -32,12 +43,22 @@ macro_rules! impl_lcm_signed {
     ($ty: ty) => {
         impl Lcm for $ty {
             fn lcm(self, rhs: Self) -> Self {
-                let m = self.abs();
-                let n = rhs.abs();
-                if m == 0 || n == 0 {
-                    return 0;
+                if self == 0 || rhs == 0 {
+                    0
                 } else {
-                    m / self.gcd(rhs) * n
+                    let m = self.abs();
+                    let n = rhs.abs();
+                    m / m.gcd(n) * n
+                }
+            }
+
+            fn checked_lcm(self, rhs: Self) -> Option<Self> {
+                if self == 0 || rhs == 0 {
+                    Some(0)
+                } else {
+                    let m = self.abs();
+                    let n = rhs.abs();
+                    m.checked_div(m.gcd(n))?.checked_mul(n)
                 }
             }
         }
@@ -61,14 +82,42 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_smoke_all_types() {
+        assert_eq!(6u8.lcm(8), 24);
+        assert_eq!(6u16.lcm(8), 24);
+        assert_eq!(6u32.lcm(8), 24);
+        assert_eq!(6u64.lcm(8), 24);
+        assert_eq!(6u128.lcm(8), 24);
+        assert_eq!(6usize.lcm(8), 24);
+        assert_eq!((-6i8).lcm(8), 24);
+        assert_eq!((-6i16).lcm(8), 24);
+        assert_eq!((-6i32).lcm(8), 24);
+        assert_eq!((-6i64).lcm(8), 24);
+        assert_eq!((-6i128).lcm(8), 24);
+        assert_eq!((-6isize).lcm(8), 24);
+
+        assert_eq!(6u8.checked_lcm(8), Some(24));
+        assert_eq!(6u16.checked_lcm(8), Some(24));
+        assert_eq!(6u32.checked_lcm(8), Some(24));
+        assert_eq!(6u64.checked_lcm(8), Some(24));
+        assert_eq!(6u128.checked_lcm(8), Some(24));
+        assert_eq!(6usize.checked_lcm(8), Some(24));
+        assert_eq!((-6i8).checked_lcm(8), Some(24));
+        assert_eq!((-6i16).checked_lcm(8), Some(24));
+        assert_eq!((-6i32).checked_lcm(8), Some(24));
+        assert_eq!((-6i64).checked_lcm(8), Some(24));
+        assert_eq!((-6i128).checked_lcm(8), Some(24));
+        assert_eq!((-6isize).checked_lcm(8), Some(24));
+    }
+
+    #[test]
     fn test_lcm_i32() {
-        let testcases: Vec<(i32, i32, i32)> = vec![
+        let testcases: &[(i32, i32, i32)] = &[
             (0, 0, 0),
             (4, 5, 20),
             (6, 8, 24),
             (7, 3, 21),
             (10, 15, 30),
-            (7, 3, 21),
             (9, 6, 18),
             (42, 42, 42),
             (-4, 5, 20),
@@ -86,14 +135,18 @@ mod tests {
             (-5927, -12080, 71598160),
             (-19952, -7767, 154967184),
         ];
-        for &(x, y, ans) in &testcases {
-            assert_eq!(x.lcm(y), ans);
+
+        for &(x, y, expected) in testcases {
+            assert_eq!(x.lcm(y), expected);
+            assert_eq!(y.lcm(x), expected);
+            assert_eq!(x.checked_lcm(y), Some(expected));
+            assert_eq!(y.checked_lcm(x), Some(expected));
         }
     }
 
     #[test]
     fn test_lcm_u32() {
-        let testcases: Vec<(u32, u32, u32)> = vec![
+        let testcases: &[(u32, u32, u32)] = &[
             (55588, 58619, 3258512972),
             (16754, 4840, 40544680),
             (42646, 55601, 2371160246),
@@ -105,14 +158,18 @@ mod tests {
             (36, 7561, 272196),
             (25830, 105, 25830),
         ];
-        for &(x, y, ans) in &testcases {
-            assert_eq!(x.lcm(y), ans);
+
+        for &(x, y, expected) in testcases {
+            assert_eq!(x.lcm(y), expected);
+            assert_eq!(y.lcm(x), expected);
+            assert_eq!(x.checked_lcm(y), Some(expected));
+            assert_eq!(y.checked_lcm(x), Some(expected));
         }
     }
 
     #[test]
     fn test_lcm_i64() {
-        let testcases: Vec<(i64, i64, i64)> = vec![
+        let testcases: &[(i64, i64, i64)] = &[
             (-911109363, -1438277576, 1310428166086544088),
             (997225435, 358789037, 357793553495556095),
             (26741635, 240717441, 6437177945356035),
@@ -124,14 +181,18 @@ mod tests {
             (-1182472694, -1292792927, 1528692335173835338),
             (709683584, 2087677753, 1481590629986106752),
         ];
-        for &(x, y, ans) in &testcases {
-            assert_eq!(x.lcm(y), ans);
+
+        for &(x, y, expected) in testcases {
+            assert_eq!(x.lcm(y), expected);
+            assert_eq!(y.lcm(x), expected);
+            assert_eq!(x.checked_lcm(y), Some(expected));
+            assert_eq!(y.checked_lcm(x), Some(expected));
         }
     }
 
     #[test]
     fn test_lcm_u64() {
-        let testcases: Vec<(u64, u64, u64)> = vec![
+        let testcases: &[(u64, u64, u64)] = &[
             (3027432665, 1513423987, 4581789214238335355),
             (2665804008, 2232814756, 1488061631416585512),
             (1710573362, 260947066, 223184549995827946),
@@ -143,20 +204,38 @@ mod tests {
             (3218938301, 2318050956, 7461663005938065756),
             (2261736816, 885157517, 2001993344158045872),
         ];
-        for &(x, y, ans) in &testcases {
-            assert_eq!(x.lcm(y), ans);
+
+        for &(x, y, expected) in testcases {
+            assert_eq!(x.lcm(y), expected);
+            assert_eq!(y.lcm(x), expected);
+            assert_eq!(x.checked_lcm(y), Some(expected));
+            assert_eq!(y.checked_lcm(x), Some(expected));
         }
     }
 
     #[test]
     fn test_lcm_u128() {
-        let testcases = vec![(
-            1_000_000_000_000_000_000u128,
-            500_000_000_000_000_000u128,
-            1_000_000_000_000_000_000u128,
+        let testcases: &[(u128, u128, u128)] = &[(
+            1_000_000_000_000_000_000,
+            500_000_000_000_000_000,
+            1_000_000_000_000_000_000,
         )];
-        for &(x, y, ans) in &testcases {
-            assert_eq!(x.lcm(y), ans);
+
+        for &(x, y, expected) in testcases {
+            assert_eq!(x.lcm(y), expected);
+            assert_eq!(y.lcm(x), expected);
+            assert_eq!(x.checked_lcm(y), Some(expected));
+            assert_eq!(y.checked_lcm(x), Some(expected));
         }
+    }
+
+    #[test]
+    fn test_checked_lcm_none() {
+        assert_eq!(i32::MAX.checked_lcm(2), None);
+        assert_eq!(u32::MAX.checked_lcm(2), None);
+        assert_eq!(i64::MAX.checked_lcm(2), None);
+        assert_eq!(u64::MAX.checked_lcm(2), None);
+        assert_eq!(i128::MAX.checked_lcm(2), None);
+        assert_eq!(u128::MAX.checked_lcm(2), None);
     }
 }
