@@ -7,6 +7,12 @@
 //! use reprol::math::lcm::Lcm;
 //! assert_eq!(6u64.lcm(8), 24);
 //! ```
+//!
+//! # Panics
+//! - `lcm`は，`self == T::MIN` または `rhs == T::MIN`の場合panicする．
+//!
+//! # Notes
+//! - `checked_lcm`は，`self == T::MIN` または `rhs == T::MIN`の場合`None`を返す．
 
 use crate::math::gcd::Gcd;
 
@@ -43,6 +49,9 @@ macro_rules! impl_lcm_signed {
     ($ty: ty) => {
         impl Lcm for $ty {
             fn lcm(self, rhs: Self) -> Self {
+                assert_ne!(self, <$ty>::MIN);
+                assert_ne!(rhs, <$ty>::MIN);
+
                 if self == 0 || rhs == 0 {
                     0
                 } else {
@@ -53,7 +62,9 @@ macro_rules! impl_lcm_signed {
             }
 
             fn checked_lcm(self, rhs: Self) -> Option<Self> {
-                if self == 0 || rhs == 0 {
+                if self == <$ty>::MIN || rhs == <$ty>::MIN {
+                    None
+                } else if self == 0 || rhs == 0 {
                     Some(0)
                 } else {
                     let m = self.abs();
@@ -112,7 +123,7 @@ mod tests {
 
     #[test]
     fn test_lcm_i32() {
-        let testcases: &[(i32, i32, i32)] = &[
+        let test_cases: &[(i32, i32, i32)] = &[
             (0, 0, 0),
             (4, 5, 20),
             (6, 8, 24),
@@ -136,7 +147,7 @@ mod tests {
             (-19952, -7767, 154967184),
         ];
 
-        for &(x, y, expected) in testcases {
+        for &(x, y, expected) in test_cases {
             assert_eq!(x.lcm(y), expected);
             assert_eq!(y.lcm(x), expected);
             assert_eq!(x.checked_lcm(y), Some(expected));
@@ -146,7 +157,7 @@ mod tests {
 
     #[test]
     fn test_lcm_u32() {
-        let testcases: &[(u32, u32, u32)] = &[
+        let test_cases: &[(u32, u32, u32)] = &[
             (55588, 58619, 3258512972),
             (16754, 4840, 40544680),
             (42646, 55601, 2371160246),
@@ -159,7 +170,7 @@ mod tests {
             (25830, 105, 25830),
         ];
 
-        for &(x, y, expected) in testcases {
+        for &(x, y, expected) in test_cases {
             assert_eq!(x.lcm(y), expected);
             assert_eq!(y.lcm(x), expected);
             assert_eq!(x.checked_lcm(y), Some(expected));
@@ -169,7 +180,7 @@ mod tests {
 
     #[test]
     fn test_lcm_i64() {
-        let testcases: &[(i64, i64, i64)] = &[
+        let test_cases: &[(i64, i64, i64)] = &[
             (-911109363, -1438277576, 1310428166086544088),
             (997225435, 358789037, 357793553495556095),
             (26741635, 240717441, 6437177945356035),
@@ -182,7 +193,7 @@ mod tests {
             (709683584, 2087677753, 1481590629986106752),
         ];
 
-        for &(x, y, expected) in testcases {
+        for &(x, y, expected) in test_cases {
             assert_eq!(x.lcm(y), expected);
             assert_eq!(y.lcm(x), expected);
             assert_eq!(x.checked_lcm(y), Some(expected));
@@ -192,7 +203,7 @@ mod tests {
 
     #[test]
     fn test_lcm_u64() {
-        let testcases: &[(u64, u64, u64)] = &[
+        let test_cases: &[(u64, u64, u64)] = &[
             (3027432665, 1513423987, 4581789214238335355),
             (2665804008, 2232814756, 1488061631416585512),
             (1710573362, 260947066, 223184549995827946),
@@ -205,7 +216,7 @@ mod tests {
             (2261736816, 885157517, 2001993344158045872),
         ];
 
-        for &(x, y, expected) in testcases {
+        for &(x, y, expected) in test_cases {
             assert_eq!(x.lcm(y), expected);
             assert_eq!(y.lcm(x), expected);
             assert_eq!(x.checked_lcm(y), Some(expected));
@@ -215,13 +226,13 @@ mod tests {
 
     #[test]
     fn test_lcm_u128() {
-        let testcases: &[(u128, u128, u128)] = &[(
+        let test_cases: &[(u128, u128, u128)] = &[(
             1_000_000_000_000_000_000,
             500_000_000_000_000_000,
             1_000_000_000_000_000_000,
         )];
 
-        for &(x, y, expected) in testcases {
+        for &(x, y, expected) in test_cases {
             assert_eq!(x.lcm(y), expected);
             assert_eq!(y.lcm(x), expected);
             assert_eq!(x.checked_lcm(y), Some(expected));
@@ -237,5 +248,17 @@ mod tests {
         assert_eq!(u64::MAX.checked_lcm(2), None);
         assert_eq!(i128::MAX.checked_lcm(2), None);
         assert_eq!(u128::MAX.checked_lcm(2), None);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_lcm_min() {
+        let _ = i32::MIN.lcm(1);
+    }
+
+    #[test]
+    fn test_checked_lcm_min() {
+        assert_eq!(i32::MIN.checked_lcm(1), None);
+        assert_eq!(1.checked_lcm(i32::MIN), None);
     }
 }
