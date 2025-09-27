@@ -1,0 +1,78 @@
+name: Rust
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain: [stable, "1.70.0"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.toolchain }}
+          components: rustfmt, clippy
+      - name: fmt
+        run: cargo +${{ matrix.toolchain }} fmt --all --check --verbose
+
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain: [stable, "1.70.0"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.toolchain }}
+      - name: check(debug) on ${{ matrix.toolchain }}
+        run: cargo +${{ matrix.toolchain }} check --workspace --all-targets --all-features --verbose
+      - name: check(release) on ${{ matrix.toolchain }}
+        run: cargo +${{ matrix.toolchain }} check --release --workspace --all-targets --all-features --verbose
+
+  test:
+    runs-on: ubuntu-latest
+    needs: [lint, check]
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain: [stable, "1.70.0"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.toolchain }}
+      - name: test(debug) on ${{ matrix.toolchain }}
+        run: cargo +${{ matrix.toolchain }} test --workspace --all-features --no-fail-fast --verbose
+      - name: test(release) on ${{ matrix.toolchain }}
+        run: cargo +${{ matrix.toolchain }} test --release --workspace --all-features --no-fail-fast --verbose
+
+  deploydocs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
+      - name: Build docs
+        run: cargo +stable doc --release --workspace --all-features --no-deps --verbose
+      - name: Add redirect index.html
+        run: echo '<meta http-equiv="refresh" content="0; url=reprol/">' > target/doc/index.html
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./target/doc
+
