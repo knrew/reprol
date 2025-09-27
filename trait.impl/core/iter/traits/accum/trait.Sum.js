@@ -1,9 +1,0 @@
-(function() {
-    var implementors = Object.fromEntries([["reprol",[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.90.0/core/iter/traits/accum/trait.Sum.html\" title=\"trait core::iter::traits::accum::Sum\">Sum</a> for <a class=\"struct\" href=\"reprol/math/ratio/struct.Ratio.html\" title=\"struct reprol::math::ratio::Ratio\">Ratio</a>"],["impl&lt;'a&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/1.90.0/core/iter/traits/accum/trait.Sum.html\" title=\"trait core::iter::traits::accum::Sum\">Sum</a>&lt;&amp;'a <a class=\"struct\" href=\"reprol/math/ratio/struct.Ratio.html\" title=\"struct reprol::math::ratio::Ratio\">Ratio</a>&gt; for <a class=\"struct\" href=\"reprol/math/ratio/struct.Ratio.html\" title=\"struct reprol::math::ratio::Ratio\">Ratio</a>"],["impl&lt;'a, const P: <a class=\"primitive\" href=\"https://doc.rust-lang.org/1.90.0/std/primitive.u64.html\">u64</a>&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/1.90.0/core/iter/traits/accum/trait.Sum.html\" title=\"trait core::iter::traits::accum::Sum\">Sum</a>&lt;&amp;'a <a class=\"struct\" href=\"reprol/math/modint/struct.ModInt.html\" title=\"struct reprol::math::modint::ModInt\">ModInt</a>&lt;P&gt;&gt; for <a class=\"struct\" href=\"reprol/math/modint/struct.ModInt.html\" title=\"struct reprol::math::modint::ModInt\">ModInt</a>&lt;P&gt;"],["impl&lt;const P: <a class=\"primitive\" href=\"https://doc.rust-lang.org/1.90.0/std/primitive.u64.html\">u64</a>&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/1.90.0/core/iter/traits/accum/trait.Sum.html\" title=\"trait core::iter::traits::accum::Sum\">Sum</a> for <a class=\"struct\" href=\"reprol/math/modint/struct.ModInt.html\" title=\"struct reprol::math::modint::ModInt\">ModInt</a>&lt;P&gt;"]]]]);
-    if (window.register_implementors) {
-        window.register_implementors(implementors);
-    } else {
-        window.pending_implementors = implementors;
-    }
-})()
-//{"start":57,"fragment_lengths":[1704]}
