@@ -88,7 +88,7 @@
 <a href=#88 id=88 data-nosnippet>88</a>            <span class="kw">for </span>i <span class="kw">in </span><span class="number">0</span>..divisors.len() {
 <a href=#89 id=89 data-nosnippet>89</a>                <span class="kw">let </span><span class="kw-2">mut </span>v = <span class="number">1</span>;
 <a href=#90 id=90 data-nosnippet>90</a>                <span class="kw">for _ in </span><span class="number">0</span>..exp {
-<a href=#91 id=91 data-nosnippet>91</a>                    v = v * p;
+<a href=#91 id=91 data-nosnippet>91</a>                    v <span class="kw-2">*</span>= p;
 <a href=#92 id=92 data-nosnippet>92</a>                    divisors.push(divisors[i] * v);
 <a href=#93 id=93 data-nosnippet>93</a>                }
 <a href=#94 id=94 data-nosnippet>94</a>            }

@@ -269,7 +269,7 @@
 <a href=#269 id=269 data-nosnippet>269</a>        <span class="kw">let </span>offset = len.next_power_of_two();
 <a href=#270 id=270 data-nosnippet>270</a>        <span class="kw">let </span><span class="kw-2">mut </span>nodes = <span class="macro">vec!</span>[op.identity(); <span class="number">2 </span>* offset];
 <a href=#271 id=271 data-nosnippet>271</a>
-<a href=#272 id=272 data-nosnippet>272</a>        nodes[offset..offset + len].clone_from_slice(<span class="kw-2">&amp;</span>v);
+<a href=#272 id=272 data-nosnippet>272</a>        nodes[offset..offset + len].clone_from_slice(v);
 <a href=#273 id=273 data-nosnippet>273</a>
 <a href=#274 id=274 data-nosnippet>274</a>        <span class="kw">for </span>i <span class="kw">in </span>(<span class="number">1</span>..offset).rev() {
 <a href=#275 id=275 data-nosnippet>275</a>            nodes[i] = op.op(<span class="kw-2">&amp;</span>nodes[<span class="number">2 </span>* i], <span class="kw-2">&amp;</span>nodes[<span class="number">2 </span>* i + <span class="number">1</span>]);
