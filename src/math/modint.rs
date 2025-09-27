@@ -165,6 +165,7 @@ impl<const P: u64> MulAssign for ModInt<P> {
 
 impl<const P: u64> Div for ModInt<P> {
     type Output = Self;
+    #[allow(clippy::suspicious_arithmetic_impl)]
     fn div(self, rhs: Self) -> Self::Output {
         self * rhs.inv()
     }

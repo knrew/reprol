@@ -30,8 +30,9 @@ where
     pub fn new(n: usize, zero: C) -> Self {
         let mut costs = vec![vec![None; n]; n];
 
-        for i in 0..n {
-            costs[i][i] = Some(zero.clone());
+        // costs[i][i] = 0
+        for (i, cost) in costs.iter_mut().enumerate() {
+            cost[i] = Some(zero.clone());
         }
 
         Self {
@@ -50,17 +51,14 @@ where
         for k in 0..n {
             for i in 0..n {
                 for j in 0..n {
-                    match (&self.costs[i][k], &self.costs[k][j]) {
-                        (Some(cost_ik), Some(cost_kj)) => {
-                            let new_cost = cost_ik.clone() + cost_kj.clone();
-                            if !self.costs[i][j]
-                                .as_ref()
-                                .is_some_and(|cost_ij| cost_ij <= &new_cost)
-                            {
-                                self.costs[i][j] = Some(new_cost);
-                            }
+                    if let (Some(cost_ik), Some(cost_kj)) = (&self.costs[i][k], &self.costs[k][j]) {
+                        let new_cost = cost_ik.clone() + cost_kj.clone();
+                        if !self.costs[i][j]
+                            .as_ref()
+                            .is_some_and(|cost_ij| cost_ij <= &new_cost)
+                        {
+                            self.costs[i][j] = Some(new_cost);
                         }
-                        _ => {}
                     }
                 }
             }
@@ -95,17 +93,14 @@ where
 
             for s in 0..n {
                 for g in 0..n {
-                    match (&self.costs[s][u], &self.costs[v][g]) {
-                        (Some(cost_su), Some(cost_vg)) => {
-                            let new_cost = cost_su.clone() + c.clone() + cost_vg.clone();
-                            if !self.costs[s][g]
-                                .as_ref()
-                                .is_some_and(|cost_sg| cost_sg <= &new_cost)
-                            {
-                                self.costs[s][g] = Some(new_cost);
-                            }
+                    if let (Some(cost_su), Some(cost_vg)) = (&self.costs[s][u], &self.costs[v][g]) {
+                        let new_cost = cost_su.clone() + c.clone() + cost_vg.clone();
+                        if !self.costs[s][g]
+                            .as_ref()
+                            .is_some_and(|cost_sg| cost_sg <= &new_cost)
+                        {
+                            self.costs[s][g] = Some(new_cost);
                         }
-                        _ => {}
                     }
                 }
             }

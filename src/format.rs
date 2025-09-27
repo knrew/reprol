@@ -13,7 +13,7 @@ where
 {
     if let Some(item) = iter.next() {
         write!(f, "{}", item)?;
-        while let Some(item) = iter.next() {
+        for item in iter.by_ref() {
             write!(f, "{}{}", sep, item)?;
         }
     }
@@ -31,7 +31,7 @@ where
 {
     if let Some(item) = iter.next() {
         write!(f, "{:?}", item)?;
-        while let Some(item) = iter.next() {
+        for item in iter.by_ref() {
             write!(f, "{}{:?}", sep, item)?;
         }
     }

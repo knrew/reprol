@@ -186,12 +186,12 @@ impl<O: Monoid, A: Action<O>> LazySegmentTree<O, A> {
 
             while l < r {
                 if l % 2 == 1 {
-                    self.apply(l, &f);
+                    self.apply(l, f);
                     l += 1;
                 }
                 if r % 2 == 1 {
                     r -= 1;
-                    self.apply(r, &f);
+                    self.apply(r, f);
                 }
                 l /= 2;
                 r /= 2;

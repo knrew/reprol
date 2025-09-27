@@ -16,70 +16,65 @@ impl<T> Grid for Vec<Vec<T>>
 where
     T: Clone,
 {
-    fn rotate_clockwise(&mut self) {
-        if self.is_empty() || self[0].is_empty() {
+    fn rotate_clockwise(&mut self)
+    where
+        Self: AsRef<[Vec<T>]> + AsMut<Vec<Vec<T>>>,
+    {
+        let this: &mut Vec<Vec<T>> = self;
+
+        if this.is_empty() || this[0].is_empty() {
             return;
         }
 
-        debug_assert!(self.iter().all(|r| r.len() == self[0].len()));
+        debug_assert!(this.iter().all(|r| r.len() == this[0].len()));
 
-        let h = self[0].len();
-        let w = self.len();
+        let h = this[0].len();
+        let orig = take(this);
 
-        let orig = take(self);
-
-        *self = Vec::with_capacity(h);
-        for j in 0..h {
-            let mut row = Vec::with_capacity(w);
-            for i in (0..w).rev() {
-                row.push(orig[i][j].clone());
-            }
-            self.push(row);
-        }
+        *this = (0..h)
+            .map(|j| orig.iter().rev().map(|row| row[j].clone()).collect())
+            .collect();
     }
 
-    fn rotate_anticlockwise(&mut self) {
-        if self.is_empty() || self.is_empty() {
+    fn rotate_anticlockwise(&mut self)
+    where
+        Self: AsRef<[Vec<T>]> + AsMut<Vec<Vec<T>>>,
+    {
+        let this: &mut Vec<Vec<T>> = self;
+
+        if this.is_empty() || this[0].is_empty() {
             return;
         }
 
-        debug_assert!(self.iter().all(|mi| mi.len() == self[0].len()));
+        debug_assert!(this.iter().all(|row| row.len() == this[0].len()));
 
-        let h = self[0].len();
-        let w = self.len();
+        let h = this[0].len();
+        let orig = take(this);
 
-        let orig = take(self);
-
-        *self = Vec::with_capacity(h);
-        for j in (0..h).rev() {
-            let mut row = Vec::with_capacity(w);
-            for i in 0..w {
-                row.push(orig[i][j].clone());
-            }
-            self.push(row);
-        }
+        *this = (0..h)
+            .rev()
+            .map(|j| orig.iter().map(|row| row[j].clone()).collect())
+            .collect();
     }
 
-    fn transpose(&mut self) {
-        if self.is_empty() || self[0].is_empty() {
+    fn transpose(&mut self)
+    where
+        Self: AsRef<[Vec<T>]> + AsMut<Vec<Vec<T>>>,
+    {
+        let this: &mut Vec<Vec<T>> = self;
+
+        if this.is_empty() || this[0].is_empty() {
             return;
         }
 
-        debug_assert!(self.iter().all(|r| r.len() == self[0].len()));
+        debug_assert!(this.iter().all(|row| row.len() == this[0].len()));
 
-        let h = self[0].len();
-        let w = self.len();
+        let h = this[0].len();
+        let orig = take(this);
 
-        let orig = take(self);
-
-        *self = Vec::with_capacity(h);
-        for j in 0..h {
-            let mut col = Vec::with_capacity(w);
-            for i in 0..w {
-                col.push(orig[i][j].clone());
-            }
-            self.push(col);
-        }
+        *this = (0..h)
+            .map(|j| orig.iter().map(|row| row[j].clone()).collect())
+            .collect();
     }
 }
 

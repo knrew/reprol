@@ -88,7 +88,7 @@ fn cmp_by_rank(rank: &[i32], i: usize, j: usize, k: usize) -> Ordering {
     if rank[i] == rank[j] {
         let ri = rank.get(i + k).unwrap_or(&-1);
         let rj = rank.get(j + k).unwrap_or(&-1);
-        ri.cmp(&rj)
+        ri.cmp(rj)
     } else {
         rank[i].cmp(&rank[j])
     }

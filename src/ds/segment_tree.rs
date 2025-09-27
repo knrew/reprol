@@ -269,7 +269,7 @@ where
         let offset = len.next_power_of_two();
         let mut nodes = vec![op.identity(); 2 * offset];
 
-        nodes[offset..offset + len].clone_from_slice(&v);
+        nodes[offset..offset + len].clone_from_slice(v);
 
         for i in (1..offset).rev() {
             nodes[i] = op.op(&nodes[2 * i], &nodes[2 * i + 1]);

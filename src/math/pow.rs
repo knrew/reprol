@@ -20,9 +20,9 @@ macro_rules! impl_integer {
 
                 while exp > 1 {
                     if (exp & 1) == 1 {
-                        res = res * base;
+                        res *= base;
                     }
-                    exp = exp / 2;
+                    exp /= 2;
                     base = base * base;
                 }
 

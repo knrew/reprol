@@ -7,21 +7,11 @@
 //! - 説明(doc)を追加する．
 //! - テストを書く．
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 struct Node {
     parent: Option<usize>,
     left: Option<usize>,
     right: Option<usize>,
-}
-
-impl Default for Node {
-    fn default() -> Self {
-        Self {
-            parent: None,
-            left: None,
-            right: None,
-        }
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -52,7 +42,9 @@ impl CartesianTree {
 
             nodes[i].left = p;
             nodes[i].parent = stack.last().cloned();
-            p.map(|p| nodes[p].parent = Some(i));
+            if let Some(p) = p {
+                nodes[p].parent = Some(i);
+            }
 
             stack.push(i);
         }

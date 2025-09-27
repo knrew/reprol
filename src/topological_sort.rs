@@ -7,6 +7,9 @@ use std::{
 pub trait Queue {
     fn new() -> Self;
     fn len(&self) -> usize;
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
     fn push(&mut self, v: usize);
     fn pop(&mut self) -> Option<usize>;
 }
@@ -81,8 +84,8 @@ impl<Q: Queue> ToplogicalSortImpl<Q> {
 
         let mut que = Q::new();
 
-        for i in 0..n {
-            if indegrees[i] == 0 {
+        for (i, indegree) in indegrees.iter().enumerate() {
+            if indegree == &0 {
                 que.push(i);
             }
         }
@@ -104,7 +107,7 @@ impl<Q: Queue> ToplogicalSortImpl<Q> {
             }
         }
 
-        let order = (order.len() == n).then(|| order);
+        let order = (order.len() == n).then_some(order);
 
         Self {
             order,

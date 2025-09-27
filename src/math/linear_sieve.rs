@@ -88,7 +88,7 @@ impl LinearSieve {
             for i in 0..divisors.len() {
                 let mut v = 1;
                 for _ in 0..exp {
-                    v = v * p;
+                    v *= p;
                     divisors.push(divisors[i] * v);
                 }
             }

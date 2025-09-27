@@ -75,9 +75,7 @@ impl<V: Clone> PathTracker<V> for WithPath<V> {
         costs: &[Option<C>],
         end: &V,
     ) -> Option<Vec<V>> {
-        if costs[to_index(end)].is_none() {
-            return None;
-        }
+        costs[to_index(end)].as_ref()?;
 
         let mut v = end;
         let mut path = vec![v];
@@ -154,7 +152,7 @@ where
 
         let mut heap = BinaryHeap::new();
 
-        costs[to_index(&start)] = Some(zero.clone());
+        costs[to_index(start)] = Some(zero.clone());
         heap.push((Reverse(zero.clone()), start.clone()));
 
         while let Some((Reverse(cost), v)) = heap.pop() {

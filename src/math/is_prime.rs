@@ -10,14 +10,14 @@
 //! ```
 
 pub trait IsPrime {
-    fn is_prime(self) -> bool;
+    fn is_prime(&self) -> bool;
 }
 
 macro_rules! impl_is_prime {
     ($ty: ty) => {
         impl IsPrime for $ty {
-            fn is_prime(self) -> bool {
-                self >= 2 && (2..).take_while(|i| i * i <= self).all(|i| self % i != 0)
+            fn is_prime(&self) -> bool {
+                self >= &2 && (2..).take_while(|i| i * i <= *self).all(|i| self % i != 0)
             }
         }
     };

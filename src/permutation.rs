@@ -47,7 +47,7 @@ impl<T: Ord> Permutation for [T] {
         {
             if let Some(j) = self
                 .iter()
-                .rposition(|x| f(&x, &self[i]) == Ordering::Greater)
+                .rposition(|x| f(x, &self[i]) == Ordering::Greater)
             {
                 self.swap(i, j);
                 self[i + 1..].reverse();

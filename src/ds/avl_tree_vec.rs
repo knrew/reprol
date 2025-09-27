@@ -197,14 +197,17 @@ fn split<T>(root: Link<T>, index: usize) -> (Link<T>, Link<T>) {
     };
 
     let left_len = len(left);
-    if index < left_len {
-        let tmp = split(left, index);
-        (tmp.0, merge_with_root(tmp.1, root, right))
-    } else if index > left_len {
-        let tmp = split(right, index - left_len - 1);
-        (merge_with_root(left, root, tmp.0), tmp.1)
-    } else {
-        (left, merge_with_root(None, root, right))
+
+    match index.cmp(&left_len) {
+        Ordering::Less => {
+            let tmp = split(left, index);
+            (tmp.0, merge_with_root(tmp.1, root, right))
+        }
+        Ordering::Greater => {
+            let tmp = split(right, index - left_len - 1);
+            (merge_with_root(left, root, tmp.0), tmp.1)
+        }
+        Ordering::Equal => (left, merge_with_root(None, root, right)),
     }
 }
 
@@ -214,12 +217,10 @@ fn get<T>(root: Link<T>, index: usize) -> Link<T> {
     let left = raw_root.left;
     let right = raw_root.right;
     let left_len = len(left);
-    if index < left_len {
-        get(left, index)
-    } else if index > left_len {
-        get(right, index - left_len - 1)
-    } else {
-        root
+    match index.cmp(&left_len) {
+        Ordering::Less => get(left, index),
+        Ordering::Greater => get(right, index - left_len - 1),
+        Ordering::Equal => root,
     }
 }
 
@@ -555,7 +556,7 @@ impl<'a, T> IterBase<'a, T> {
         let mut iter = Self {
             stack: vec![],
             stack_rev: vec![],
-            phantom: PhantomData::default(),
+            phantom: PhantomData,
         };
         iter.push_left(root);
         iter.push_right(root);

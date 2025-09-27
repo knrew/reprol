@@ -143,9 +143,7 @@ impl<V: Clone> PathTracker<V> for WithPath<V> {
         costs: &[Option<usize>],
         end: &V,
     ) -> Option<Vec<V>> {
-        if costs[to_index(end)].is_none() {
-            return None;
-        }
+        costs[to_index(end)]?;
 
         let mut v = end;
         let mut path = vec![v];
@@ -220,7 +218,7 @@ where
 
         let mut queue = VecDeque::new();
 
-        costs[to_index(&start)] = Some(0);
+        costs[to_index(start)] = Some(0);
         queue.push_back(start.clone());
 
         while let Some(v) = queue.pop_front() {
@@ -264,7 +262,7 @@ where
 
         let mut queue = VecDeque::new();
 
-        costs[to_index(&start)] = Some(0);
+        costs[to_index(start)] = Some(0);
         queue.push_back(start.clone());
 
         while let Some(v) = queue.pop_front() {
