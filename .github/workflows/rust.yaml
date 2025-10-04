@@ -31,7 +31,7 @@ jobs:
           toolchain: ${{ inputs.rust_toolchain }}
           components: clippy
       - run: cargo +${{ inputs.rust_toolchain }} clippy --workspace --all-features -- -D warnings
-  
+
   check:
     runs-on: ubuntu-latest
     strategy:

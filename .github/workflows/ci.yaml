@@ -2,9 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ "main" ]
   pull_request:
-    branches: [ "main" ]
   schedule:
     - cron: "0 0 1 * *"
 
@@ -28,5 +26,5 @@ jobs:
 
   deploy-docs:
     uses: ./.github/workflows/deploy_docs.yaml
-    with: 
+    with:
       rust_toolchain: "stable"
