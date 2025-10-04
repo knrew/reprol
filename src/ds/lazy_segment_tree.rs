@@ -150,7 +150,7 @@ impl<O: Monoid, A: Action<O>> LazySegmentTree<O, A> {
             self.propagate(index >> i);
         }
         self.nodes[index] = value;
-        for i in (1..=self.log).rev() {
+        for i in 1..=self.log {
             let k = index >> i;
             self.nodes[k] = self.op.op(&self.nodes[2 * k], &self.nodes[2 * k + 1]);
         }
@@ -513,48 +513,46 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::ops::op_max::OpMax;
+    mod op_opmax_actadd {
+        use crate::ops::{act_add::ActAdd, op_max::OpMax};
 
-    use super::{Action, LazySegmentTree, Monoid};
+        use super::super::LazySegmentTree;
 
-    type Op = OpMax<i64>;
+        type Op = OpMax<i64>;
+        type Act = ActAdd<i64>;
 
-    #[derive(Default)]
-    struct Act;
+        #[test]
+        fn test_lazy_segment_tree() {
+            {
+                let v = vec![4, 4, 4, 4, 4];
+                let mut seg = LazySegmentTree::<Op, Act>::from(v);
+                seg.act(1..4, &2);
+                assert_eq!(
+                    (0..5).map(|i| *seg.get(i)).collect::<Vec<_>>(),
+                    vec![4, 6, 6, 6, 4]
+                );
+                assert_eq!(seg.fold(0..=2), 6);
+                seg.act(0..5, &(-1));
+                assert_eq!(
+                    (0..5).map(|i| *seg.get(i)).collect::<Vec<_>>(),
+                    vec![3, 5, 5, 5, 3]
+                );
+                assert_eq!(seg.fold(..), 5);
+            }
 
-    impl Monoid for Act {
-        type Value = i64;
+            {
+                let mut seg = LazySegmentTree::<OpMax<i64>, ActAdd<i64>>::from(vec![0; 4]);
+                seg.act(0..4, &5);
+                assert_eq!(*seg.get(0), 5);
+            }
 
-        fn identity(&self) -> Self::Value {
-            0
+            // test set
+            {
+                let mut seg = LazySegmentTree::<Op, Act>::from(vec![1, 2, 3, 4]);
+                assert_eq!(seg.fold(..), 4);
+                seg.set(2, 10);
+                assert_eq!(seg.fold(..), 10);
+            }
         }
-
-        fn op(&self, g: &Self::Value, f: &Self::Value) -> Self::Value {
-            f + g
-        }
-    }
-
-    impl Action<Op> for Act {
-        fn act(&self, f: &Self::Value, x: &<Op as Monoid>::Value) -> <Op as Monoid>::Value {
-            x + f
-        }
-    }
-
-    #[test]
-    fn test_lazy_segment_tree() {
-        let v = vec![4, 4, 4, 4, 4];
-        let mut seg = LazySegmentTree::<Op, Act>::from(v);
-        seg.act(1..4, &2);
-        assert_eq!(
-            (0..5).map(|i| *seg.get(i)).collect::<Vec<_>>(),
-            vec![4, 6, 6, 6, 4]
-        );
-        assert_eq!(seg.fold(0..=2), 6);
-        seg.act(0..5, &(-1));
-        assert_eq!(
-            (0..5).map(|i| *seg.get(i)).collect::<Vec<_>>(),
-            vec![3, 5, 5, 5, 3]
-        );
-        assert_eq!(seg.fold(..), 5);
     }
 }

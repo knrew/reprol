@@ -52,7 +52,7 @@ macro_rules! impl_zeroadd_signed {
         impl ZeroAdd for $ty {
             #[inline(always)]
             fn zero() -> Self {
-                1
+                0
             }
 
             #[inline(always)]
