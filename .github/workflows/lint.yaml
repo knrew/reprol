@@ -2,37 +2,13 @@ name: Lint
 
 on:
   workflow_call:
-    inputs:
-      rust_toolchain:
-        type: string
-        required: true
 
 env:
   CARGO_TERM_COLOR: always
   CARGO_INCREMENTAL: 0
 
 jobs:
-  fmt:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@v1
-        with:
-          toolchain: ${{ inputs.rust_toolchain }}
-          components: rustfmt, clippy
-      - run: cargo +${{ inputs.rust_toolchain }} fmt --all --check --verbose
-
-  clippy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@v1
-        with:
-          toolchain: ${{ inputs.rust_toolchain }}
-          components: clippy
-      - run: cargo +${{ inputs.rust_toolchain }} clippy --workspace --all-features -- -D warnings
-
-  taplo:
+  toml:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

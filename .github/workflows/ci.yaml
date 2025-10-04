@@ -15,21 +15,14 @@ env:
 jobs:
   lint:
     uses: ./.github/workflows/lint.yaml
-    with:
-      rust_toolchain: "1.70.0"
- 
-  lint-stable:
-    uses: ./.github/workflows/lint.yaml
-    with:
-      rust_toolchain: "stable"
 
-  test:
-    uses: ./.github/workflows/test.yaml
+  rust:
+    uses: ./.github/workflows/rust.yaml
     with:
       rust_toolchain: "1.70.0"
 
-  test-stable:
-    uses: ./.github/workflows/test.yaml
+  rust-stable:
+    uses: ./.github/workflows/rust.yaml
     with:
       rust_toolchain: "stable"
 

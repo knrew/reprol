@@ -1,4 +1,4 @@
-name: Test
+name: Lint
 
 on:
   workflow_call:
@@ -6,18 +6,34 @@ on:
       rust_toolchain:
         type: string
         required: true
-      allow_failure:
-        type: boolean
-        default: false
 
 env:
   CARGO_TERM_COLOR: always
   CARGO_INCREMENTAL: 0
 
 jobs:
+  fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ inputs.rust_toolchain }}
+          components: rustfmt
+      - run: cargo +${{ inputs.rust_toolchain }} fmt --all --check --verbose
+
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ inputs.rust_toolchain }}
+          components: clippy
+      - run: cargo +${{ inputs.rust_toolchain }} clippy --workspace --all-features -- -D warnings
+  
   check:
     runs-on: ubuntu-latest
-    continue-on-error: ${{ inputs.allow_failure }}
     strategy:
       fail-fast: false
     steps:
@@ -26,14 +42,11 @@ jobs:
         with:
           toolchain: ${{ inputs.rust_toolchain }}
       - run: cargo +${{ inputs.rust_toolchain }} check --workspace --all-targets --all-features --verbose
-        continue-on-error: ${{ inputs.allow_failure }}
       - run: cargo +${{ inputs.rust_toolchain }} check --release --workspace --all-targets --all-features --verbose
-        continue-on-error: ${{ inputs.allow_failure }}
 
   test:
     runs-on: ubuntu-latest
     needs: [check]
-    continue-on-error: ${{ inputs.allow_failure }}
     strategy:
       fail-fast: false
     steps:
@@ -42,6 +55,4 @@ jobs:
         with:
           toolchain: ${{ inputs.rust_toolchain }}
       - run: cargo +${{ inputs.rust_toolchain }} test --workspace --all-features --no-fail-fast --verbose
-        continue-on-error: ${{ inputs.allow_failure }}
       - run: cargo +${{ inputs.rust_toolchain }} test --release --workspace --all-features --no-fail-fast --verbose
-        continue-on-error: ${{ inputs.allow_failure }}
