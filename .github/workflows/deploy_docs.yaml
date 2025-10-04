@@ -1,0 +1,32 @@
+name: Deploy doc
+
+on:
+  workflow_call:
+    inputs:
+      rust_toolchain:
+        type: string
+        required: false
+        default: "stable"
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  deploydocs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ inputs.rust_toolchain }}
+      - name: Build docs
+        run: cargo +${{ inputs.rust_toolchain }} doc --release --workspace --all-features --no-deps --verbose
+      - name: Add redirect index.html
+        run: echo '<meta http-equiv="refresh" content="0; url=reprol/">' > target/doc/index.html
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./target/doc
+
