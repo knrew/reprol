@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["avl_tree_vec","cartesian_tree","cumulative_array","cumulative_array_2d","disjoint_sparse_table","dsu","fenwick_tree","lazy_segment_tree","monoid_dsu","potentialized_dsu","segment_tree","skew_heap","sparse_table","sparse_table_2d"]};
+window.SIDEBAR_ITEMS = {"mod":["avl_tree_vec","bitset","cartesian_tree","cumulative_array","cumulative_array_2d","disjoint_sparse_table","dsu","fenwick_tree","lazy_segment_tree","monoid_dsu","potentialized_dsu","segment_tree","skew_heap","sparse_table","sparse_table_2d"]};
