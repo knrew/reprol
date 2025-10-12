@@ -1,9 +1,9 @@
 (function() {
-    var implementors = Object.fromEntries([["reprol",[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.90.0/core/ops/arith/trait.Div.html\" title=\"trait core::ops::arith::Div\">Div</a> for <a class=\"struct\" href=\"reprol/math/ratio/struct.Ratio.html\" title=\"struct reprol::math::ratio::Ratio\">Ratio</a>"],["impl&lt;const P: <a class=\"primitive\" href=\"https://doc.rust-lang.org/1.90.0/std/primitive.u64.html\">u64</a>&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/1.90.0/core/ops/arith/trait.Div.html\" title=\"trait core::ops::arith::Div\">Div</a> for <a class=\"struct\" href=\"reprol/math/modint/struct.ModInt.html\" title=\"struct reprol::math::modint::ModInt\">ModInt</a>&lt;P&gt;"]]]]);
+    var implementors = Object.fromEntries([["reprol",[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.90.0/core/ops/arith/trait.Div.html\" title=\"trait core::ops::arith::Div\">Div</a> for <a class=\"struct\" href=\"reprol/math/ratio/struct.Ratio.html\" title=\"struct reprol::math::ratio::Ratio\">Ratio</a>"],["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.90.0/core/ops/arith/trait.Div.html\" title=\"trait core::ops::arith::Div\">Div</a> for <a class=\"struct\" href=\"reprol/nonnan_float/struct.NonNanFloat.html\" title=\"struct reprol::nonnan_float::NonNanFloat\">NonNanFloat</a>"],["impl&lt;const P: <a class=\"primitive\" href=\"https://doc.rust-lang.org/1.90.0/std/primitive.u64.html\">u64</a>&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/1.90.0/core/ops/arith/trait.Div.html\" title=\"trait core::ops::arith::Div\">Div</a> for <a class=\"struct\" href=\"reprol/math/modint/struct.ModInt.html\" title=\"struct reprol::math::modint::ModInt\">ModInt</a>&lt;P&gt;"]]]]);
     if (window.register_implementors) {
         window.register_implementors(implementors);
     } else {
         window.pending_implementors = implementors;
     }
 })()
-//{"start":57,"fragment_lengths":[676]}
+//{"start":57,"fragment_lengths":[966]}

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"macro":["bitset"],"mod":["bellman_ford","bfs","bisect","change_min_max","dijkstra","ds","format","grid","inversion","lowlink","math","ops","permutation","rle","scc","string","topological_sort","warshall_floyd"]};
+window.SIDEBAR_ITEMS = {"macro":["bitset"],"mod":["bellman_ford","bfs","bisect","change_min_max","dijkstra","ds","format","grid","inversion","lowlink","math","nonnan_float","ops","permutation","rle","scc","string","topological_sort","warshall_floyd"]};
