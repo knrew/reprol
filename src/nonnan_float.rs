@@ -47,13 +47,93 @@ pub struct NonNanFloat {
 impl NonNanFloat {
     #[inline]
     pub fn new(value: f64) -> Self {
-        assert!(!value.is_nan());
+        debug_assert!(!value.is_nan());
         Self { inner: value }
     }
 
     #[inline]
     pub fn inner(&self) -> f64 {
         self.inner
+    }
+
+    #[inline]
+    pub fn powi(self, exp: i32) -> Self {
+        Self::new(self.inner.powi(exp))
+    }
+
+    #[inline]
+    pub fn powf(self, exp: f64) -> Self {
+        Self::new(self.inner.powf(exp))
+    }
+
+    #[inline]
+    pub fn sqrt(self) -> Self {
+        Self::new(self.inner.sqrt())
+    }
+
+    #[inline]
+    pub fn cbrt(self) -> Self {
+        Self::new(self.inner.cbrt())
+    }
+
+    #[inline]
+    pub fn trunc(self) -> Self {
+        Self::new(self.inner.trunc())
+    }
+
+    #[inline]
+    pub fn copysign(self, sign: Self) -> Self {
+        Self::new(self.inner.copysign(sign.inner))
+    }
+
+    #[inline]
+    pub fn signum(self) -> Self {
+        Self::new(self.inner.signum())
+    }
+
+    #[inline]
+    pub fn abs(self) -> Self {
+        Self::new(self.inner.abs())
+    }
+
+    #[inline]
+    pub fn round(self) -> Self {
+        Self::new(self.inner.round())
+    }
+
+    #[inline]
+    pub fn floor(self) -> Self {
+        Self::new(self.inner.floor())
+    }
+
+    #[inline]
+    pub fn ceil(self) -> Self {
+        Self::new(self.inner.ceil())
+    }
+
+    #[inline]
+    pub fn fract(self) -> Self {
+        Self::new(self.inner.fract())
+    }
+
+    #[inline]
+    pub fn recip(self) -> Self {
+        Self::new(self.inner.recip())
+    }
+
+    #[inline]
+    pub fn min(self, rhs: Self) -> Self {
+        Self::new(self.inner.min(rhs.inner))
+    }
+
+    #[inline]
+    pub fn max(self, rhs: Self) -> Self {
+        Self::new(self.inner.max(rhs.inner))
+    }
+
+    #[inline]
+    pub fn clamp(self, min: Self, max: Self) -> Self {
+        Self::new(self.inner.clamp(min.inner, max.inner))
     }
 }
 
@@ -88,9 +168,7 @@ impl Add for NonNanFloat {
     type Output = NonNanFloat;
     #[inline]
     fn add(self, rhs: Self) -> Self::Output {
-        let res = self.inner + rhs.inner;
-        assert!(!res.is_nan());
-        NonNanFloat { inner: res }
+        Self::new(self.inner + rhs.inner)
     }
 }
 
@@ -105,9 +183,7 @@ impl Sub for NonNanFloat {
     type Output = NonNanFloat;
     #[inline]
     fn sub(self, rhs: Self) -> Self::Output {
-        let res = self.inner - rhs.inner;
-        assert!(!res.is_nan());
-        NonNanFloat { inner: res }
+        Self::new(self.inner - rhs.inner)
     }
 }
 
@@ -122,9 +198,7 @@ impl Mul for NonNanFloat {
     type Output = NonNanFloat;
     #[inline]
     fn mul(self, rhs: Self) -> Self::Output {
-        let res = self.inner * rhs.inner;
-        assert!(!res.is_nan());
-        NonNanFloat { inner: res }
+        Self::new(self.inner * rhs.inner)
     }
 }
 
@@ -139,9 +213,7 @@ impl Div for NonNanFloat {
     type Output = NonNanFloat;
     #[inline]
     fn div(self, rhs: Self) -> Self::Output {
-        let res = self.inner / rhs.inner;
-        assert!(!res.is_nan());
-        NonNanFloat { inner: res }
+        Self::new(self.inner / rhs.inner)
     }
 }
 
@@ -156,9 +228,7 @@ impl Rem for NonNanFloat {
     type Output = NonNanFloat;
     #[inline]
     fn rem(self, rhs: Self) -> Self::Output {
-        let res = self.inner % rhs.inner;
-        assert!(!res.is_nan());
-        NonNanFloat { inner: res }
+        Self::new(self.inner % rhs.inner)
     }
 }
 
@@ -173,9 +243,7 @@ impl Neg for NonNanFloat {
     type Output = NonNanFloat;
     #[inline]
     fn neg(self) -> Self::Output {
-        let res = -self.inner;
-        assert!(!res.is_nan());
-        NonNanFloat { inner: res }
+        Self::new(-self.inner)
     }
 }
 
@@ -252,6 +320,7 @@ mod tests {
         assert!(f64::is_infinite(infinite.inner()));
     }
 
+    #[cfg(debug_assertions)]
     #[test]
     #[should_panic]
     fn test_new_nan() {
@@ -333,6 +402,44 @@ mod tests {
         let x = 0.4f64;
         let y: f64 = NonNanFloat::new(0.4).into();
         assert_eq!(x, y);
+    }
+
+    #[test]
+    fn test_math_methods() {
+        let base = NonNanFloat::new(4.0);
+        assert_eq!(base.powi(3).inner(), 64.0);
+        assert_eq!(base.powi(-1).inner(), 0.25);
+
+        let powf_base = NonNanFloat::new(4.0);
+        assert_eq!(powf_base.powf(0.5).inner(), 2.0);
+
+        assert_eq!(NonNanFloat::new(16.0).sqrt().inner(), 4.0);
+        assert_eq!(NonNanFloat::new(8.0).cbrt().inner(), 2.0);
+        assert_eq!(NonNanFloat::new(3.75).trunc().inner(), 3.0);
+
+        let positive = NonNanFloat::new(1.5);
+        let negative = NonNanFloat::new(-2.0);
+        assert_eq!(positive.copysign(negative).inner(), -1.5);
+        assert_eq!(negative.signum().inner(), -1.0);
+        assert_eq!(negative.abs().inner(), 2.0);
+
+        assert_eq!(NonNanFloat::new(2.4).round().inner(), 2.0);
+        assert_eq!(NonNanFloat::new(2.5).round().inner(), 3.0);
+        assert_eq!(NonNanFloat::new(2.5).floor().inner(), 2.0);
+        assert_eq!(NonNanFloat::new(2.5).ceil().inner(), 3.0);
+        assert_eq!(NonNanFloat::new(3.25).fract().inner(), 0.25);
+
+        assert_eq!(NonNanFloat::new(4.0).recip().inner(), 0.25);
+
+        let lhs = NonNanFloat::new(1.0);
+        let rhs = NonNanFloat::new(2.0);
+        assert_eq!(lhs.min(rhs).inner(), 1.0);
+        assert_eq!(lhs.max(rhs).inner(), 2.0);
+
+        let value = NonNanFloat::new(5.0);
+        let min_bound = NonNanFloat::new(3.0);
+        let max_bound = NonNanFloat::new(4.0);
+        assert_eq!(value.clamp(min_bound, max_bound).inner(), 4.0);
     }
 
     #[test]
