@@ -1,7 +1,9 @@
 //! NonNanFloat
 //!
 //! Nanでないf64について扱うモジュール．
-//! fOrdやHashが実装されたf64．
+//! OrdやHashが実装されたf64．
+//!
+//! # 使用例
 //!
 //! ```
 //! use reprol::nonnan_float::NonNanFloat;
@@ -10,6 +12,23 @@
 //! assert_eq!((x + y).inner(), 9.0);
 //! assert_eq!((x - y).inner(), 3.0);
 //! assert_eq!((x * y).inner(), 18.0);
+//!
+//! let mut v = vec![
+//!     NonNanFloat::new(3.0),
+//!     NonNanFloat::new(-5.0),
+//!     NonNanFloat::new(-10.0),
+//!     NonNanFloat::new(1.0),
+//! ];
+//! v.sort();
+//! assert_eq!(
+//!     v,
+//!     vec![
+//!         NonNanFloat::new(-10.0),
+//!         NonNanFloat::new(-5.0),
+//!         NonNanFloat::new(1.0),
+//!         NonNanFloat::new(3.0),
+//!     ]
+//! );
 //! ```
 
 use std::{
