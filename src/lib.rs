@@ -9,6 +9,7 @@ pub mod grid;
 pub mod inversion;
 pub mod lowlink;
 pub mod math;
+pub mod nonnan_float;
 pub mod ops;
 pub mod permutation;
 mod range;
