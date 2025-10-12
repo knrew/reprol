@@ -20,7 +20,7 @@ use std::{
 };
 
 #[repr(transparent)]
-#[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Default, PartialEq)]
 pub struct NonNanFloat {
     inner: f64,
 }
@@ -39,6 +39,13 @@ impl NonNanFloat {
 }
 
 impl Eq for NonNanFloat {}
+
+impl PartialOrd for NonNanFloat {
+    #[inline]
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
 
 impl Ord for NonNanFloat {
     #[inline]
