@@ -50,7 +50,7 @@ impl PartialOrd for NonNanFloat {
 impl Ord for NonNanFloat {
     #[inline]
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.partial_cmp(other).unwrap()
+        self.inner.partial_cmp(&other.inner).unwrap()
     }
 }
 
