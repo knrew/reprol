@@ -139,7 +139,7 @@ mod tests {
 
     #[test]
     fn test_merge_and_connected_random() {
-        use rand::{rngs::StdRng, Rng, SeedableRng};
+        use rand::{Rng, SeedableRng, rngs::StdRng};
 
         let mut rng = StdRng::seed_from_u64(30);
 
@@ -155,10 +155,10 @@ mod tests {
             let mut naive_parents = (0..N).collect::<Vec<_>>();
 
             for _ in 0..Q {
-                let u = rng.gen_range(0..N);
-                let v = rng.gen_range(0..N);
+                let u = rng.random_range(0..N);
+                let v = rng.random_range(0..N);
 
-                if rng.gen_ratio(1, 2) {
+                if rng.random_ratio(1, 2) {
                     // merge
 
                     dsu.merge(u, v);

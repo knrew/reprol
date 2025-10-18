@@ -304,10 +304,10 @@ impl Display for NonNanFloat {
 #[cfg(test)]
 mod tests {
     use super::NonNanFloat;
-    use rand::{rngs::StdRng, Rng, SeedableRng};
+    use rand::{Rng, SeedableRng, rngs::StdRng};
     use std::{
         cmp::Ordering,
-        collections::{hash_map::DefaultHasher, HashSet},
+        collections::{HashSet, hash_map::DefaultHasher},
         hash::{Hash, Hasher},
     };
 
@@ -514,8 +514,8 @@ mod tests {
         let mut rng = StdRng::seed_from_u64(30);
 
         for _ in 0..T {
-            let lhs_raw: f64 = rng.gen();
-            let rhs_raw: f64 = rng.gen();
+            let lhs_raw: f64 = rng.random();
+            let rhs_raw: f64 = rng.random();
 
             let lhs = NonNanFloat::new(lhs_raw);
             let rhs = NonNanFloat::new(rhs_raw);
@@ -577,7 +577,7 @@ mod tests {
         let mut rng = StdRng::seed_from_u64(31);
 
         for _ in 0..T {
-            let mut v_raw = (0..N).map(|_| rng.gen()).collect::<Vec<f64>>();
+            let mut v_raw = (0..N).map(|_| rng.random()).collect::<Vec<f64>>();
             let mut v = v_raw
                 .iter()
                 .map(|&e| NonNanFloat::new(e))

@@ -932,7 +932,7 @@ mod tests {
 
     #[test]
     fn test_insert_and_remove_random_small() {
-        use rand::{rngs::StdRng, Rng, SeedableRng};
+        use rand::{Rng, SeedableRng, rngs::StdRng};
 
         let mut rng = StdRng::seed_from_u64(42);
 
@@ -943,16 +943,16 @@ mod tests {
             assert!(avl.is_empty());
 
             for _ in 0..1000 {
-                if rng.gen_ratio(2, 3) {
+                if rng.random_ratio(2, 3) {
                     // insert
-                    let value = rng.gen();
-                    let index = rng.gen_range(0..=avl.len());
+                    let value = rng.random();
+                    let index = rng.random_range(0..=avl.len());
                     avl.insert(index, value);
                     vec.insert(index, value);
                 } else {
                     // remove
                     if vec.len() > 0 {
-                        let index = rng.gen_range(0..vec.len());
+                        let index = rng.random_range(0..vec.len());
                         assert_eq!(avl.remove(index), Some(vec.remove(index)));
                     } else {
                         assert_eq!(avl.remove(0), None);
@@ -969,7 +969,7 @@ mod tests {
 
     #[test]
     fn test_insert_and_remove_random_large() {
-        use rand::{rngs::StdRng, Rng, SeedableRng};
+        use rand::{Rng, SeedableRng, rngs::StdRng};
 
         let mut rng = StdRng::seed_from_u64(42);
 
@@ -980,16 +980,16 @@ mod tests {
             assert!(avl.is_empty());
 
             for _ in 0..100000 {
-                if rng.gen_ratio(2, 3) {
+                if rng.random_ratio(2, 3) {
                     // insert
-                    let value = rng.gen();
-                    let index = rng.gen_range(0..=avl.len());
+                    let value = rng.random();
+                    let index = rng.random_range(0..=avl.len());
                     avl.insert(index, value);
                     vec.insert(index, value);
                 } else {
                     // remove
                     if vec.len() > 0 {
-                        let index = rng.gen_range(0..vec.len());
+                        let index = rng.random_range(0..vec.len());
                         assert_eq!(avl.remove(index), Some(vec.remove(index)));
                     } else {
                         assert_eq!(avl.remove(0), None);

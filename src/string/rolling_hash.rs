@@ -22,6 +22,7 @@ pub struct RollingHash<const P: u64> {
 impl<const P: u64> RollingHash<P> {
     /// 文字列`s`に対して，連続部分列のハッシュ値を計算するための前処理を行う．
     pub fn new(s: &[u8], base: u64) -> Self {
+        assert!(0 < base);
         assert!(base < P);
         let n = s.len();
         let base = base.into();
@@ -48,7 +49,7 @@ mod tests {
 
     #[test]
     fn test_rolling_hash() {
-        use rand::{rngs::StdRng, Rng, SeedableRng};
+        use rand::{Rng, SeedableRng, rngs::StdRng};
 
         let testcases = vec![
             "abcabc",
@@ -73,8 +74,8 @@ mod tests {
         let mut rng = StdRng::seed_from_u64(30);
 
         for s in testcases {
-            let rh1 = RollingHash::<MOD1>::new(s.as_bytes(), rng.gen_range(0..MOD1));
-            let rh2 = RollingHash::<MOD2>::new(s.as_bytes(), rng.gen_range(0..MOD2));
+            let rh1 = RollingHash::<MOD1>::new(s.as_bytes(), rng.random_range(1..MOD1));
+            let rh2 = RollingHash::<MOD2>::new(s.as_bytes(), rng.random_range(1..MOD2));
             for i in 0..s.len() {
                 for j in i..s.len() {
                     for k in 0..s.len() {

@@ -122,7 +122,7 @@ mod tests {
             (100, vec![1, 2, 4, 5, 10, 20, 25, 50, 100]),
         ];
 
-        for (n, ref expected) in test_cases {
+        for (n, expected) in test_cases {
             assert!(
                 n.divisors().eq(expected.iter().copied()),
                 "failed case: divisors of {}",

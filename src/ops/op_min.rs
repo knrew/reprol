@@ -20,11 +20,7 @@ where
 
     #[inline]
     fn op(&self, &x: &Self::Value, &y: &Self::Value) -> Self::Value {
-        if x < y {
-            x
-        } else {
-            y
-        }
+        if x < y { x } else { y }
     }
 }
 

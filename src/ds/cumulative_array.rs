@@ -205,7 +205,7 @@ pub type CumulativeSum<T> = CumulativeArray<OpAdd<T>>;
 
 #[cfg(test)]
 mod tests {
-    use rand::{rngs::StdRng, Rng, SeedableRng};
+    use rand::{Rng, SeedableRng, rngs::StdRng};
 
     use crate::ops::{op_max::OpMax, op_min::OpMin};
 
@@ -263,7 +263,9 @@ mod tests {
                     const T: usize = 100;
                     const N: usize = 100;
                     for _ in 0..T {
-                        let v = (0..N).map(|_| rng.gen_range(mn..=mx)).collect::<Vec<_>>();
+                        let v = (0..N)
+                            .map(|_| rng.random_range(mn..=mx))
+                            .collect::<Vec<_>>();
                         let cum = CumulativeSum::new(v.clone());
                         for l in 0..v.len() {
                             for r in l..=v.len() {
@@ -293,7 +295,7 @@ mod tests {
                     const N: usize = 100;
 
                     for _ in 0..T {
-                        let v = (0..N).map(|_| rng.gen()).collect::<Vec<_>>();
+                        let v = (0..N).map(|_| rng.random()).collect::<Vec<_>>();
                         let cum = CumulativeArray::<OpMin<_>>::new(v.clone());
                         for r in 0..=v.len() {
                             let naive = *v[..r].iter().min().unwrap_or(&$ty::MAX);
@@ -321,7 +323,7 @@ mod tests {
                     const N: usize = 100;
 
                     for _ in 0..T {
-                        let v = (0..N).map(|_| rng.gen()).collect::<Vec<_>>();
+                        let v = (0..N).map(|_| rng.random()).collect::<Vec<_>>();
                         let cum = CumulativeArray::<OpMax<_>>::new(v.clone());
                         for r in 0..=v.len() {
                             let naive = *v[..r].iter().max().unwrap_or(&$ty::MIN);

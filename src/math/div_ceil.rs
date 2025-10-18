@@ -40,11 +40,7 @@ macro_rules! impl_div_unsigned {
                 assert!(rhs != 0);
                 let q = self / rhs;
                 let r = self % rhs;
-                if r != 0 {
-                    q + 1
-                } else {
-                    q
-                }
+                if r != 0 { q + 1 } else { q }
             }
         }
     };

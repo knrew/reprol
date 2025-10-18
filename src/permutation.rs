@@ -44,15 +44,13 @@ impl<T: Ord> Permutation for [T] {
         if let Some(i) = self
             .windows(2)
             .rposition(|w| f(&w[0], &w[1]) == Ordering::Less)
-        {
-            if let Some(j) = self
+            && let Some(j) = self
                 .iter()
                 .rposition(|x| f(x, &self[i]) == Ordering::Greater)
-            {
-                self.swap(i, j);
-                self[i + 1..].reverse();
-                return true;
-            }
+        {
+            self.swap(i, j);
+            self[i + 1..].reverse();
+            return true;
         }
 
         false

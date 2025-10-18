@@ -147,7 +147,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use rand::{rngs::StdRng, Rng, SeedableRng};
+    use rand::{Rng, SeedableRng, rngs::StdRng};
 
     use crate::ops::op_add::OpAdd;
 
@@ -185,14 +185,14 @@ mod tests {
                         for _ in 0..Q {
                             // add
                             // v[index] += d
-                            let index = rng.gen_range(0..N);
-                            let d = rng.gen_range(mn..=mx);
+                            let index = rng.random_range(0..N);
+                            let d = rng.random_range(mn..=mx);
                             ft.op(index, &d);
                             naive[index] += d;
 
                             // [l, r)の区間和を求める
-                            let l = rng.gen_range(0..N);
-                            let r = rng.gen_range(l..=N);
+                            let l = rng.random_range(0..N);
+                            let r = rng.random_range(l..=N);
                             assert_eq!(ft.fold(l..r), naive[l..r].iter().sum());
                         }
 

@@ -139,7 +139,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use rand::{rngs::StdRng, Rng, SeedableRng};
+    use rand::{Rng, SeedableRng, rngs::StdRng};
 
     use crate::ops::{op_add::OpAdd, op_max::OpMax, op_min::OpMin};
 
@@ -176,7 +176,9 @@ mod tests {
                     const N: usize = 100;
 
                     for _ in 0..T {
-                        let v = (0..N).map(|_| rng.gen_range(mn..=mx)).collect::<Vec<_>>();
+                        let v = (0..N)
+                            .map(|_| rng.random_range(mn..=mx))
+                            .collect::<Vec<_>>();
                         let dst = DisjointSparseTable::<OpAdd<_>>::from(v.clone());
                         for l in 0..v.len() {
                             for r in l..=v.len() {
@@ -205,7 +207,7 @@ mod tests {
                     const N: usize = 100;
 
                     for _ in 0..T {
-                        let v = (0..N).map(|_| rng.gen()).collect::<Vec<_>>();
+                        let v = (0..N).map(|_| rng.random()).collect::<Vec<_>>();
                         let dst = DisjointSparseTable::<OpMin<_>>::from(v.clone());
                         for l in 0..v.len() {
                             for r in l..=v.len() {
@@ -235,7 +237,7 @@ mod tests {
                     const N: usize = 100;
 
                     for _ in 0..T {
-                        let v = (0..N).map(|_| rng.gen()).collect::<Vec<_>>();
+                        let v = (0..N).map(|_| rng.random()).collect::<Vec<_>>();
                         let dst = DisjointSparseTable::<OpMax<_>>::from(v.clone());
                         for l in 0..v.len() {
                             for r in l..=v.len() {

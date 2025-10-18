@@ -37,7 +37,7 @@ impl<T: Ord> Inversion for [T] {
 
 #[cfg(test)]
 mod tests {
-    use rand::{rngs::StdRng, Rng, SeedableRng};
+    use rand::{Rng, SeedableRng, rngs::StdRng};
 
     use crate::inversion::*;
 
@@ -103,7 +103,7 @@ mod tests {
                     const T: usize = 100;
                     const N: usize = 100;
                     for _ in 0..T {
-                        let v = (0..N).map(|_| rng.gen()).collect::<Vec<$ty>>();
+                        let v = (0..N).map(|_| rng.random()).collect::<Vec<$ty>>();
                         assert_eq!(v.inversion(), naive(&v));
                     }
                 }

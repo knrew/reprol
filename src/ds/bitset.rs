@@ -126,7 +126,7 @@ macro_rules! bitset {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rand::{rngs::StdRng, Rng, SeedableRng};
+    use rand::{Rng, SeedableRng, rngs::StdRng};
     use std::cmp::Ordering;
 
     #[test]
@@ -303,8 +303,8 @@ mod tests {
                 let mut naive = vec![false; n];
 
                 for _ in 0..Q {
-                    let i = rng.gen_range(0..n);
-                    if rng.gen_bool(0.5) {
+                    let i = rng.random_range(0..n);
+                    if rng.random_bool(0.5) {
                         bs.set(i);
                         naive[i] = true;
                     } else {
@@ -313,7 +313,7 @@ mod tests {
                     }
                     assert_eq!(bs.get(i), naive[i]);
 
-                    let i = rng.gen_range(0..n);
+                    let i = rng.random_range(0..n);
                     assert_eq!(bs.get(i), naive[i]);
                 }
 

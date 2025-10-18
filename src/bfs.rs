@@ -274,7 +274,7 @@ where
                 let index_nv = to_index(&nv);
                 let new_cost_nv = cost_v + dcost;
 
-                if !costs[index_nv].is_some_and(|cost_nv| cost_nv <= new_cost_nv) {
+                if costs[index_nv].is_none_or(|cost_nv| new_cost_nv < cost_nv) {
                     costs[index_nv] = Some(new_cost_nv);
                     path_tracker.set_previous(index_nv, &v);
                     if dcost == 0 {

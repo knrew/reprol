@@ -102,11 +102,7 @@ impl Bisect for Range<f64> {
         #[inline]
         fn f2u(f: f64) -> u64 {
             let u = f.to_bits();
-            if u >> 63 == 1 {
-                !u
-            } else {
-                u ^ 1 << 63
-            }
+            if u >> 63 == 1 { !u } else { u ^ 1 << 63 }
         }
 
         #[inline]
@@ -204,7 +200,7 @@ impl<T: Ord> Bounds for [T] {
 
 #[cfg(test)]
 mod tests {
-    use rand::{rngs::StdRng, Rng, SeedableRng};
+    use rand::{Rng, SeedableRng, rngs::StdRng};
 
     use super::*;
 
@@ -361,9 +357,11 @@ mod tests {
                     const T: usize = 100;
                     const N: usize = 1000;
                     for _ in 0..T {
-                        let mut v = (0..N).map(|_| rng.gen_range(mn..=mx)).collect::<Vec<_>>();
+                        let mut v = (0..N)
+                            .map(|_| rng.random_range(mn..=mx))
+                            .collect::<Vec<_>>();
                         v.sort_unstable();
-                        let target = rng.gen_range(mn..=mx);
+                        let target = rng.random_range(mn..=mx);
                         assert_eq!(v.lower_bound(&target), naive_lower_bound(&v, &target));
                         assert_eq!(v.upper_bound(&target), naive_upper_bound(&v, &target));
                     }

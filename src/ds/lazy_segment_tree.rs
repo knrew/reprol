@@ -283,7 +283,7 @@ impl<O: Monoid, A: Action<O>> LazySegmentTree<O, A> {
         let mut prod = self.op.identity();
 
         loop {
-            while l % 2 == 0 {
+            while l.is_multiple_of(2) {
                 l /= 2;
             }
 
