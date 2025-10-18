@@ -932,7 +932,7 @@
 <a href=#932 id=932 data-nosnippet>932</a>
 <a href=#933 id=933 data-nosnippet>933</a>    <span class="attr">#[test]
 <a href=#934 id=934 data-nosnippet>934</a>    </span><span class="kw">fn </span>test_insert_and_remove_random_small() {
-<a href=#935 id=935 data-nosnippet>935</a>        <span class="kw">use </span>rand::{rngs::StdRng, Rng, SeedableRng};
+<a href=#935 id=935 data-nosnippet>935</a>        <span class="kw">use </span>rand::{Rng, SeedableRng, rngs::StdRng};
 <a href=#936 id=936 data-nosnippet>936</a>
 <a href=#937 id=937 data-nosnippet>937</a>        <span class="kw">let </span><span class="kw-2">mut </span>rng = StdRng::seed_from_u64(<span class="number">42</span>);
 <a href=#938 id=938 data-nosnippet>938</a>
@@ -943,16 +943,16 @@
 <a href=#943 id=943 data-nosnippet>943</a>            <span class="macro">assert!</span>(avl.is_empty());
 <a href=#944 id=944 data-nosnippet>944</a>
 <a href=#945 id=945 data-nosnippet>945</a>            <span class="kw">for _ in </span><span class="number">0</span>..<span class="number">1000 </span>{
-<a href=#946 id=946 data-nosnippet>946</a>                <span class="kw">if </span>rng.gen_ratio(<span class="number">2</span>, <span class="number">3</span>) {
+<a href=#946 id=946 data-nosnippet>946</a>                <span class="kw">if </span>rng.random_ratio(<span class="number">2</span>, <span class="number">3</span>) {
 <a href=#947 id=947 data-nosnippet>947</a>                    <span class="comment">// insert
-<a href=#948 id=948 data-nosnippet>948</a>                    </span><span class="kw">let </span>value = rng.gen();
-<a href=#949 id=949 data-nosnippet>949</a>                    <span class="kw">let </span>index = rng.gen_range(<span class="number">0</span>..=avl.len());
+<a href=#948 id=948 data-nosnippet>948</a>                    </span><span class="kw">let </span>value = rng.random();
+<a href=#949 id=949 data-nosnippet>949</a>                    <span class="kw">let </span>index = rng.random_range(<span class="number">0</span>..=avl.len());
 <a href=#950 id=950 data-nosnippet>950</a>                    avl.insert(index, value);
 <a href=#951 id=951 data-nosnippet>951</a>                    vec.insert(index, value);
 <a href=#952 id=952 data-nosnippet>952</a>                } <span class="kw">else </span>{
 <a href=#953 id=953 data-nosnippet>953</a>                    <span class="comment">// remove
 <a href=#954 id=954 data-nosnippet>954</a>                    </span><span class="kw">if </span>vec.len() &gt; <span class="number">0 </span>{
-<a href=#955 id=955 data-nosnippet>955</a>                        <span class="kw">let </span>index = rng.gen_range(<span class="number">0</span>..vec.len());
+<a href=#955 id=955 data-nosnippet>955</a>                        <span class="kw">let </span>index = rng.random_range(<span class="number">0</span>..vec.len());
 <a href=#956 id=956 data-nosnippet>956</a>                        <span class="macro">assert_eq!</span>(avl.remove(index), <span class="prelude-val">Some</span>(vec.remove(index)));
 <a href=#957 id=957 data-nosnippet>957</a>                    } <span class="kw">else </span>{
 <a href=#958 id=958 data-nosnippet>958</a>                        <span class="macro">assert_eq!</span>(avl.remove(<span class="number">0</span>), <span class="prelude-val">None</span>);
@@ -969,7 +969,7 @@
 <a href=#969 id=969 data-nosnippet>969</a>
 <a href=#970 id=970 data-nosnippet>970</a>    <span class="attr">#[test]
 <a href=#971 id=971 data-nosnippet>971</a>    </span><span class="kw">fn </span>test_insert_and_remove_random_large() {
-<a href=#972 id=972 data-nosnippet>972</a>        <span class="kw">use </span>rand::{rngs::StdRng, Rng, SeedableRng};
+<a href=#972 id=972 data-nosnippet>972</a>        <span class="kw">use </span>rand::{Rng, SeedableRng, rngs::StdRng};
 <a href=#973 id=973 data-nosnippet>973</a>
 <a href=#974 id=974 data-nosnippet>974</a>        <span class="kw">let </span><span class="kw-2">mut </span>rng = StdRng::seed_from_u64(<span class="number">42</span>);
 <a href=#975 id=975 data-nosnippet>975</a>
@@ -980,16 +980,16 @@
 <a href=#980 id=980 data-nosnippet>980</a>            <span class="macro">assert!</span>(avl.is_empty());
 <a href=#981 id=981 data-nosnippet>981</a>
 <a href=#982 id=982 data-nosnippet>982</a>            <span class="kw">for _ in </span><span class="number">0</span>..<span class="number">100000 </span>{
-<a href=#983 id=983 data-nosnippet>983</a>                <span class="kw">if </span>rng.gen_ratio(<span class="number">2</span>, <span class="number">3</span>) {
+<a href=#983 id=983 data-nosnippet>983</a>                <span class="kw">if </span>rng.random_ratio(<span class="number">2</span>, <span class="number">3</span>) {
 <a href=#984 id=984 data-nosnippet>984</a>                    <span class="comment">// insert
-<a href=#985 id=985 data-nosnippet>985</a>                    </span><span class="kw">let </span>value = rng.gen();
-<a href=#986 id=986 data-nosnippet>986</a>                    <span class="kw">let </span>index = rng.gen_range(<span class="number">0</span>..=avl.len());
+<a href=#985 id=985 data-nosnippet>985</a>                    </span><span class="kw">let </span>value = rng.random();
+<a href=#986 id=986 data-nosnippet>986</a>                    <span class="kw">let </span>index = rng.random_range(<span class="number">0</span>..=avl.len());
 <a href=#987 id=987 data-nosnippet>987</a>                    avl.insert(index, value);
 <a href=#988 id=988 data-nosnippet>988</a>                    vec.insert(index, value);
 <a href=#989 id=989 data-nosnippet>989</a>                } <span class="kw">else </span>{
 <a href=#990 id=990 data-nosnippet>990</a>                    <span class="comment">// remove
 <a href=#991 id=991 data-nosnippet>991</a>                    </span><span class="kw">if </span>vec.len() &gt; <span class="number">0 </span>{
-<a href=#992 id=992 data-nosnippet>992</a>                        <span class="kw">let </span>index = rng.gen_range(<span class="number">0</span>..vec.len());
+<a href=#992 id=992 data-nosnippet>992</a>                        <span class="kw">let </span>index = rng.random_range(<span class="number">0</span>..vec.len());
 <a href=#993 id=993 data-nosnippet>993</a>                        <span class="macro">assert_eq!</span>(avl.remove(index), <span class="prelude-val">Some</span>(vec.remove(index)));
 <a href=#994 id=994 data-nosnippet>994</a>                    } <span class="kw">else </span>{
 <a href=#995 id=995 data-nosnippet>995</a>                        <span class="macro">assert_eq!</span>(avl.remove(<span class="number">0</span>), <span class="prelude-val">None</span>);

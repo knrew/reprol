@@ -267,7 +267,7 @@
 <a href=#267 id=267 data-nosnippet>267</a></span><span class="kw">mod </span>tests {
 <a href=#268 id=268 data-nosnippet>268</a>    <span class="kw">use </span>std::ops::RangeInclusive;
 <a href=#269 id=269 data-nosnippet>269</a>
-<a href=#270 id=270 data-nosnippet>270</a>    <span class="kw">use </span>rand::{rngs::StdRng, Rng, SeedableRng};
+<a href=#270 id=270 data-nosnippet>270</a>    <span class="kw">use </span>rand::{Rng, SeedableRng, rngs::StdRng};
 <a href=#271 id=271 data-nosnippet>271</a>
 <a href=#272 id=272 data-nosnippet>272</a>    <span class="kw">const </span>P1: u64 = <span class="number">998244353</span>;
 <a href=#273 id=273 data-nosnippet>273</a>    <span class="kw">const </span>P2: u64 = <span class="number">1000000007</span>;
@@ -298,8 +298,8 @@
 <a href=#298 id=298 data-nosnippet>298</a>            <span class="kw">for _ in </span><span class="number">0</span>..Q {
 <a href=#299 id=299 data-nosnippet>299</a>                <span class="comment">// u64
 <a href=#300 id=300 data-nosnippet>300</a>                </span>{
-<a href=#301 id=301 data-nosnippet>301</a>                    <span class="kw">let </span>lhs = rng.gen_range(RANGE_U64);
-<a href=#302 id=302 data-nosnippet>302</a>                    <span class="kw">let </span>rhs = rng.gen_range(RANGE_U64);
+<a href=#301 id=301 data-nosnippet>301</a>                    <span class="kw">let </span>lhs = rng.random_range(RANGE_U64);
+<a href=#302 id=302 data-nosnippet>302</a>                    <span class="kw">let </span>rhs = rng.random_range(RANGE_U64);
 <a href=#303 id=303 data-nosnippet>303</a>                    <span class="kw">for </span>p <span class="kw">in </span>P {
 <a href=#304 id=304 data-nosnippet>304</a>                        <span class="macro">assert_eq!</span>(lhs.add_mod(rhs, p), (lhs % p + rhs % p) % p);
 <a href=#305 id=305 data-nosnippet>305</a>                    }
@@ -307,8 +307,8 @@
 <a href=#307 id=307 data-nosnippet>307</a>
 <a href=#308 id=308 data-nosnippet>308</a>                <span class="comment">// i64
 <a href=#309 id=309 data-nosnippet>309</a>                </span>{
-<a href=#310 id=310 data-nosnippet>310</a>                    <span class="kw">let </span>lhs: i64 = rng.gen_range(RANGE_I64);
-<a href=#311 id=311 data-nosnippet>311</a>                    <span class="kw">let </span>rhs: i64 = rng.gen_range(RANGE_I64);
+<a href=#310 id=310 data-nosnippet>310</a>                    <span class="kw">let </span>lhs: i64 = rng.random_range(RANGE_I64);
+<a href=#311 id=311 data-nosnippet>311</a>                    <span class="kw">let </span>rhs: i64 = rng.random_range(RANGE_I64);
 <a href=#312 id=312 data-nosnippet>312</a>                    <span class="kw">for </span>p <span class="kw">in </span>P {
 <a href=#313 id=313 data-nosnippet>313</a>                        <span class="kw">let </span>p = p <span class="kw">as </span>i64;
 <a href=#314 id=314 data-nosnippet>314</a>                        <span class="macro">assert_eq!</span>(lhs.add_mod(rhs, p), (lhs % p + rhs % p).rem_euclid(p));
@@ -328,8 +328,8 @@
 <a href=#328 id=328 data-nosnippet>328</a>            <span class="kw">for _ in </span><span class="number">0</span>..Q {
 <a href=#329 id=329 data-nosnippet>329</a>                <span class="comment">// u64
 <a href=#330 id=330 data-nosnippet>330</a>                </span>{
-<a href=#331 id=331 data-nosnippet>331</a>                    <span class="kw">let </span>lhs = rng.gen_range(RANGE_U64);
-<a href=#332 id=332 data-nosnippet>332</a>                    <span class="kw">let </span>rhs = rng.gen_range(RANGE_U64);
+<a href=#331 id=331 data-nosnippet>331</a>                    <span class="kw">let </span>lhs = rng.random_range(RANGE_U64);
+<a href=#332 id=332 data-nosnippet>332</a>                    <span class="kw">let </span>rhs = rng.random_range(RANGE_U64);
 <a href=#333 id=333 data-nosnippet>333</a>                    <span class="kw">for </span>p <span class="kw">in </span>P {
 <a href=#334 id=334 data-nosnippet>334</a>                        <span class="macro">assert_eq!</span>(lhs.sub_mod(rhs, p), (p + lhs % p - rhs % p) % p);
 <a href=#335 id=335 data-nosnippet>335</a>                    }
@@ -337,8 +337,8 @@
 <a href=#337 id=337 data-nosnippet>337</a>
 <a href=#338 id=338 data-nosnippet>338</a>                <span class="comment">// i64
 <a href=#339 id=339 data-nosnippet>339</a>                </span>{
-<a href=#340 id=340 data-nosnippet>340</a>                    <span class="kw">let </span>lhs: i64 = rng.gen_range(RANGE_I64);
-<a href=#341 id=341 data-nosnippet>341</a>                    <span class="kw">let </span>rhs: i64 = rng.gen_range(RANGE_I64);
+<a href=#340 id=340 data-nosnippet>340</a>                    <span class="kw">let </span>lhs: i64 = rng.random_range(RANGE_I64);
+<a href=#341 id=341 data-nosnippet>341</a>                    <span class="kw">let </span>rhs: i64 = rng.random_range(RANGE_I64);
 <a href=#342 id=342 data-nosnippet>342</a>                    <span class="kw">for </span>p <span class="kw">in </span>P {
 <a href=#343 id=343 data-nosnippet>343</a>                        <span class="kw">let </span>p = p <span class="kw">as </span>i64;
 <a href=#344 id=344 data-nosnippet>344</a>                        <span class="macro">assert_eq!</span>(lhs.sub_mod(rhs, p), (lhs % p - rhs % p).rem_euclid(p));
@@ -358,8 +358,8 @@
 <a href=#358 id=358 data-nosnippet>358</a>            <span class="kw">for _ in </span><span class="number">0</span>..Q {
 <a href=#359 id=359 data-nosnippet>359</a>                <span class="comment">// u64
 <a href=#360 id=360 data-nosnippet>360</a>                </span>{
-<a href=#361 id=361 data-nosnippet>361</a>                    <span class="kw">let </span>lhs = rng.gen_range(RANGE_U64);
-<a href=#362 id=362 data-nosnippet>362</a>                    <span class="kw">let </span>rhs = rng.gen_range(RANGE_U64);
+<a href=#361 id=361 data-nosnippet>361</a>                    <span class="kw">let </span>lhs = rng.random_range(RANGE_U64);
+<a href=#362 id=362 data-nosnippet>362</a>                    <span class="kw">let </span>rhs = rng.random_range(RANGE_U64);
 <a href=#363 id=363 data-nosnippet>363</a>                    <span class="kw">for </span>p <span class="kw">in </span>P {
 <a href=#364 id=364 data-nosnippet>364</a>                        <span class="macro">assert_eq!</span>(lhs.mul_mod(rhs, p), lhs % p * (rhs % p) % p);
 <a href=#365 id=365 data-nosnippet>365</a>                    }
@@ -367,8 +367,8 @@
 <a href=#367 id=367 data-nosnippet>367</a>
 <a href=#368 id=368 data-nosnippet>368</a>                <span class="comment">// i64
 <a href=#369 id=369 data-nosnippet>369</a>                </span>{
-<a href=#370 id=370 data-nosnippet>370</a>                    <span class="kw">let </span>lhs: i64 = rng.gen_range(RANGE_I64);
-<a href=#371 id=371 data-nosnippet>371</a>                    <span class="kw">let </span>rhs: i64 = rng.gen_range(RANGE_I64);
+<a href=#370 id=370 data-nosnippet>370</a>                    <span class="kw">let </span>lhs: i64 = rng.random_range(RANGE_I64);
+<a href=#371 id=371 data-nosnippet>371</a>                    <span class="kw">let </span>rhs: i64 = rng.random_range(RANGE_I64);
 <a href=#372 id=372 data-nosnippet>372</a>                    <span class="kw">for </span>p <span class="kw">in </span>P {
 <a href=#373 id=373 data-nosnippet>373</a>                        <span class="kw">let </span>p = p <span class="kw">as </span>i64;
 <a href=#374 id=374 data-nosnippet>374</a>                        <span class="macro">assert_eq!</span>(lhs.mul_mod(rhs, p), (lhs % p * (rhs % p)).rem_euclid(p));
@@ -387,8 +387,8 @@
 <a href=#387 id=387 data-nosnippet>387</a>            <span class="kw">for _ in </span><span class="number">0</span>..Q {
 <a href=#388 id=388 data-nosnippet>388</a>                <span class="comment">// u64
 <a href=#389 id=389 data-nosnippet>389</a>                </span>{
-<a href=#390 id=390 data-nosnippet>390</a>                    <span class="kw">let </span>lhs = rng.gen_range(RANGE_U64);
-<a href=#391 id=391 data-nosnippet>391</a>                    <span class="kw">let </span>rhs = rng.gen_range(RANGE_U64);
+<a href=#390 id=390 data-nosnippet>390</a>                    <span class="kw">let </span>lhs = rng.random_range(RANGE_U64);
+<a href=#391 id=391 data-nosnippet>391</a>                    <span class="kw">let </span>rhs = rng.random_range(RANGE_U64);
 <a href=#392 id=392 data-nosnippet>392</a>                    <span class="kw">for </span>p <span class="kw">in </span>P {
 <a href=#393 id=393 data-nosnippet>393</a>                        <span class="macro">assert_eq!</span>(lhs.div_mod(rhs, p), lhs % p * (rhs % p).inv_mod(p) % p);
 <a href=#394 id=394 data-nosnippet>394</a>                    }
@@ -396,8 +396,8 @@
 <a href=#396 id=396 data-nosnippet>396</a>
 <a href=#397 id=397 data-nosnippet>397</a>                <span class="comment">// i64
 <a href=#398 id=398 data-nosnippet>398</a>                </span>{
-<a href=#399 id=399 data-nosnippet>399</a>                    <span class="kw">let </span>lhs: i64 = rng.gen_range(RANGE_I64);
-<a href=#400 id=400 data-nosnippet>400</a>                    <span class="kw">let </span>rhs: i64 = rng.gen_range(RANGE_I64);
+<a href=#399 id=399 data-nosnippet>399</a>                    <span class="kw">let </span>lhs: i64 = rng.random_range(RANGE_I64);
+<a href=#400 id=400 data-nosnippet>400</a>                    <span class="kw">let </span>rhs: i64 = rng.random_range(RANGE_I64);
 <a href=#401 id=401 data-nosnippet>401</a>                    <span class="kw">for </span>p <span class="kw">in </span>P {
 <a href=#402 id=402 data-nosnippet>402</a>                        <span class="kw">let </span>p = p <span class="kw">as </span>i64;
 <a href=#403 id=403 data-nosnippet>403</a>
@@ -421,7 +421,7 @@
 <a href=#421 id=421 data-nosnippet>421</a>            <span class="kw">for _ in </span><span class="number">0</span>..Q {
 <a href=#422 id=422 data-nosnippet>422</a>                <span class="comment">// u64
 <a href=#423 id=423 data-nosnippet>423</a>                </span>{
-<a href=#424 id=424 data-nosnippet>424</a>                    <span class="kw">let </span>lhs = rng.gen_range(RANGE_U64);
+<a href=#424 id=424 data-nosnippet>424</a>                    <span class="kw">let </span>lhs = rng.random_range(RANGE_U64);
 <a href=#425 id=425 data-nosnippet>425</a>                    <span class="kw">for </span>p <span class="kw">in </span>P {
 <a href=#426 id=426 data-nosnippet>426</a>                        <span class="macro">assert_eq!</span>(lhs.add_mod(lhs.neg_mod(p), p), <span class="number">0</span>);
 <a href=#427 id=427 data-nosnippet>427</a>                    }
@@ -429,7 +429,7 @@
 <a href=#429 id=429 data-nosnippet>429</a>
 <a href=#430 id=430 data-nosnippet>430</a>                <span class="comment">// i64
 <a href=#431 id=431 data-nosnippet>431</a>                </span>{
-<a href=#432 id=432 data-nosnippet>432</a>                    <span class="kw">let </span>lhs: i64 = rng.gen_range(RANGE_I64);
+<a href=#432 id=432 data-nosnippet>432</a>                    <span class="kw">let </span>lhs: i64 = rng.random_range(RANGE_I64);
 <a href=#433 id=433 data-nosnippet>433</a>                    <span class="kw">for </span>p <span class="kw">in </span>P {
 <a href=#434 id=434 data-nosnippet>434</a>                        <span class="kw">let </span>p = p <span class="kw">as </span>i64;
 <a href=#435 id=435 data-nosnippet>435</a>                        <span class="macro">assert_eq!</span>(lhs.add_mod(lhs.neg_mod(p), p), <span class="number">0</span>);
@@ -467,8 +467,8 @@
 <a href=#467 id=467 data-nosnippet>467</a>            <span class="kw">for _ in </span><span class="number">0</span>..Q {
 <a href=#468 id=468 data-nosnippet>468</a>                <span class="comment">// u64
 <a href=#469 id=469 data-nosnippet>469</a>                </span>{
-<a href=#470 id=470 data-nosnippet>470</a>                    <span class="kw">let </span>base = rng.gen_range(RANGE_U64);
-<a href=#471 id=471 data-nosnippet>471</a>                    <span class="kw">let </span>exp = rng.gen_range(<span class="number">0</span>..<span class="number">100</span>);
+<a href=#470 id=470 data-nosnippet>470</a>                    <span class="kw">let </span>base = rng.random_range(RANGE_U64);
+<a href=#471 id=471 data-nosnippet>471</a>                    <span class="kw">let </span>exp = rng.random_range(<span class="number">0</span>..<span class="number">100</span>);
 <a href=#472 id=472 data-nosnippet>472</a>                    <span class="kw">for </span>p <span class="kw">in </span>P {
 <a href=#473 id=473 data-nosnippet>473</a>                        <span class="macro">assert_eq!</span>(base.pow_mod(exp, p), naive_pow_u64(base, exp, p));
 <a href=#474 id=474 data-nosnippet>474</a>                    }
@@ -476,8 +476,8 @@
 <a href=#476 id=476 data-nosnippet>476</a>
 <a href=#477 id=477 data-nosnippet>477</a>                <span class="comment">// i64
 <a href=#478 id=478 data-nosnippet>478</a>                </span>{
-<a href=#479 id=479 data-nosnippet>479</a>                    <span class="kw">let </span>base: i64 = rng.gen_range(RANGE_I64);
-<a href=#480 id=480 data-nosnippet>480</a>                    <span class="kw">let </span>exp = rng.gen_range(<span class="number">0</span>..<span class="number">100</span>);
+<a href=#479 id=479 data-nosnippet>479</a>                    <span class="kw">let </span>base: i64 = rng.random_range(RANGE_I64);
+<a href=#480 id=480 data-nosnippet>480</a>                    <span class="kw">let </span>exp = rng.random_range(<span class="number">0</span>..<span class="number">100</span>);
 <a href=#481 id=481 data-nosnippet>481</a>                    <span class="kw">for </span>p <span class="kw">in </span>P {
 <a href=#482 id=482 data-nosnippet>482</a>                        <span class="kw">let </span>p = p <span class="kw">as </span>i64;
 <a href=#483 id=483 data-nosnippet>483</a>                        <span class="macro">assert_eq!</span>(base.pow_mod(exp, p), naive_pow_i64(base, exp, p));
@@ -497,7 +497,7 @@
 <a href=#497 id=497 data-nosnippet>497</a>            <span class="kw">for _ in </span><span class="number">0</span>..Q {
 <a href=#498 id=498 data-nosnippet>498</a>                <span class="comment">// u64
 <a href=#499 id=499 data-nosnippet>499</a>                </span>{
-<a href=#500 id=500 data-nosnippet>500</a>                    <span class="kw">let </span>lhs = rng.gen_range(RANGE_U64);
+<a href=#500 id=500 data-nosnippet>500</a>                    <span class="kw">let </span>lhs = rng.random_range(RANGE_U64);
 <a href=#501 id=501 data-nosnippet>501</a>                    <span class="kw">for </span>p <span class="kw">in </span>P {
 <a href=#502 id=502 data-nosnippet>502</a>                        <span class="macro">assert_eq!</span>(lhs.mul_mod(lhs.inv_mod(p), p), <span class="number">1</span>);
 <a href=#503 id=503 data-nosnippet>503</a>                    }
@@ -505,7 +505,7 @@
 <a href=#505 id=505 data-nosnippet>505</a>
 <a href=#506 id=506 data-nosnippet>506</a>                <span class="comment">// i64
 <a href=#507 id=507 data-nosnippet>507</a>                </span>{
-<a href=#508 id=508 data-nosnippet>508</a>                    <span class="kw">let </span>lhs = rng.gen_range(RANGE_I64);
+<a href=#508 id=508 data-nosnippet>508</a>                    <span class="kw">let </span>lhs = rng.random_range(RANGE_I64);
 <a href=#509 id=509 data-nosnippet>509</a>                    <span class="kw">for </span>p <span class="kw">in </span>P {
 <a href=#510 id=510 data-nosnippet>510</a>                        <span class="kw">let </span>p = p <span class="kw">as </span>i64;
 <a href=#511 id=511 data-nosnippet>511</a>                        <span class="macro">assert_eq!</span>(lhs.mul_mod(lhs.inv_mod(p), p), <span class="number">1</span>);
@@ -528,8 +528,8 @@
 <a href=#528 id=528 data-nosnippet>528</a>            }
 <a href=#529 id=529 data-nosnippet>529</a>            <span class="kw">let </span><span class="kw-2">mut </span>rng = StdRng::seed_from_u64(SEED);
 <a href=#530 id=530 data-nosnippet>530</a>            <span class="kw">for _ in </span><span class="number">0</span>..Q {
-<a href=#531 id=531 data-nosnippet>531</a>                <span class="kw">let </span>lhs = rng.gen_range(RANGE_U64);
-<a href=#532 id=532 data-nosnippet>532</a>                <span class="kw">let </span>rhs = rng.gen_range(RANGE_U64);
+<a href=#531 id=531 data-nosnippet>531</a>                <span class="kw">let </span>lhs = rng.random_range(RANGE_U64);
+<a href=#532 id=532 data-nosnippet>532</a>                <span class="kw">let </span>rhs = rng.random_range(RANGE_U64);
 <a href=#533 id=533 data-nosnippet>533</a>                check::&lt;P1&gt;(lhs, rhs);
 <a href=#534 id=534 data-nosnippet>534</a>                check::&lt;P2&gt;(lhs, rhs);
 <a href=#535 id=535 data-nosnippet>535</a>                check::&lt;P3&gt;(lhs, rhs);
@@ -546,8 +546,8 @@
 <a href=#546 id=546 data-nosnippet>546</a>            }
 <a href=#547 id=547 data-nosnippet>547</a>            <span class="kw">let </span><span class="kw-2">mut </span>rng = StdRng::seed_from_u64(SEED);
 <a href=#548 id=548 data-nosnippet>548</a>            <span class="kw">for _ in </span><span class="number">0</span>..Q {
-<a href=#549 id=549 data-nosnippet>549</a>                <span class="kw">let </span>lhs = rng.gen_range(RANGE_U64);
-<a href=#550 id=550 data-nosnippet>550</a>                <span class="kw">let </span>rhs = rng.gen_range(RANGE_U64);
+<a href=#549 id=549 data-nosnippet>549</a>                <span class="kw">let </span>lhs = rng.random_range(RANGE_U64);
+<a href=#550 id=550 data-nosnippet>550</a>                <span class="kw">let </span>rhs = rng.random_range(RANGE_U64);
 <a href=#551 id=551 data-nosnippet>551</a>                check::&lt;P1&gt;(lhs, rhs);
 <a href=#552 id=552 data-nosnippet>552</a>                check::&lt;P2&gt;(lhs, rhs);
 <a href=#553 id=553 data-nosnippet>553</a>                check::&lt;P3&gt;(lhs, rhs);
@@ -564,8 +564,8 @@
 <a href=#564 id=564 data-nosnippet>564</a>            }
 <a href=#565 id=565 data-nosnippet>565</a>            <span class="kw">let </span><span class="kw-2">mut </span>rng = StdRng::seed_from_u64(SEED);
 <a href=#566 id=566 data-nosnippet>566</a>            <span class="kw">for _ in </span><span class="number">0</span>..Q {
-<a href=#567 id=567 data-nosnippet>567</a>                <span class="kw">let </span>lhs = rng.gen_range(RANGE_U64);
-<a href=#568 id=568 data-nosnippet>568</a>                <span class="kw">let </span>rhs = rng.gen_range(RANGE_U64);
+<a href=#567 id=567 data-nosnippet>567</a>                <span class="kw">let </span>lhs = rng.random_range(RANGE_U64);
+<a href=#568 id=568 data-nosnippet>568</a>                <span class="kw">let </span>rhs = rng.random_range(RANGE_U64);
 <a href=#569 id=569 data-nosnippet>569</a>                check::&lt;P1&gt;(lhs, rhs);
 <a href=#570 id=570 data-nosnippet>570</a>                check::&lt;P2&gt;(lhs, rhs);
 <a href=#571 id=571 data-nosnippet>571</a>                check::&lt;P3&gt;(lhs, rhs);
@@ -582,8 +582,8 @@
 <a href=#582 id=582 data-nosnippet>582</a>            }
 <a href=#583 id=583 data-nosnippet>583</a>            <span class="kw">let </span><span class="kw-2">mut </span>rng = StdRng::seed_from_u64(SEED);
 <a href=#584 id=584 data-nosnippet>584</a>            <span class="kw">for _ in </span><span class="number">0</span>..Q {
-<a href=#585 id=585 data-nosnippet>585</a>                <span class="kw">let </span>lhs = rng.gen_range(RANGE_U64);
-<a href=#586 id=586 data-nosnippet>586</a>                <span class="kw">let </span>rhs = rng.gen_range(RANGE_U64);
+<a href=#585 id=585 data-nosnippet>585</a>                <span class="kw">let </span>lhs = rng.random_range(RANGE_U64);
+<a href=#586 id=586 data-nosnippet>586</a>                <span class="kw">let </span>rhs = rng.random_range(RANGE_U64);
 <a href=#587 id=587 data-nosnippet>587</a>                check::&lt;P1&gt;(lhs, rhs);
 <a href=#588 id=588 data-nosnippet>588</a>                check::&lt;P2&gt;(lhs, rhs);
 <a href=#589 id=589 data-nosnippet>589</a>                check::&lt;P3&gt;(lhs, rhs);
@@ -597,7 +597,7 @@
 <a href=#597 id=597 data-nosnippet>597</a>            }
 <a href=#598 id=598 data-nosnippet>598</a>            <span class="kw">let </span><span class="kw-2">mut </span>rng = StdRng::seed_from_u64(SEED);
 <a href=#599 id=599 data-nosnippet>599</a>            <span class="kw">for _ in </span><span class="number">0</span>..Q {
-<a href=#600 id=600 data-nosnippet>600</a>                <span class="kw">let </span>lhs = rng.gen_range(RANGE_U64);
+<a href=#600 id=600 data-nosnippet>600</a>                <span class="kw">let </span>lhs = rng.random_range(RANGE_U64);
 <a href=#601 id=601 data-nosnippet>601</a>                check::&lt;P1&gt;(lhs);
 <a href=#602 id=602 data-nosnippet>602</a>                check::&lt;P2&gt;(lhs);
 <a href=#603 id=603 data-nosnippet>603</a>                check::&lt;P3&gt;(lhs);
@@ -625,8 +625,8 @@
 <a href=#625 id=625 data-nosnippet>625</a>            }
 <a href=#626 id=626 data-nosnippet>626</a>            <span class="kw">let </span><span class="kw-2">mut </span>rng = StdRng::seed_from_u64(SEED);
 <a href=#627 id=627 data-nosnippet>627</a>            <span class="kw">for _ in </span><span class="number">0</span>..Q {
-<a href=#628 id=628 data-nosnippet>628</a>                <span class="kw">let </span>base = rng.gen_range(RANGE_U64);
-<a href=#629 id=629 data-nosnippet>629</a>                <span class="kw">let </span>exp = rng.gen_range(<span class="number">0</span>..<span class="number">100</span>);
+<a href=#628 id=628 data-nosnippet>628</a>                <span class="kw">let </span>base = rng.random_range(RANGE_U64);
+<a href=#629 id=629 data-nosnippet>629</a>                <span class="kw">let </span>exp = rng.random_range(<span class="number">0</span>..<span class="number">100</span>);
 <a href=#630 id=630 data-nosnippet>630</a>                check::&lt;P1&gt;(base, exp);
 <a href=#631 id=631 data-nosnippet>631</a>                check::&lt;P2&gt;(base, exp);
 <a href=#632 id=632 data-nosnippet>632</a>                check::&lt;P3&gt;(base, exp);
@@ -643,7 +643,7 @@
 <a href=#643 id=643 data-nosnippet>643</a>            }
 <a href=#644 id=644 data-nosnippet>644</a>            <span class="kw">let </span><span class="kw-2">mut </span>rng = StdRng::seed_from_u64(SEED);
 <a href=#645 id=645 data-nosnippet>645</a>            <span class="kw">for _ in </span><span class="number">0</span>..Q {
-<a href=#646 id=646 data-nosnippet>646</a>                <span class="kw">let </span>lhs = rng.gen_range(RANGE_U64);
+<a href=#646 id=646 data-nosnippet>646</a>                <span class="kw">let </span>lhs = rng.random_range(RANGE_U64);
 <a href=#647 id=647 data-nosnippet>647</a>                check::&lt;P1&gt;(lhs);
 <a href=#648 id=648 data-nosnippet>648</a>                check::&lt;P2&gt;(lhs);
 <a href=#649 id=649 data-nosnippet>649</a>                check::&lt;P3&gt;(lhs);

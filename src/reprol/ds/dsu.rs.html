@@ -139,7 +139,7 @@
 <a href=#139 id=139 data-nosnippet>139</a>
 <a href=#140 id=140 data-nosnippet>140</a>    <span class="attr">#[test]
 <a href=#141 id=141 data-nosnippet>141</a>    </span><span class="kw">fn </span>test_merge_and_connected_random() {
-<a href=#142 id=142 data-nosnippet>142</a>        <span class="kw">use </span>rand::{rngs::StdRng, Rng, SeedableRng};
+<a href=#142 id=142 data-nosnippet>142</a>        <span class="kw">use </span>rand::{Rng, SeedableRng, rngs::StdRng};
 <a href=#143 id=143 data-nosnippet>143</a>
 <a href=#144 id=144 data-nosnippet>144</a>        <span class="kw">let </span><span class="kw-2">mut </span>rng = StdRng::seed_from_u64(<span class="number">30</span>);
 <a href=#145 id=145 data-nosnippet>145</a>
@@ -155,10 +155,10 @@
 <a href=#155 id=155 data-nosnippet>155</a>            </span><span class="kw">let </span><span class="kw-2">mut </span>naive_parents = (<span class="number">0</span>..N).collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
 <a href=#156 id=156 data-nosnippet>156</a>
 <a href=#157 id=157 data-nosnippet>157</a>            <span class="kw">for _ in </span><span class="number">0</span>..Q {
-<a href=#158 id=158 data-nosnippet>158</a>                <span class="kw">let </span>u = rng.gen_range(<span class="number">0</span>..N);
-<a href=#159 id=159 data-nosnippet>159</a>                <span class="kw">let </span>v = rng.gen_range(<span class="number">0</span>..N);
+<a href=#158 id=158 data-nosnippet>158</a>                <span class="kw">let </span>u = rng.random_range(<span class="number">0</span>..N);
+<a href=#159 id=159 data-nosnippet>159</a>                <span class="kw">let </span>v = rng.random_range(<span class="number">0</span>..N);
 <a href=#160 id=160 data-nosnippet>160</a>
-<a href=#161 id=161 data-nosnippet>161</a>                <span class="kw">if </span>rng.gen_ratio(<span class="number">1</span>, <span class="number">2</span>) {
+<a href=#161 id=161 data-nosnippet>161</a>                <span class="kw">if </span>rng.random_ratio(<span class="number">1</span>, <span class="number">2</span>) {
 <a href=#162 id=162 data-nosnippet>162</a>                    <span class="comment">// merge
 <a href=#163 id=163 data-nosnippet>163</a>
 <a href=#164 id=164 data-nosnippet>164</a>                    </span>dsu.merge(u, v);
