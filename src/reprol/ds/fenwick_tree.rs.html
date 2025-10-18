@@ -147,7 +147,7 @@
 <a href=#147 id=147 data-nosnippet>147</a>
 <a href=#148 id=148 data-nosnippet>148</a><span class="attr">#[cfg(test)]
 <a href=#149 id=149 data-nosnippet>149</a></span><span class="kw">mod </span>tests {
-<a href=#150 id=150 data-nosnippet>150</a>    <span class="kw">use </span>rand::{rngs::StdRng, Rng, SeedableRng};
+<a href=#150 id=150 data-nosnippet>150</a>    <span class="kw">use </span>rand::{Rng, SeedableRng, rngs::StdRng};
 <a href=#151 id=151 data-nosnippet>151</a>
 <a href=#152 id=152 data-nosnippet>152</a>    <span class="kw">use </span><span class="kw">crate</span>::ops::op_add::OpAdd;
 <a href=#153 id=153 data-nosnippet>153</a>
@@ -185,14 +185,14 @@
 <a href=#185 id=185 data-nosnippet>185</a>                        <span class="kw">for _ in </span><span class="number">0</span>..Q {
 <a href=#186 id=186 data-nosnippet>186</a>                            <span class="comment">// add
 <a href=#187 id=187 data-nosnippet>187</a>                            // v[index] += d
-<a href=#188 id=188 data-nosnippet>188</a>                            </span><span class="kw">let </span>index = rng.gen_range(<span class="number">0</span>..N);
-<a href=#189 id=189 data-nosnippet>189</a>                            <span class="kw">let </span>d = rng.gen_range(mn..=mx);
+<a href=#188 id=188 data-nosnippet>188</a>                            </span><span class="kw">let </span>index = rng.random_range(<span class="number">0</span>..N);
+<a href=#189 id=189 data-nosnippet>189</a>                            <span class="kw">let </span>d = rng.random_range(mn..=mx);
 <a href=#190 id=190 data-nosnippet>190</a>                            ft.op(index, <span class="kw-2">&amp;</span>d);
 <a href=#191 id=191 data-nosnippet>191</a>                            naive[index] += d;
 <a href=#192 id=192 data-nosnippet>192</a>
 <a href=#193 id=193 data-nosnippet>193</a>                            <span class="comment">// [l, r)の区間和を求める
-<a href=#194 id=194 data-nosnippet>194</a>                            </span><span class="kw">let </span>l = rng.gen_range(<span class="number">0</span>..N);
-<a href=#195 id=195 data-nosnippet>195</a>                            <span class="kw">let </span>r = rng.gen_range(l..=N);
+<a href=#194 id=194 data-nosnippet>194</a>                            </span><span class="kw">let </span>l = rng.random_range(<span class="number">0</span>..N);
+<a href=#195 id=195 data-nosnippet>195</a>                            <span class="kw">let </span>r = rng.random_range(l..=N);
 <a href=#196 id=196 data-nosnippet>196</a>                            <span class="macro">assert_eq!</span>(ft.fold(l..r), naive[l..r].iter().sum());
 <a href=#197 id=197 data-nosnippet>197</a>                        }
 <a href=#198 id=198 data-nosnippet>198</a>

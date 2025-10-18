@@ -205,7 +205,7 @@
 <a href=#205 id=205 data-nosnippet>205</a>
 <a href=#206 id=206 data-nosnippet>206</a><span class="attr">#[cfg(test)]
 <a href=#207 id=207 data-nosnippet>207</a></span><span class="kw">mod </span>tests {
-<a href=#208 id=208 data-nosnippet>208</a>    <span class="kw">use </span>rand::{rngs::StdRng, Rng, SeedableRng};
+<a href=#208 id=208 data-nosnippet>208</a>    <span class="kw">use </span>rand::{Rng, SeedableRng, rngs::StdRng};
 <a href=#209 id=209 data-nosnippet>209</a>
 <a href=#210 id=210 data-nosnippet>210</a>    <span class="kw">use </span><span class="kw">crate</span>::ops::{op_max::OpMax, op_min::OpMin};
 <a href=#211 id=211 data-nosnippet>211</a>
@@ -263,80 +263,82 @@
 <a href=#263 id=263 data-nosnippet>263</a>                    <span class="kw">const </span>T: usize = <span class="number">100</span>;
 <a href=#264 id=264 data-nosnippet>264</a>                    <span class="kw">const </span>N: usize = <span class="number">100</span>;
 <a href=#265 id=265 data-nosnippet>265</a>                    <span class="kw">for _ in </span><span class="number">0</span>..T {
-<a href=#266 id=266 data-nosnippet>266</a>                        <span class="kw">let </span>v = (<span class="number">0</span>..N).map(|<span class="kw">_</span>| rng.gen_range(mn..=mx)).collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
-<a href=#267 id=267 data-nosnippet>267</a>                        <span class="kw">let </span>cum = CumulativeSum::new(v.clone());
-<a href=#268 id=268 data-nosnippet>268</a>                        <span class="kw">for </span>l <span class="kw">in </span><span class="number">0</span>..v.len() {
-<a href=#269 id=269 data-nosnippet>269</a>                            <span class="kw">for </span>r <span class="kw">in </span>l..=v.len() {
-<a href=#270 id=270 data-nosnippet>270</a>                                <span class="macro">assert_eq!</span>(cum.fold(l..r), v[l..r].iter().sum());
-<a href=#271 id=271 data-nosnippet>271</a>                            }
-<a href=#272 id=272 data-nosnippet>272</a>                        }
-<a href=#273 id=273 data-nosnippet>273</a>                    }
-<a href=#274 id=274 data-nosnippet>274</a>                }
-<a href=#275 id=275 data-nosnippet>275</a>            };
-<a href=#276 id=276 data-nosnippet>276</a>        }
-<a href=#277 id=277 data-nosnippet>277</a>
-<a href=#278 id=278 data-nosnippet>278</a>        <span class="macro">define_test_function!</span>(test_i64, i64);
-<a href=#279 id=279 data-nosnippet>279</a>        <span class="macro">define_test_function!</span>(test_u64, u64);
-<a href=#280 id=280 data-nosnippet>280</a>
-<a href=#281 id=281 data-nosnippet>281</a>        <span class="kw">let </span><span class="kw-2">mut </span>rng = StdRng::seed_from_u64(<span class="number">30</span>);
+<a href=#266 id=266 data-nosnippet>266</a>                        <span class="kw">let </span>v = (<span class="number">0</span>..N)
+<a href=#267 id=267 data-nosnippet>267</a>                            .map(|<span class="kw">_</span>| rng.random_range(mn..=mx))
+<a href=#268 id=268 data-nosnippet>268</a>                            .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
+<a href=#269 id=269 data-nosnippet>269</a>                        <span class="kw">let </span>cum = CumulativeSum::new(v.clone());
+<a href=#270 id=270 data-nosnippet>270</a>                        <span class="kw">for </span>l <span class="kw">in </span><span class="number">0</span>..v.len() {
+<a href=#271 id=271 data-nosnippet>271</a>                            <span class="kw">for </span>r <span class="kw">in </span>l..=v.len() {
+<a href=#272 id=272 data-nosnippet>272</a>                                <span class="macro">assert_eq!</span>(cum.fold(l..r), v[l..r].iter().sum());
+<a href=#273 id=273 data-nosnippet>273</a>                            }
+<a href=#274 id=274 data-nosnippet>274</a>                        }
+<a href=#275 id=275 data-nosnippet>275</a>                    }
+<a href=#276 id=276 data-nosnippet>276</a>                }
+<a href=#277 id=277 data-nosnippet>277</a>            };
+<a href=#278 id=278 data-nosnippet>278</a>        }
+<a href=#279 id=279 data-nosnippet>279</a>
+<a href=#280 id=280 data-nosnippet>280</a>        <span class="macro">define_test_function!</span>(test_i64, i64);
+<a href=#281 id=281 data-nosnippet>281</a>        <span class="macro">define_test_function!</span>(test_u64, u64);
 <a href=#282 id=282 data-nosnippet>282</a>
-<a href=#283 id=283 data-nosnippet>283</a>        test_i64(<span class="kw-2">&amp;mut </span>rng, -<span class="number">1000000000</span>, <span class="number">1000000000</span>);
-<a href=#284 id=284 data-nosnippet>284</a>        test_u64(<span class="kw-2">&amp;mut </span>rng, <span class="number">0</span>, <span class="number">1000000000</span>);
-<a href=#285 id=285 data-nosnippet>285</a>    }
-<a href=#286 id=286 data-nosnippet>286</a>
-<a href=#287 id=287 data-nosnippet>287</a>    <span class="attr">#[test]
-<a href=#288 id=288 data-nosnippet>288</a>    </span><span class="kw">fn </span>test_min_random() {
-<a href=#289 id=289 data-nosnippet>289</a>        <span class="macro">macro_rules!</span> define_test_function {
-<a href=#290 id=290 data-nosnippet>290</a>            (<span class="macro-nonterminal">$name</span>:ident, <span class="macro-nonterminal">$ty</span>:ident) =&gt; {
-<a href=#291 id=291 data-nosnippet>291</a>                <span class="kw">fn </span><span class="macro-nonterminal">$name</span>(rng: <span class="kw-2">&amp;mut </span>StdRng) {
-<a href=#292 id=292 data-nosnippet>292</a>                    <span class="kw">const </span>T: usize = <span class="number">100</span>;
-<a href=#293 id=293 data-nosnippet>293</a>                    <span class="kw">const </span>N: usize = <span class="number">100</span>;
-<a href=#294 id=294 data-nosnippet>294</a>
-<a href=#295 id=295 data-nosnippet>295</a>                    <span class="kw">for _ in </span><span class="number">0</span>..T {
-<a href=#296 id=296 data-nosnippet>296</a>                        <span class="kw">let </span>v = (<span class="number">0</span>..N).map(|<span class="kw">_</span>| rng.gen()).collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
-<a href=#297 id=297 data-nosnippet>297</a>                        <span class="kw">let </span>cum = CumulativeArray::&lt;OpMin&lt;<span class="kw">_</span>&gt;&gt;::new(v.clone());
-<a href=#298 id=298 data-nosnippet>298</a>                        <span class="kw">for </span>r <span class="kw">in </span><span class="number">0</span>..=v.len() {
-<a href=#299 id=299 data-nosnippet>299</a>                            <span class="kw">let </span>naive = <span class="kw-2">*</span>v[..r].iter().min().unwrap_or(<span class="kw-2">&amp;</span><span class="macro-nonterminal">$ty::MAX</span>);
-<a href=#300 id=300 data-nosnippet>300</a>                            <span class="macro">assert_eq!</span>(cum[r], naive);
-<a href=#301 id=301 data-nosnippet>301</a>                        }
-<a href=#302 id=302 data-nosnippet>302</a>                    }
-<a href=#303 id=303 data-nosnippet>303</a>                }
-<a href=#304 id=304 data-nosnippet>304</a>            };
-<a href=#305 id=305 data-nosnippet>305</a>        }
-<a href=#306 id=306 data-nosnippet>306</a>
-<a href=#307 id=307 data-nosnippet>307</a>        <span class="macro">define_test_function!</span>(test_i64, i64);
-<a href=#308 id=308 data-nosnippet>308</a>        <span class="macro">define_test_function!</span>(test_u64, u64);
-<a href=#309 id=309 data-nosnippet>309</a>
-<a href=#310 id=310 data-nosnippet>310</a>        <span class="kw">let </span><span class="kw-2">mut </span>rng = StdRng::seed_from_u64(<span class="number">30</span>);
-<a href=#311 id=311 data-nosnippet>311</a>        test_i64(<span class="kw-2">&amp;mut </span>rng);
-<a href=#312 id=312 data-nosnippet>312</a>        test_u64(<span class="kw-2">&amp;mut </span>rng);
-<a href=#313 id=313 data-nosnippet>313</a>    }
-<a href=#314 id=314 data-nosnippet>314</a>
-<a href=#315 id=315 data-nosnippet>315</a>    <span class="attr">#[test]
-<a href=#316 id=316 data-nosnippet>316</a>    </span><span class="kw">fn </span>test_max_random() {
-<a href=#317 id=317 data-nosnippet>317</a>        <span class="macro">macro_rules!</span> define_test_function {
-<a href=#318 id=318 data-nosnippet>318</a>            (<span class="macro-nonterminal">$name</span>:ident, <span class="macro-nonterminal">$ty</span>:ident) =&gt; {
-<a href=#319 id=319 data-nosnippet>319</a>                <span class="kw">fn </span><span class="macro-nonterminal">$name</span>(rng: <span class="kw-2">&amp;mut </span>StdRng) {
-<a href=#320 id=320 data-nosnippet>320</a>                    <span class="kw">const </span>T: usize = <span class="number">100</span>;
-<a href=#321 id=321 data-nosnippet>321</a>                    <span class="kw">const </span>N: usize = <span class="number">100</span>;
-<a href=#322 id=322 data-nosnippet>322</a>
-<a href=#323 id=323 data-nosnippet>323</a>                    <span class="kw">for _ in </span><span class="number">0</span>..T {
-<a href=#324 id=324 data-nosnippet>324</a>                        <span class="kw">let </span>v = (<span class="number">0</span>..N).map(|<span class="kw">_</span>| rng.gen()).collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
-<a href=#325 id=325 data-nosnippet>325</a>                        <span class="kw">let </span>cum = CumulativeArray::&lt;OpMax&lt;<span class="kw">_</span>&gt;&gt;::new(v.clone());
-<a href=#326 id=326 data-nosnippet>326</a>                        <span class="kw">for </span>r <span class="kw">in </span><span class="number">0</span>..=v.len() {
-<a href=#327 id=327 data-nosnippet>327</a>                            <span class="kw">let </span>naive = <span class="kw-2">*</span>v[..r].iter().max().unwrap_or(<span class="kw-2">&amp;</span><span class="macro-nonterminal">$ty::MIN</span>);
-<a href=#328 id=328 data-nosnippet>328</a>                            <span class="macro">assert_eq!</span>(cum[r], naive);
-<a href=#329 id=329 data-nosnippet>329</a>                        }
-<a href=#330 id=330 data-nosnippet>330</a>                    }
-<a href=#331 id=331 data-nosnippet>331</a>                }
-<a href=#332 id=332 data-nosnippet>332</a>            };
-<a href=#333 id=333 data-nosnippet>333</a>        }
-<a href=#334 id=334 data-nosnippet>334</a>
-<a href=#335 id=335 data-nosnippet>335</a>        <span class="macro">define_test_function!</span>(test_i64, i64);
-<a href=#336 id=336 data-nosnippet>336</a>        <span class="macro">define_test_function!</span>(test_u64, u64);
-<a href=#337 id=337 data-nosnippet>337</a>
-<a href=#338 id=338 data-nosnippet>338</a>        <span class="kw">let </span><span class="kw-2">mut </span>rng = StdRng::seed_from_u64(<span class="number">30</span>);
-<a href=#339 id=339 data-nosnippet>339</a>        test_i64(<span class="kw-2">&amp;mut </span>rng);
-<a href=#340 id=340 data-nosnippet>340</a>        test_u64(<span class="kw-2">&amp;mut </span>rng);
-<a href=#341 id=341 data-nosnippet>341</a>    }
-<a href=#342 id=342 data-nosnippet>342</a>}</code></pre></div></section></main></body></html>
+<a href=#283 id=283 data-nosnippet>283</a>        <span class="kw">let </span><span class="kw-2">mut </span>rng = StdRng::seed_from_u64(<span class="number">30</span>);
+<a href=#284 id=284 data-nosnippet>284</a>
+<a href=#285 id=285 data-nosnippet>285</a>        test_i64(<span class="kw-2">&amp;mut </span>rng, -<span class="number">1000000000</span>, <span class="number">1000000000</span>);
+<a href=#286 id=286 data-nosnippet>286</a>        test_u64(<span class="kw-2">&amp;mut </span>rng, <span class="number">0</span>, <span class="number">1000000000</span>);
+<a href=#287 id=287 data-nosnippet>287</a>    }
+<a href=#288 id=288 data-nosnippet>288</a>
+<a href=#289 id=289 data-nosnippet>289</a>    <span class="attr">#[test]
+<a href=#290 id=290 data-nosnippet>290</a>    </span><span class="kw">fn </span>test_min_random() {
+<a href=#291 id=291 data-nosnippet>291</a>        <span class="macro">macro_rules!</span> define_test_function {
+<a href=#292 id=292 data-nosnippet>292</a>            (<span class="macro-nonterminal">$name</span>:ident, <span class="macro-nonterminal">$ty</span>:ident) =&gt; {
+<a href=#293 id=293 data-nosnippet>293</a>                <span class="kw">fn </span><span class="macro-nonterminal">$name</span>(rng: <span class="kw-2">&amp;mut </span>StdRng) {
+<a href=#294 id=294 data-nosnippet>294</a>                    <span class="kw">const </span>T: usize = <span class="number">100</span>;
+<a href=#295 id=295 data-nosnippet>295</a>                    <span class="kw">const </span>N: usize = <span class="number">100</span>;
+<a href=#296 id=296 data-nosnippet>296</a>
+<a href=#297 id=297 data-nosnippet>297</a>                    <span class="kw">for _ in </span><span class="number">0</span>..T {
+<a href=#298 id=298 data-nosnippet>298</a>                        <span class="kw">let </span>v = (<span class="number">0</span>..N).map(|<span class="kw">_</span>| rng.random()).collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
+<a href=#299 id=299 data-nosnippet>299</a>                        <span class="kw">let </span>cum = CumulativeArray::&lt;OpMin&lt;<span class="kw">_</span>&gt;&gt;::new(v.clone());
+<a href=#300 id=300 data-nosnippet>300</a>                        <span class="kw">for </span>r <span class="kw">in </span><span class="number">0</span>..=v.len() {
+<a href=#301 id=301 data-nosnippet>301</a>                            <span class="kw">let </span>naive = <span class="kw-2">*</span>v[..r].iter().min().unwrap_or(<span class="kw-2">&amp;</span><span class="macro-nonterminal">$ty::MAX</span>);
+<a href=#302 id=302 data-nosnippet>302</a>                            <span class="macro">assert_eq!</span>(cum[r], naive);
+<a href=#303 id=303 data-nosnippet>303</a>                        }
+<a href=#304 id=304 data-nosnippet>304</a>                    }
+<a href=#305 id=305 data-nosnippet>305</a>                }
+<a href=#306 id=306 data-nosnippet>306</a>            };
+<a href=#307 id=307 data-nosnippet>307</a>        }
+<a href=#308 id=308 data-nosnippet>308</a>
+<a href=#309 id=309 data-nosnippet>309</a>        <span class="macro">define_test_function!</span>(test_i64, i64);
+<a href=#310 id=310 data-nosnippet>310</a>        <span class="macro">define_test_function!</span>(test_u64, u64);
+<a href=#311 id=311 data-nosnippet>311</a>
+<a href=#312 id=312 data-nosnippet>312</a>        <span class="kw">let </span><span class="kw-2">mut </span>rng = StdRng::seed_from_u64(<span class="number">30</span>);
+<a href=#313 id=313 data-nosnippet>313</a>        test_i64(<span class="kw-2">&amp;mut </span>rng);
+<a href=#314 id=314 data-nosnippet>314</a>        test_u64(<span class="kw-2">&amp;mut </span>rng);
+<a href=#315 id=315 data-nosnippet>315</a>    }
+<a href=#316 id=316 data-nosnippet>316</a>
+<a href=#317 id=317 data-nosnippet>317</a>    <span class="attr">#[test]
+<a href=#318 id=318 data-nosnippet>318</a>    </span><span class="kw">fn </span>test_max_random() {
+<a href=#319 id=319 data-nosnippet>319</a>        <span class="macro">macro_rules!</span> define_test_function {
+<a href=#320 id=320 data-nosnippet>320</a>            (<span class="macro-nonterminal">$name</span>:ident, <span class="macro-nonterminal">$ty</span>:ident) =&gt; {
+<a href=#321 id=321 data-nosnippet>321</a>                <span class="kw">fn </span><span class="macro-nonterminal">$name</span>(rng: <span class="kw-2">&amp;mut </span>StdRng) {
+<a href=#322 id=322 data-nosnippet>322</a>                    <span class="kw">const </span>T: usize = <span class="number">100</span>;
+<a href=#323 id=323 data-nosnippet>323</a>                    <span class="kw">const </span>N: usize = <span class="number">100</span>;
+<a href=#324 id=324 data-nosnippet>324</a>
+<a href=#325 id=325 data-nosnippet>325</a>                    <span class="kw">for _ in </span><span class="number">0</span>..T {
+<a href=#326 id=326 data-nosnippet>326</a>                        <span class="kw">let </span>v = (<span class="number">0</span>..N).map(|<span class="kw">_</span>| rng.random()).collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
+<a href=#327 id=327 data-nosnippet>327</a>                        <span class="kw">let </span>cum = CumulativeArray::&lt;OpMax&lt;<span class="kw">_</span>&gt;&gt;::new(v.clone());
+<a href=#328 id=328 data-nosnippet>328</a>                        <span class="kw">for </span>r <span class="kw">in </span><span class="number">0</span>..=v.len() {
+<a href=#329 id=329 data-nosnippet>329</a>                            <span class="kw">let </span>naive = <span class="kw-2">*</span>v[..r].iter().max().unwrap_or(<span class="kw-2">&amp;</span><span class="macro-nonterminal">$ty::MIN</span>);
+<a href=#330 id=330 data-nosnippet>330</a>                            <span class="macro">assert_eq!</span>(cum[r], naive);
+<a href=#331 id=331 data-nosnippet>331</a>                        }
+<a href=#332 id=332 data-nosnippet>332</a>                    }
+<a href=#333 id=333 data-nosnippet>333</a>                }
+<a href=#334 id=334 data-nosnippet>334</a>            };
+<a href=#335 id=335 data-nosnippet>335</a>        }
+<a href=#336 id=336 data-nosnippet>336</a>
+<a href=#337 id=337 data-nosnippet>337</a>        <span class="macro">define_test_function!</span>(test_i64, i64);
+<a href=#338 id=338 data-nosnippet>338</a>        <span class="macro">define_test_function!</span>(test_u64, u64);
+<a href=#339 id=339 data-nosnippet>339</a>
+<a href=#340 id=340 data-nosnippet>340</a>        <span class="kw">let </span><span class="kw-2">mut </span>rng = StdRng::seed_from_u64(<span class="number">30</span>);
+<a href=#341 id=341 data-nosnippet>341</a>        test_i64(<span class="kw-2">&amp;mut </span>rng);
+<a href=#342 id=342 data-nosnippet>342</a>        test_u64(<span class="kw-2">&amp;mut </span>rng);
+<a href=#343 id=343 data-nosnippet>343</a>    }
+<a href=#344 id=344 data-nosnippet>344</a>}</code></pre></div></section></main></body></html>
