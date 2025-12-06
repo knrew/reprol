@@ -4,7 +4,7 @@ description = "A Rust library for competitive programming, mainly targeting AtCo
 edition     = "2024"
 name        = "reprol"
 publish     = false
-version     = "2.0.0"
+version     = "1.0.0"
 
 [dependencies]
 
