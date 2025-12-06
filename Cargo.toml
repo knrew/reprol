@@ -1,7 +1,10 @@
 [package]
-edition = "2024"
-name    = "reprol"
-version = "0.1.0"
+authors     = ["knrew"]
+description = "A Rust library for competitive programming, mainly targeting AtCoder."
+edition     = "2024"
+name        = "reprol"
+publish     = false
+version     = "2.0.0"
 
 [dependencies]
 
