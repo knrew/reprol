@@ -8,6 +8,8 @@ pub mod cumulative_array_2d;
 pub mod disjoint_sparse_table;
 pub mod dsu;
 pub mod fenwick_tree;
+pub mod imos;
+pub mod imos2d;
 pub mod lazy_segment_tree;
 pub mod monoid_dsu;
 pub mod potentialized_dsu;
