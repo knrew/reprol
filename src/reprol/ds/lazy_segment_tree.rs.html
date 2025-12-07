@@ -80,7 +80,7 @@
 <a href=#80 id=80 data-nosnippet>80</a>
 <a href=#81 id=81 data-nosnippet>81</a><span class="kw">use crate</span>::{
 <a href=#82 id=82 data-nosnippet>82</a>    ops::{action::Action, monoid::Monoid},
-<a href=#83 id=83 data-nosnippet>83</a>    range::to_open_range,
+<a href=#83 id=83 data-nosnippet>83</a>    utils::range::to_half_open_index_range,
 <a href=#84 id=84 data-nosnippet>84</a>};
 <a href=#85 id=85 data-nosnippet>85</a>
 <a href=#86 id=86 data-nosnippet>86</a><span class="doccomment">/// 遅延評価付きセグメント木
@@ -161,7 +161,7 @@
 <a href=#161 id=161 data-nosnippet>161</a>    <span class="kw">where
 <a href=#162 id=162 data-nosnippet>162</a>        </span>A::Value: PartialEq,
 <a href=#163 id=163 data-nosnippet>163</a>    {
-<a href=#164 id=164 data-nosnippet>164</a>        <span class="kw">let </span>Range { start: l, end: r } = to_open_range(range, <span class="self">self</span>.len);
+<a href=#164 id=164 data-nosnippet>164</a>        <span class="kw">let </span>Range { start: l, end: r } = to_half_open_index_range(range, <span class="self">self</span>.len);
 <a href=#165 id=165 data-nosnippet>165</a>        <span class="macro">assert!</span>(r &lt;= <span class="self">self</span>.len);
 <a href=#166 id=166 data-nosnippet>166</a>        <span class="kw">if </span>l &gt;= r {
 <a href=#167 id=167 data-nosnippet>167</a>            <span class="kw">return</span>;
@@ -215,7 +215,7 @@
 <a href=#215 id=215 data-nosnippet>215</a>    <span class="kw">where
 <a href=#216 id=216 data-nosnippet>216</a>        </span>A::Value: PartialEq,
 <a href=#217 id=217 data-nosnippet>217</a>    {
-<a href=#218 id=218 data-nosnippet>218</a>        <span class="kw">let </span>Range { start: l, end: r } = to_open_range(range, <span class="self">self</span>.len);
+<a href=#218 id=218 data-nosnippet>218</a>        <span class="kw">let </span>Range { start: l, end: r } = to_half_open_index_range(range, <span class="self">self</span>.len);
 <a href=#219 id=219 data-nosnippet>219</a>        <span class="macro">assert!</span>(l &lt;= r);
 <a href=#220 id=220 data-nosnippet>220</a>        <span class="macro">assert!</span>(r &lt;= <span class="self">self</span>.len);
 <a href=#221 id=221 data-nosnippet>221</a>

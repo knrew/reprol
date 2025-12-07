@@ -40,7 +40,7 @@
 <a href=#40 id=40 data-nosnippet>40</a>    ops::{Index, Range, RangeBounds},
 <a href=#41 id=41 data-nosnippet>41</a>};
 <a href=#42 id=42 data-nosnippet>42</a>
-<a href=#43 id=43 data-nosnippet>43</a><span class="kw">use crate</span>::{ops::monoid::Monoid, range::to_open_range};
+<a href=#43 id=43 data-nosnippet>43</a><span class="kw">use crate</span>::{ops::monoid::Monoid, utils::range::to_half_open_index_range};
 <a href=#44 id=44 data-nosnippet>44</a>
 <a href=#45 id=45 data-nosnippet>45</a><span class="doccomment">/// セグメント木
 <a href=#46 id=46 data-nosnippet>46</a></span><span class="kw">pub struct </span>SegmentTree&lt;O: Monoid&gt; {
@@ -94,7 +94,7 @@
 <a href=#94 id=94 data-nosnippet>94</a>
 <a href=#95 id=95 data-nosnippet>95</a>    <span class="doccomment">/// 区間`range`の要素の総積を返す．
 <a href=#96 id=96 data-nosnippet>96</a>    </span><span class="kw">pub fn </span>fold(<span class="kw-2">&amp;</span><span class="self">self</span>, range: <span class="kw">impl </span>RangeBounds&lt;usize&gt;) -&gt; O::Value {
-<a href=#97 id=97 data-nosnippet>97</a>        <span class="kw">let </span>Range { start: l, end: r } = to_open_range(range, <span class="self">self</span>.len);
+<a href=#97 id=97 data-nosnippet>97</a>        <span class="kw">let </span>Range { start: l, end: r } = to_half_open_index_range(range, <span class="self">self</span>.len);
 <a href=#98 id=98 data-nosnippet>98</a>        <span class="macro">assert!</span>(l &lt;= r);
 <a href=#99 id=99 data-nosnippet>99</a>        <span class="macro">assert!</span>(r &lt;= <span class="self">self</span>.len);
 <a href=#100 id=100 data-nosnippet>100</a>

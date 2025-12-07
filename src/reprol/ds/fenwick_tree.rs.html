@@ -20,7 +20,7 @@
 <a href=#20 id=20 data-nosnippet>20</a>    ops::{Range, RangeBounds},
 <a href=#21 id=21 data-nosnippet>21</a>};
 <a href=#22 id=22 data-nosnippet>22</a>
-<a href=#23 id=23 data-nosnippet>23</a><span class="kw">use crate</span>::{ops::group::Group, range::to_open_range};
+<a href=#23 id=23 data-nosnippet>23</a><span class="kw">use crate</span>::{ops::group::Group, utils::range::to_half_open_index_range};
 <a href=#24 id=24 data-nosnippet>24</a>
 <a href=#25 id=25 data-nosnippet>25</a><span class="doccomment">/// Fenwick Tree
 <a href=#26 id=26 data-nosnippet>26</a></span><span class="kw">pub struct </span>FenwickTree&lt;O: Group&gt; {
@@ -81,7 +81,7 @@
 <a href=#81 id=81 data-nosnippet>81</a>
 <a href=#82 id=82 data-nosnippet>82</a>    <span class="doccomment">/// 区間`[l, r)`の区間積を返す．
 <a href=#83 id=83 data-nosnippet>83</a>    </span><span class="kw">pub fn </span>fold(<span class="kw-2">&amp;</span><span class="self">self</span>, range: <span class="kw">impl </span>RangeBounds&lt;usize&gt;) -&gt; O::Value {
-<a href=#84 id=84 data-nosnippet>84</a>        <span class="kw">let </span>Range { start: l, end: r } = to_open_range(range, <span class="self">self</span>.nodes.len());
+<a href=#84 id=84 data-nosnippet>84</a>        <span class="kw">let </span>Range { start: l, end: r } = to_half_open_index_range(range, <span class="self">self</span>.nodes.len());
 <a href=#85 id=85 data-nosnippet>85</a>        <span class="macro">assert!</span>(l &lt;= r);
 <a href=#86 id=86 data-nosnippet>86</a>        <span class="kw">let </span>cl = <span class="self">self</span>.cum(l);
 <a href=#87 id=87 data-nosnippet>87</a>        <span class="kw">let </span>cr = <span class="self">self</span>.cum(r);

@@ -17,7 +17,7 @@
 <a href=#17 id=17 data-nosnippet>17</a>
 <a href=#18 id=18 data-nosnippet>18</a></span><span class="kw">use </span>std::ops::{Index, Range, RangeBounds};
 <a href=#19 id=19 data-nosnippet>19</a>
-<a href=#20 id=20 data-nosnippet>20</a><span class="kw">use </span><span class="kw">crate</span>::range::to_open_range;
+<a href=#20 id=20 data-nosnippet>20</a><span class="kw">use </span><span class="kw">crate</span>::utils::range::to_half_open_index_range;
 <a href=#21 id=21 data-nosnippet>21</a>
 <a href=#22 id=22 data-nosnippet>22</a><span class="doccomment">/// 1次元配列上の区間加算を管理するいもす法
 <a href=#23 id=23 data-nosnippet>23</a></span><span class="kw">pub struct </span>Imos {
@@ -42,7 +42,7 @@
 <a href=#42 id=42 data-nosnippet>42</a>    </span><span class="kw">pub fn </span>add(<span class="kw-2">&amp;mut </span><span class="self">self</span>, range: <span class="kw">impl </span>RangeBounds&lt;usize&gt;, value: i64) {
 <a href=#43 id=43 data-nosnippet>43</a>        <span class="macro">assert!</span>(!<span class="self">self</span>.has_built);
 <a href=#44 id=44 data-nosnippet>44</a>
-<a href=#45 id=45 data-nosnippet>45</a>        <span class="kw">let </span>Range { start: l, end: r } = to_open_range(range, <span class="self">self</span>.n + <span class="number">1</span>);
+<a href=#45 id=45 data-nosnippet>45</a>        <span class="kw">let </span>Range { start: l, end: r } = to_half_open_index_range(range, <span class="self">self</span>.n + <span class="number">1</span>);
 <a href=#46 id=46 data-nosnippet>46</a>
 <a href=#47 id=47 data-nosnippet>47</a>        <span class="self">self</span>.imos[l] += value;
 <a href=#48 id=48 data-nosnippet>48</a>        <span class="self">self</span>.imos[r] -= value;
