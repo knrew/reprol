@@ -51,7 +51,7 @@ impl<T: IntervalMapElement> Interval<T> {
 
     /// 区間が`x`を含むかどうかを返す．
     pub fn contains(&self, x: &T) -> bool {
-        self.range.contains(&x)
+        self.range.contains(x)
     }
 
     /// 区間の長さを返す．
@@ -189,20 +189,21 @@ impl<K: IntervalMapElement, V: Clone + PartialEq> IntervalMap<K, V> {
             .inner
             .range(..new_interval.start_point_inteval())
             .next_back()
+            && interval.end() == new_interval.start()
+            && v == &value
         {
-            if interval.end() == new_interval.start() && v == &value {
-                let key = interval.clone();
-                *new_interval.start_mut() = key.start();
-                self.inner.remove(&key);
-            }
+            let key = interval.clone();
+            *new_interval.start_mut() = key.start();
+            self.inner.remove(&key);
         }
 
-        if let Some((interval, v)) = self.inner.range(new_interval.end_point_inteval()..).next() {
-            if interval.start() == new_interval.end() && v == &value {
-                let key = interval.clone();
-                *new_interval.end_mut() = key.end();
-                self.inner.remove(&key);
-            }
+        if let Some((interval, v)) = self.inner.range(new_interval.end_point_inteval()..).next()
+            && interval.start() == new_interval.end()
+            && v == &value
+        {
+            let key = interval.clone();
+            *new_interval.end_mut() = key.end();
+            self.inner.remove(&key);
         }
 
         self.inner.insert(new_interval, value);
@@ -224,28 +225,27 @@ impl<K: IntervalMapElement, V: Clone + PartialEq> IntervalMap<K, V> {
             .inner
             .range(..to_remove_interval.start_point_inteval())
             .next_back()
+            && interval.end() > to_remove_interval.start()
         {
-            if interval.end() > to_remove_interval.start() {
-                to_remove.push(interval.clone());
+            to_remove.push(interval.clone());
 
-                if interval.start() < to_remove_interval.start() {
-                    cut_subsets.push((
-                        Interval::new(interval.start()..to_remove_interval.start()),
-                        v.clone(),
-                    ));
-                }
+            if interval.start() < to_remove_interval.start() {
+                cut_subsets.push((
+                    Interval::new(interval.start()..to_remove_interval.start()),
+                    v.clone(),
+                ));
+            }
 
-                if interval.end() > to_remove_interval.end() {
-                    cut_subsets.push((
-                        Interval::new(to_remove_interval.end()..interval.end()),
-                        v.clone(),
-                    ));
-                }
+            if interval.end() > to_remove_interval.end() {
+                cut_subsets.push((
+                    Interval::new(to_remove_interval.end()..interval.end()),
+                    v.clone(),
+                ));
+            }
 
-                let interval = interval.intersect(&to_remove_interval);
-                if !interval.is_empty() {
-                    removed.push((interval, v.clone()));
-                }
+            let interval = interval.intersect(&to_remove_interval);
+            if !interval.is_empty() {
+                removed.push((interval, v.clone()));
             }
         }
 
@@ -287,22 +287,23 @@ impl<K: IntervalMapElement, V: Clone + PartialEq> IntervalMap<K, V> {
             return None;
         }
 
-        if let Some((interval, v)) = self.inner.range(..target.start_point_inteval()).next_back() {
-            if interval.end() >= target.end() {
-                return Some((interval, v));
-            }
+        if let Some((interval, v)) = self.inner.range(..target.start_point_inteval()).next_back()
+            && interval.end() >= target.end()
+        {
+            return Some((interval, v));
         }
 
-        if let Some((interval, v)) = self.inner.range(target.start_point_inteval()..).next() {
-            if interval.start() == target.start() && interval.end() >= target.end() {
-                return Some((interval, v));
-            }
+        if let Some((interval, v)) = self.inner.range(target.start_point_inteval()..).next()
+            && interval.start() == target.start()
+            && interval.end() >= target.end()
+        {
+            return Some((interval, v));
         }
 
         None
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = (&Interval<K>, &V)> + DoubleEndedIterator + '_ {
+    pub fn iter(&self) -> impl DoubleEndedIterator<Item = (&Interval<K>, &V)> + '_ {
         self.inner.iter()
     }
 }
