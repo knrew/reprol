@@ -20,7 +20,7 @@ use std::{
     ops::{Range, RangeBounds},
 };
 
-use crate::{ops::group::Group, range::to_open_range};
+use crate::{ops::group::Group, utils::range::to_half_open_index_range};
 
 /// Fenwick Tree
 pub struct FenwickTree<O: Group> {
@@ -81,7 +81,7 @@ impl<O: Group> FenwickTree<O> {
 
     /// 区間`[l, r)`の区間積を返す．
     pub fn fold(&self, range: impl RangeBounds<usize>) -> O::Value {
-        let Range { start: l, end: r } = to_open_range(range, self.nodes.len());
+        let Range { start: l, end: r } = to_half_open_index_range(range, self.nodes.len());
         assert!(l <= r);
         let cl = self.cum(l);
         let cr = self.cum(r);

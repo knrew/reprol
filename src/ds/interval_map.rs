@@ -28,6 +28,8 @@ use std::{
     ops::{Bound, Range, RangeBounds, Sub},
 };
 
+use crate::utils::range::RangeUtil;
+
 /// `IntervalMap`内部で扱う半開区間を表す構造体．
 #[repr(transparent)]
 #[derive(Clone, PartialEq, Eq)]
@@ -36,7 +38,7 @@ pub struct Interval<T> {
 }
 
 #[allow(private_bounds)]
-impl<T: IntervalMapElement> Interval<T> {
+impl<T: IntervalElement> Interval<T> {
     /// 半開区間`[range.start, range.end)`をそのまま保持する`Interval`を生成する．
     pub fn new(range: Range<T>) -> Self {
         Self { range }
@@ -45,7 +47,7 @@ impl<T: IntervalMapElement> Interval<T> {
     /// 任意の`RangeBounds`を半開区間に正規化して`Interval`を生成する．
     pub fn from_range_bounds(range_bounds: impl RangeBounds<T>) -> Self {
         Self {
-            range: T::to_half_open_range(range_bounds),
+            range: T::to_half_open_range(range_bounds, T::NEGATIVE_INFINITY, T::POSITIVE_INFINITY),
         }
     }
 
@@ -152,7 +154,7 @@ pub struct IntervalMap<K, V> {
 }
 
 #[allow(private_bounds)]
-impl<K: IntervalMapElement, V: Clone + PartialEq> IntervalMap<K, V> {
+impl<K: IntervalElement, V: Clone + PartialEq> IntervalMap<K, V> {
     /// 空の`IntervalMap`を生成する．
     pub fn new() -> Self {
         Self {
@@ -335,7 +337,7 @@ impl<K: Debug, V: Debug> Debug for IntervalMap<K, V> {
 pub struct IntervalSet<K>(IntervalMap<K, ()>);
 
 #[allow(private_bounds)]
-impl<K: IntervalMapElement> IntervalSet<K> {
+impl<K: IntervalElement> IntervalSet<K> {
     /// 空の集合を生成する．
     pub fn new() -> Self {
         Self(IntervalMap::new())
@@ -470,32 +472,16 @@ impl<K: Debug> Debug for IntervalSet<K> {
     }
 }
 
-trait IntervalMapElement: Ord + Copy {
-    /// 任意の`RangeBounds`を半開区間`[l, r)`に正規化する．
-    fn to_half_open_range(range_bounds: impl RangeBounds<Self>) -> Range<Self>;
+trait IntervalElement: Ord + Copy + RangeUtil {
+    const NEGATIVE_INFINITY: Self;
+    const POSITIVE_INFINITY: Self;
 }
 
 macro_rules! impl_interval_element {
     ($ty: ty) => {
-        impl IntervalMapElement for $ty {
-            fn to_half_open_range(range_bounds: impl RangeBounds<Self>) -> Range<Self> {
-                const NEGATIVE_INFINITY: $ty = <$ty>::MIN;
-                const POSITIVE_INFINITY: $ty = <$ty>::MAX;
-
-                let l = match range_bounds.start_bound() {
-                    Bound::Unbounded => NEGATIVE_INFINITY,
-                    Bound::Included(&x) => x,
-                    Bound::Excluded(&x) => x + 1,
-                };
-
-                let r = match range_bounds.end_bound() {
-                    Bound::Excluded(&x) => x,
-                    Bound::Included(&x) => x + 1,
-                    Bound::Unbounded => POSITIVE_INFINITY,
-                };
-
-                l..r
-            }
+        impl IntervalElement for $ty {
+            const NEGATIVE_INFINITY: $ty = <$ty>::MIN;
+            const POSITIVE_INFINITY: $ty = <$ty>::MAX;
         }
     };
 }

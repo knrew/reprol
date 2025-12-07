@@ -29,7 +29,7 @@ use std::{
 
 use crate::{
     ops::{group::Group, monoid::Monoid, op_add::OpAdd},
-    range::to_open_range,
+    utils::range::to_half_open_index_range,
 };
 
 /// 2次元累積積を管理するデータ構造
@@ -88,8 +88,9 @@ impl<O: Monoid> CumulativeArray2d<O> {
     where
         O: Group,
     {
-        let Range { start: il, end: ir } = to_open_range(row_range, self.data.len() - 1);
-        let Range { start: jl, end: jr } = to_open_range(col_range, self.data[0].len() - 1);
+        let Range { start: il, end: ir } = to_half_open_index_range(row_range, self.data.len() - 1);
+        let Range { start: jl, end: jr } =
+            to_half_open_index_range(col_range, self.data[0].len() - 1);
         assert!(il <= ir);
         assert!(jl <= jr);
         let mut res = self.op.op(&self.data[ir][jr], &self.data[il][jl]);

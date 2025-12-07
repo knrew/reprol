@@ -1,6 +1,6 @@
 use std::ops::{Range, RangeBounds};
 
-use crate::{ops::monoid::Monoid, range::to_open_range};
+use crate::{ops::monoid::Monoid, utils::range::to_half_open_index_range};
 
 /// なんか遅い？
 pub struct SparseTable<M: Monoid> {
@@ -39,7 +39,7 @@ where
     }
 
     pub fn fold(&self, range: impl RangeBounds<usize>) -> M::Value {
-        let Range { start: l, end: r } = to_open_range(range, self.n);
+        let Range { start: l, end: r } = to_half_open_index_range(range, self.n);
         if l >= r {
             return self.monoid.identity();
         }

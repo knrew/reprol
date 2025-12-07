@@ -17,7 +17,7 @@
 
 use std::ops::{Index, Range, RangeBounds};
 
-use crate::range::to_open_range;
+use crate::utils::range::to_half_open_index_range;
 
 /// 1次元配列上の区間加算を管理するいもす法
 pub struct Imos {
@@ -42,7 +42,7 @@ impl Imos {
     pub fn add(&mut self, range: impl RangeBounds<usize>, value: i64) {
         assert!(!self.has_built);
 
-        let Range { start: l, end: r } = to_open_range(range, self.n + 1);
+        let Range { start: l, end: r } = to_half_open_index_range(range, self.n + 1);
 
         self.imos[l] += value;
         self.imos[r] -= value;

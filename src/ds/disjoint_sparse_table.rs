@@ -23,7 +23,7 @@ use std::{
     ops::{Range, RangeBounds},
 };
 
-use crate::{ops::monoid::Monoid, range::to_open_range};
+use crate::{ops::monoid::Monoid, utils::range::to_half_open_index_range};
 
 pub struct DisjointSparseTable<O: Monoid> {
     len: usize,
@@ -82,7 +82,7 @@ impl<O: Monoid> DisjointSparseTable<O> {
         let Range {
             start: l,
             end: mut r,
-        } = to_open_range(range, self.len);
+        } = to_half_open_index_range(range, self.len);
         assert!(l <= r);
         assert!(r <= self.len);
         r += 1;
