@@ -1,6 +1,8 @@
 use std::ops::{Range, RangeBounds};
 
-use crate::{ds::sparse_table::SparseTable, ops::monoid::Monoid, range::to_open_range};
+use crate::{
+    ds::sparse_table::SparseTable, ops::monoid::Monoid, utils::range::to_half_open_index_range,
+};
 
 pub struct SparseTable2d<M: Monoid> {
     h: usize,
@@ -112,8 +114,8 @@ where
         row_range: impl RangeBounds<usize>,
         col_range: impl RangeBounds<usize>,
     ) -> M::Value {
-        let Range { start: il, end: ir } = to_open_range(row_range, self.h);
-        let Range { start: jl, end: jr } = to_open_range(col_range, self.w);
+        let Range { start: il, end: ir } = to_half_open_index_range(row_range, self.h);
+        let Range { start: jl, end: jr } = to_half_open_index_range(col_range, self.w);
         if il >= ir {
             return self.monoid.identity();
         }

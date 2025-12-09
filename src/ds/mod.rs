@@ -10,6 +10,7 @@ pub mod dsu;
 pub mod fenwick_tree;
 pub mod imos;
 pub mod imos2d;
+pub mod interval_map;
 pub mod lazy_segment_tree;
 pub mod monoid_dsu;
 pub mod potentialized_dsu;

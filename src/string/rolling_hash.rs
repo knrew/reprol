@@ -12,7 +12,7 @@
 
 use std::ops::{Range, RangeBounds};
 
-use crate::{math::modint::ModInt, range::to_open_range};
+use crate::{math::modint::ModInt, utils::range::to_half_open_index_range};
 
 pub struct RollingHash<const P: u64> {
     hash: Vec<ModInt<P>>,
@@ -37,7 +37,7 @@ impl<const P: u64> RollingHash<P> {
 
     ///　文字列の区間`[l, r)`のハッシュ値を計算する．
     pub fn get(&self, range: impl RangeBounds<usize>) -> u64 {
-        let Range { start: l, end: r } = to_open_range(range, self.hash.len() - 1);
+        let Range { start: l, end: r } = to_half_open_index_range(range, self.hash.len() - 1);
         assert!(l <= r);
         (self.hash[r] - self.hash[l] * self.pow[r - l]).value()
     }

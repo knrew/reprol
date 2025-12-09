@@ -40,7 +40,7 @@ use std::{
     ops::{Index, Range, RangeBounds},
 };
 
-use crate::{ops::monoid::Monoid, range::to_open_range};
+use crate::{ops::monoid::Monoid, utils::range::to_half_open_index_range};
 
 /// セグメント木
 pub struct SegmentTree<O: Monoid> {
@@ -94,7 +94,7 @@ impl<O: Monoid> SegmentTree<O> {
 
     /// 区間`range`の要素の総積を返す．
     pub fn fold(&self, range: impl RangeBounds<usize>) -> O::Value {
-        let Range { start: l, end: r } = to_open_range(range, self.len);
+        let Range { start: l, end: r } = to_half_open_index_range(range, self.len);
         assert!(l <= r);
         assert!(r <= self.len);
 

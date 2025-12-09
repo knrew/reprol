@@ -80,7 +80,7 @@ use std::{
 
 use crate::{
     ops::{action::Action, monoid::Monoid},
-    range::to_open_range,
+    utils::range::to_half_open_index_range,
 };
 
 /// 遅延評価付きセグメント木
@@ -161,7 +161,7 @@ impl<O: Monoid, A: Action<O>> LazySegmentTree<O, A> {
     where
         A::Value: PartialEq,
     {
-        let Range { start: l, end: r } = to_open_range(range, self.len);
+        let Range { start: l, end: r } = to_half_open_index_range(range, self.len);
         assert!(r <= self.len);
         if l >= r {
             return;
@@ -215,7 +215,7 @@ impl<O: Monoid, A: Action<O>> LazySegmentTree<O, A> {
     where
         A::Value: PartialEq,
     {
-        let Range { start: l, end: r } = to_open_range(range, self.len);
+        let Range { start: l, end: r } = to_half_open_index_range(range, self.len);
         assert!(l <= r);
         assert!(r <= self.len);
 
