@@ -259,12 +259,13 @@ mod tests {
     fn test_sum_random() {
         macro_rules! define_test_function {
             ($name:ident, $ty:ident) => {
-                fn $name(rng: &mut StdRng, mn: $ty, mx: $ty) {
-                    const T: usize = 100;
-                    const N: usize = 100;
+                fn $name(rng: &mut StdRng, range: Range<$ty>) {
+                    const T: usize = 200;
+                    const N_MAX: usize = 100;
                     for _ in 0..T {
-                        let v = (0..N)
-                            .map(|_| rng.random_range(mn..=mx))
+                        let n = rng.random_range(1..=N_MAX);
+                        let v = (0..n)
+                            .map(|_| rng.random_range(range.clone()))
                             .collect::<Vec<_>>();
                         let cum = CumulativeSum::new(v.clone());
                         for l in 0..v.len() {
@@ -277,13 +278,33 @@ mod tests {
             };
         }
 
+        define_test_function!(test_i8, i8);
+        define_test_function!(test_u8, u8);
+        define_test_function!(test_i16, i16);
+        define_test_function!(test_u16, u16);
+        define_test_function!(test_i32, i32);
+        define_test_function!(test_u32, u32);
         define_test_function!(test_i64, i64);
         define_test_function!(test_u64, u64);
+        define_test_function!(test_i128, i128);
+        define_test_function!(test_u128, u128);
+        define_test_function!(test_usize, usize);
 
         let mut rng = StdRng::seed_from_u64(30);
 
-        test_i64(&mut rng, -1000000000, 1000000000);
-        test_u64(&mut rng, 0, 1000000000);
+        test_i8(&mut rng, -10..10);
+        test_u8(&mut rng, 0..10);
+        test_i16(&mut rng, -1000..1000);
+        test_u16(&mut rng, 0..1000);
+        test_i32(&mut rng, -100000..100000);
+        test_u32(&mut rng, 0..100000);
+        test_i64(&mut rng, -1000000000..1000000000);
+        test_u64(&mut rng, 0..1000000000);
+        test_i64(&mut rng, -1000000000..1000000000);
+        test_u64(&mut rng, 0..1000000000);
+        test_i128(&mut rng, -10i128.pow(18)..10i128.pow(18));
+        test_u128(&mut rng, 0..10u128.pow(18));
+        test_usize(&mut rng, 0..1000000000);
     }
 
     #[test]
@@ -292,10 +313,11 @@ mod tests {
             ($name:ident, $ty:ident) => {
                 fn $name(rng: &mut StdRng) {
                     const T: usize = 100;
-                    const N: usize = 100;
+                    const N_MAX: usize = 100;
 
                     for _ in 0..T {
-                        let v = (0..N).map(|_| rng.random()).collect::<Vec<_>>();
+                        let n = rng.random_range(1..=N_MAX);
+                        let v = (0..n).map(|_| rng.random()).collect::<Vec<_>>();
                         let cum = CumulativeArray::<OpMin<_>>::new(v.clone());
                         for r in 0..=v.len() {
                             let naive = *v[..r].iter().min().unwrap_or(&$ty::MAX);
@@ -306,12 +328,29 @@ mod tests {
             };
         }
 
+        define_test_function!(test_i8, i8);
+        define_test_function!(test_u8, u8);
+        define_test_function!(test_i16, i16);
+        define_test_function!(test_u16, u16);
+        define_test_function!(test_i32, i32);
+        define_test_function!(test_u32, u32);
         define_test_function!(test_i64, i64);
         define_test_function!(test_u64, u64);
+        define_test_function!(test_i128, i128);
+        define_test_function!(test_u128, u128);
 
         let mut rng = StdRng::seed_from_u64(30);
+
+        test_i8(&mut rng);
+        test_u8(&mut rng);
+        test_i16(&mut rng);
+        test_u16(&mut rng);
+        test_i32(&mut rng);
+        test_u32(&mut rng);
         test_i64(&mut rng);
         test_u64(&mut rng);
+        test_i128(&mut rng);
+        test_u128(&mut rng);
     }
 
     #[test]
@@ -334,11 +373,28 @@ mod tests {
             };
         }
 
+        define_test_function!(test_i8, i8);
+        define_test_function!(test_u8, u8);
+        define_test_function!(test_i16, i16);
+        define_test_function!(test_u16, u16);
+        define_test_function!(test_i32, i32);
+        define_test_function!(test_u32, u32);
         define_test_function!(test_i64, i64);
         define_test_function!(test_u64, u64);
+        define_test_function!(test_i128, i128);
+        define_test_function!(test_u128, u128);
 
         let mut rng = StdRng::seed_from_u64(30);
+
+        test_i8(&mut rng);
+        test_u8(&mut rng);
+        test_i16(&mut rng);
+        test_u16(&mut rng);
+        test_i32(&mut rng);
+        test_u32(&mut rng);
         test_i64(&mut rng);
         test_u64(&mut rng);
+        test_i128(&mut rng);
+        test_u128(&mut rng);
     }
 }
