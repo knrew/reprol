@@ -80,9 +80,9 @@
 <a href=#80 id=80 data-nosnippet>80</a>    <span class="kw">where
 <a href=#81 id=81 data-nosnippet>81</a>        </span>O: Group,
 <a href=#82 id=82 data-nosnippet>82</a>    {
-<a href=#83 id=83 data-nosnippet>83</a>        <span class="macro">debug_assert!</span>(<span class="self">self</span>.inner.len() &gt; <span class="number">0</span>);
-<a href=#84 id=84 data-nosnippet>84</a>        <span class="macro">debug_assert!</span>(<span class="self">self</span>.inner[<span class="number">0</span>].len() &gt; <span class="number">0</span>);
-<a href=#85 id=85 data-nosnippet>85</a>        <span class="macro">debug_assert!</span>(<span class="self">self</span>.inner[<span class="number">0</span>][<span class="number">0</span>].len() &gt; <span class="number">0</span>);
+<a href=#83 id=83 data-nosnippet>83</a>        <span class="macro">debug_assert!</span>(<span class="self">self</span>.inner.is_empty());
+<a href=#84 id=84 data-nosnippet>84</a>        <span class="macro">debug_assert!</span>(<span class="self">self</span>.inner[<span class="number">0</span>].is_empty());
+<a href=#85 id=85 data-nosnippet>85</a>        <span class="macro">debug_assert!</span>(<span class="self">self</span>.inner[<span class="number">0</span>][<span class="number">0</span>].is_empty());
 <a href=#86 id=86 data-nosnippet>86</a>
 <a href=#87 id=87 data-nosnippet>87</a>        <span class="kw">let </span>Range { start: il, end: ir } = to_half_open_index_range(i_range, <span class="self">self</span>.inner.len() - <span class="number">1</span>);
 <a href=#88 id=88 data-nosnippet>88</a>        <span class="kw">let </span>Range { start: jl, end: jr } =
@@ -125,7 +125,7 @@
 <a href=#125 id=125 data-nosnippet>125</a>            .into_iter()
 <a href=#126 id=126 data-nosnippet>126</a>            .map(|vi| {
 <a href=#127 id=127 data-nosnippet>127</a>                vi.into_iter()
-<a href=#128 id=128 data-nosnippet>128</a>                    .map(|vij| vij.into_iter().map(|vijk| vijk).collect())
+<a href=#128 id=128 data-nosnippet>128</a>                    .map(|vij| vij.into_iter().collect())
 <a href=#129 id=129 data-nosnippet>129</a>                    .collect()
 <a href=#130 id=130 data-nosnippet>130</a>            })
 <a href=#131 id=131 data-nosnippet>131</a>            .collect();
@@ -152,7 +152,7 @@
 <a href=#152 id=152 data-nosnippet>152</a>            .into_iter()
 <a href=#153 id=153 data-nosnippet>153</a>            .map(|vi| {
 <a href=#154 id=154 data-nosnippet>154</a>                vi.into_iter()
-<a href=#155 id=155 data-nosnippet>155</a>                    .map(|vij| vij.into_iter().map(|vijk| vijk).collect())
+<a href=#155 id=155 data-nosnippet>155</a>                    .map(|vij| vij.into_iter().collect())
 <a href=#156 id=156 data-nosnippet>156</a>                    .collect()
 <a href=#157 id=157 data-nosnippet>157</a>            })
 <a href=#158 id=158 data-nosnippet>158</a>            .collect();
