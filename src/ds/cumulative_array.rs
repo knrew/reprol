@@ -300,8 +300,6 @@ mod tests {
         test_u32(&mut rng, 0..100000);
         test_i64(&mut rng, -1000000000..1000000000);
         test_u64(&mut rng, 0..1000000000);
-        test_i64(&mut rng, -1000000000..1000000000);
-        test_u64(&mut rng, 0..1000000000);
         test_i128(&mut rng, -10i128.pow(18)..10i128.pow(18));
         test_u128(&mut rng, 0..10u128.pow(18));
         test_usize(&mut rng, 0..1000000000);
