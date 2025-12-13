@@ -34,7 +34,7 @@ use crate::{
 
 /// 2次元累積積を管理するデータ構造
 pub struct CumulativeArray2d<O: Monoid> {
-    data: Vec<Vec<O::Value>>,
+    inner: Vec<Vec<O::Value>>,
     op: O,
 }
 
@@ -58,25 +58,25 @@ impl<O: Monoid> CumulativeArray2d<O> {
 
         let row_len = v.len();
         let col_len = v[0].len();
-        let mut data: Vec<Vec<O::Value>> = (0..row_len + 1)
+        let mut inner: Vec<Vec<O::Value>> = (0..row_len + 1)
             .map(|_| (0..col_len + 1).map(|_| op.identity()).collect())
             .collect();
 
         for i in 0..row_len {
             for j in 0..col_len {
-                let mut datum = op.op(&data[i + 1][j], &data[i][j + 1]);
-                datum = op.op(&datum, &op.inv(&data[i][j]));
+                let mut datum = op.op(&inner[i + 1][j], &inner[i][j + 1]);
+                datum = op.op(&datum, &op.inv(&inner[i][j]));
                 datum = op.op(&datum, &v[i][j]);
-                data[i + 1][j + 1] = datum;
+                inner[i + 1][j + 1] = datum;
             }
         }
 
-        Self { data, op }
+        Self { inner, op }
     }
 
     /// `[0, i) x [0, j)`の累積積を返す．
     pub fn get(&self, i: usize, j: usize) -> &O::Value {
-        &self.data[i][j]
+        &self.inner[i][j]
     }
 
     /// 区間`[il, ir) x [jl, jr)`の累積積を返す．
@@ -88,14 +88,17 @@ impl<O: Monoid> CumulativeArray2d<O> {
     where
         O: Group,
     {
-        let Range { start: il, end: ir } = to_half_open_index_range(row_range, self.data.len() - 1);
+        debug_assert!(self.inner.len() > 0);
+        debug_assert!(self.inner[0].len() > 0);
+        let Range { start: il, end: ir } =
+            to_half_open_index_range(row_range, self.inner.len() - 1);
         let Range { start: jl, end: jr } =
-            to_half_open_index_range(col_range, self.data[0].len() - 1);
+            to_half_open_index_range(col_range, self.inner[0].len() - 1);
         assert!(il <= ir);
         assert!(jl <= jr);
-        let mut res = self.op.op(&self.data[ir][jr], &self.data[il][jl]);
-        res = self.op.op(&res, &self.op.inv(&self.data[il][jr]));
-        res = self.op.op(&res, &self.op.inv(&self.data[ir][jl]));
+        let mut res = self.op.op(&self.inner[ir][jr], &self.inner[il][jl]);
+        res = self.op.op(&res, &self.op.inv(&self.inner[il][jr]));
+        res = self.op.op(&res, &self.op.inv(&self.inner[ir][jl]));
         res
     }
 }
@@ -109,12 +112,38 @@ where
     }
 }
 
+impl<O, const N: usize, const M: usize> From<([[O::Value; M]; N], O)> for CumulativeArray2d<O>
+where
+    O: Group,
+{
+    fn from((v, op): ([[O::Value; M]; N], O)) -> Self {
+        let v: Vec<Vec<O::Value>> = v
+            .into_iter()
+            .map(|vi| vi.into_iter().map(|vij| vij).collect())
+            .collect();
+        CumulativeArray2d::from((v, op))
+    }
+}
+
 impl<O> From<Vec<Vec<O::Value>>> for CumulativeArray2d<O>
 where
     O: Group + Default,
 {
     fn from(v: Vec<Vec<O::Value>>) -> Self {
         CumulativeArray2d::new(v)
+    }
+}
+
+impl<O, const N: usize, const M: usize> From<[[O::Value; M]; N]> for CumulativeArray2d<O>
+where
+    O: Group + Default,
+{
+    fn from(v: [[O::Value; M]; N]) -> Self {
+        let v: Vec<Vec<O::Value>> = v
+            .into_iter()
+            .map(|vi| vi.into_iter().map(|vij| vij).collect())
+            .collect();
+        CumulativeArray2d::from(v)
     }
 }
 
@@ -125,7 +154,7 @@ where
 {
     fn clone(&self) -> Self {
         Self {
-            data: self.data.clone(),
+            inner: self.inner.clone(),
             op: self.op.clone(),
         }
     }
@@ -137,7 +166,7 @@ where
 {
     type Output = O::Value;
     fn index(&self, [i, j]: [usize; 2]) -> &Self::Output {
-        &self.data[i][j]
+        &self.inner[i][j]
     }
 }
 
@@ -147,7 +176,7 @@ where
 {
     type Output = O::Value;
     fn index(&self, (i, j): (usize, usize)) -> &Self::Output {
-        &self.data[i][j]
+        &self.inner[i][j]
     }
 }
 
@@ -157,7 +186,7 @@ where
     O::Value: Debug,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_list().entries(self.data.iter()).finish()
+        f.debug_list().entries(self.inner.iter()).finish()
     }
 }
 

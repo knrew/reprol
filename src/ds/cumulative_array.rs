@@ -69,7 +69,7 @@ use crate::{
 
 /// 累積積を管理するデータ構造
 pub struct CumulativeArray<O: Monoid> {
-    data: Vec<O::Value>,
+    inner: Vec<O::Value>,
     op: O,
 }
 
@@ -85,17 +85,17 @@ impl<O: Monoid> CumulativeArray<O> {
     /// 演算`op`を明示的に渡して配列の累積配列を構築する．
     pub fn with_op(v: Vec<O::Value>, op: O) -> Self {
         assert!(!v.is_empty());
-        let mut data = Vec::with_capacity(v.len() + 1);
-        data.push(op.identity());
+        let mut inner = Vec::with_capacity(v.len() + 1);
+        inner.push(op.identity());
         for i in 0..v.len() {
-            data.push(op.op(&data[i], &v[i]));
+            inner.push(op.op(&inner[i], &v[i]));
         }
-        Self { data, op }
+        Self { inner, op }
     }
 
     /// 累積配列の`r`番目の要素を返す(区間`[0, r)`の区間積を返す)．
     pub fn get(&self, r: usize) -> &O::Value {
-        &self.data[r]
+        &self.inner[r]
     }
 
     /// `[l, r)`の区間積を返す．
@@ -103,13 +103,13 @@ impl<O: Monoid> CumulativeArray<O> {
     where
         O: Group,
     {
-        let Range { start: l, end: r } = to_half_open_index_range(range, self.data.len() - 1);
+        let Range { start: l, end: r } = to_half_open_index_range(range, self.inner.len() - 1);
         assert!(l <= r);
-        self.op.op(&self.data[r], &self.op.inv(&self.data[l]))
+        self.op.op(&self.inner[r], &self.op.inv(&self.inner[l]))
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &O::Value> {
-        self.data.iter()
+        self.inner.iter()
     }
 }
 
@@ -159,7 +159,7 @@ where
 {
     fn clone(&self) -> Self {
         Self {
-            data: self.data.clone(),
+            inner: self.inner.clone(),
             op: self.op.clone(),
         }
     }
@@ -168,7 +168,7 @@ where
 impl<O: Monoid> Index<usize> for CumulativeArray<O> {
     type Output = O::Value;
     fn index(&self, index: usize) -> &Self::Output {
-        &self.data[index]
+        &self.inner[index]
     }
 }
 
@@ -177,7 +177,7 @@ impl<'a, O: Monoid> IntoIterator for &'a CumulativeArray<O> {
     type Item = &'a O::Value;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.data.iter()
+        self.inner.iter()
     }
 }
 
@@ -186,7 +186,7 @@ impl<O: Monoid> IntoIterator for CumulativeArray<O> {
     type Item = O::Value;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.data.into_iter()
+        self.inner.into_iter()
     }
 }
 
@@ -196,7 +196,7 @@ where
     O::Value: Debug,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_list().entries(self.data.iter()).finish()
+        f.debug_list().entries(self.inner.iter()).finish()
     }
 }
 
