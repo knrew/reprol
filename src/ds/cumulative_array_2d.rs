@@ -88,8 +88,8 @@ impl<O: Monoid> CumulativeArray2d<O> {
     where
         O: Group,
     {
-        debug_assert!(self.inner.len() > 0);
-        debug_assert!(self.inner[0].len() > 0);
+        debug_assert!(!self.inner.is_empty());
+        debug_assert!(!self.inner[0].is_empty());
         let Range { start: il, end: ir } =
             to_half_open_index_range(row_range, self.inner.len() - 1);
         let Range { start: jl, end: jr } =
@@ -117,10 +117,7 @@ where
     O: Group,
 {
     fn from((v, op): ([[O::Value; M]; N], O)) -> Self {
-        let v: Vec<Vec<O::Value>> = v
-            .into_iter()
-            .map(|vi| vi.into_iter().map(|vij| vij).collect())
-            .collect();
+        let v: Vec<Vec<O::Value>> = v.into_iter().map(|vi| vi.into_iter().collect()).collect();
         CumulativeArray2d::from((v, op))
     }
 }
@@ -139,10 +136,7 @@ where
     O: Group + Default,
 {
     fn from(v: [[O::Value; M]; N]) -> Self {
-        let v: Vec<Vec<O::Value>> = v
-            .into_iter()
-            .map(|vi| vi.into_iter().map(|vij| vij).collect())
-            .collect();
+        let v: Vec<Vec<O::Value>> = v.into_iter().map(|vi| vi.into_iter().collect()).collect();
         CumulativeArray2d::from(v)
     }
 }
