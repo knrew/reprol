@@ -5,6 +5,7 @@ pub mod bitset;
 pub mod cartesian_tree;
 pub mod cumulative_array;
 pub mod cumulative_array_2d;
+pub mod cumulative_array_3d;
 pub mod disjoint_sparse_table;
 pub mod dsu;
 pub mod fenwick_tree;
