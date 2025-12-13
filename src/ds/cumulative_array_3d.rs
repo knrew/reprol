@@ -80,9 +80,9 @@ impl<O: Monoid> CumulativeArray3d<O> {
     where
         O: Group,
     {
-        debug_assert!(self.inner.is_empty());
-        debug_assert!(self.inner[0].is_empty());
-        debug_assert!(self.inner[0][0].is_empty());
+        debug_assert!(!self.inner.is_empty());
+        debug_assert!(!self.inner[0].is_empty());
+        debug_assert!(!self.inner[0][0].is_empty());
 
         let Range { start: il, end: ir } = to_half_open_index_range(i_range, self.inner.len() - 1);
         let Range { start: jl, end: jr } =
