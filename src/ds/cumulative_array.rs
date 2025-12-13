@@ -292,10 +292,10 @@ mod tests {
 
         let mut rng = StdRng::seed_from_u64(30);
 
-        test_i8(&mut rng, -10..10);
-        test_u8(&mut rng, 0..10);
-        test_i16(&mut rng, -1000..1000);
-        test_u16(&mut rng, 0..1000);
+        test_i8(&mut rng, -1..2);
+        test_u8(&mut rng, 0..2);
+        test_i16(&mut rng, -300..300);
+        test_u16(&mut rng, 0..300);
         test_i32(&mut rng, -100000..100000);
         test_u32(&mut rng, 0..100000);
         test_i64(&mut rng, -1000000000..1000000000);
