@@ -33,7 +33,7 @@ impl<O: Monoid> CumulativeArray3d<O> {
         assert!(!v.is_empty());
         assert!(!v[0].is_empty());
         assert!(!v[0][0].is_empty());
-        debug_assert!(v.iter().all(|vi| vi.len() == v[0].len() && vi.iter().all(|vij|vij.len()==v[0][0].len()) ));
+        debug_assert!(v.iter().all(|vi| vi.len() == v[0].len() && vi.iter().all(|vij|vij.len() == v[0][0].len())));
 
         let i_len = v.len();
         let j_len = v[0].len();
