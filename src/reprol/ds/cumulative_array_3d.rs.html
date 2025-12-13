@@ -80,9 +80,9 @@
 <a href=#80 id=80 data-nosnippet>80</a>    <span class="kw">where
 <a href=#81 id=81 data-nosnippet>81</a>        </span>O: Group,
 <a href=#82 id=82 data-nosnippet>82</a>    {
-<a href=#83 id=83 data-nosnippet>83</a>        <span class="macro">debug_assert!</span>(<span class="self">self</span>.inner.is_empty());
-<a href=#84 id=84 data-nosnippet>84</a>        <span class="macro">debug_assert!</span>(<span class="self">self</span>.inner[<span class="number">0</span>].is_empty());
-<a href=#85 id=85 data-nosnippet>85</a>        <span class="macro">debug_assert!</span>(<span class="self">self</span>.inner[<span class="number">0</span>][<span class="number">0</span>].is_empty());
+<a href=#83 id=83 data-nosnippet>83</a>        <span class="macro">debug_assert!</span>(!<span class="self">self</span>.inner.is_empty());
+<a href=#84 id=84 data-nosnippet>84</a>        <span class="macro">debug_assert!</span>(!<span class="self">self</span>.inner[<span class="number">0</span>].is_empty());
+<a href=#85 id=85 data-nosnippet>85</a>        <span class="macro">debug_assert!</span>(!<span class="self">self</span>.inner[<span class="number">0</span>][<span class="number">0</span>].is_empty());
 <a href=#86 id=86 data-nosnippet>86</a>
 <a href=#87 id=87 data-nosnippet>87</a>        <span class="kw">let </span>Range { start: il, end: ir } = to_half_open_index_range(i_range, <span class="self">self</span>.inner.len() - <span class="number">1</span>);
 <a href=#88 id=88 data-nosnippet>88</a>        <span class="kw">let </span>Range { start: jl, end: jr } =
