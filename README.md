@@ -16,7 +16,7 @@ git clone https://github.com/knrew/reprol
 2. Cargo.tomlのdependenciesに追加
 ```toml
 [dependencies]
-reprol = {path = "../reprol/"}
+reprol = {path = "/path/to/reprol/"}
 ```
 
 ## バンドル
