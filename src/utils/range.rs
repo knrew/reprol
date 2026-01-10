@@ -1,10 +1,10 @@
 use std::ops::{Bound, Range, RangeBounds};
 
 pub trait RangeUtil: Sized {
-    /// 任意の`RangeBounds`を半開区間`[l, r)`に正規化する．
+    /// 任意の整数要素の`RangeBounds`を半開区間`[l, r)`に正規化する．
     fn to_half_open_range(
         range: impl RangeBounds<Self>,
-        negative_infinity: Self,
+        min: Self,
         positive_infinity: Self,
     ) -> Range<Self>;
 }
@@ -14,18 +14,24 @@ macro_rules! impl_rangeutil {
         impl RangeUtil for $ty {
             fn to_half_open_range(
                 range_bounds: impl RangeBounds<Self>,
-                negative_infinity: Self,
+                min: Self,
                 positive_infinity: Self,
             ) -> Range<Self> {
                 let l = match range_bounds.start_bound() {
-                    Bound::Unbounded => negative_infinity,
+                    Bound::Unbounded => min,
                     Bound::Included(&x) => x,
-                    Bound::Excluded(&x) => x + 1,
+                    Bound::Excluded(&x) => {
+                        debug_assert!(x != <$ty>::MAX);
+                        x + 1
+                    }
                 };
 
                 let r = match range_bounds.end_bound() {
                     Bound::Excluded(&x) => x,
-                    Bound::Included(&x) => x + 1,
+                    Bound::Included(&x) => {
+                        debug_assert!(x != <$ty>::MAX);
+                        x + 1
+                    }
                     Bound::Unbounded => positive_infinity,
                 };
 

@@ -29,31 +29,31 @@ use std::{
 use crate::utils::range::RangeUtil;
 
 /// 二分探索を行うためのトレイト．
-pub trait Bisect<I> {
+pub trait Bisect<T> {
     /// 単調性のある関数`f`に対して，
     /// 範囲内の数`x`であって，`f(x)`が`false`となる最小の$x$を返す．
     /// ただし，すべての`x`に対して`f(x)`が`true`である場合は，範囲の上限を返す．
-    fn bisect(self, f: impl FnMut(&I) -> bool) -> I;
+    fn bisect(self, f: impl FnMut(&T) -> bool) -> T;
 }
 
-impl<I, B> Bisect<I> for B
+impl<T, B> Bisect<T> for B
 where
-    I: BisectInteger,
-    B: RangeBounds<I>,
+    T: BisectInteger,
+    B: RangeBounds<T>,
 {
-    fn bisect(self, mut f: impl FnMut(&I) -> bool) -> I {
+    fn bisect(self, mut f: impl FnMut(&T) -> bool) -> T {
         let Range {
             start: mut ok,
             end: mut ng,
-        } = I::to_half_open_range(self, I::MIN, I::INFINITY);
+        } = T::to_half_open_range(self, T::MIN, T::INFINITY);
 
-        assert!(!I::is_empty_range(&ok, &ng));
+        assert!(!T::is_empty_range(&ok, &ng));
 
         if !f(&ok) {
             return ok;
         }
 
-        while let Some(mid) = I::midpoint(&ok, &ng) {
+        while let Some(mid) = T::midpoint(&ok, &ng) {
             if f(&mid) {
                 ok = mid;
             } else {
@@ -211,10 +211,12 @@ impl_bisect_integer_for! {
 
 #[cfg(test)]
 mod tests {
-    use crate::utils::test_utils::initialize_rng;
+    use std::ops::Bound;
+
     use rand::Rng;
 
     use super::*;
+    use crate::utils::test_utils::initialize_rng;
 
     #[test]
     fn test_lower_bound() {
@@ -392,8 +394,6 @@ mod tests {
 
     #[test]
     fn test_bisect_range_bounds_variants() {
-        use std::ops::Bound::{Excluded, Included};
-
         assert_eq!((0..10).bisect(|&x| x < 7), 7);
         assert_eq!((0..=10).bisect(|&x| x < 10), 10);
         assert_eq!((10..20).bisect(|&x| x < 100), 20);
@@ -409,7 +409,7 @@ mod tests {
             (..=upper_unbounded_end).bisect(|&x| x < inclusive_target),
             inclusive_target
         );
-        let custom: (std::ops::Bound<i32>, std::ops::Bound<i32>) = (Excluded(0), Included(10));
+        let custom: (Bound<i32>, Bound<i32>) = (Bound::Excluded(0), Bound::Included(10));
         assert_eq!(custom.bisect(|&x| x < 5), 5);
     }
 }

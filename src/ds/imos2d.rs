@@ -87,8 +87,11 @@ impl Imos2d {
 
 #[cfg(test)]
 mod tests {
+    use rand::Rng;
+
+    use crate::utils::test_utils::initialize_rng;
+
     use super::Imos2d;
-    use rand::{Rng, SeedableRng, rngs::StdRng};
 
     #[test]
     fn test_basic() {
@@ -106,7 +109,7 @@ mod tests {
 
     #[test]
     fn test_random() {
-        let mut rng = StdRng::seed_from_u64(30);
+        let mut rng = initialize_rng();
 
         const T: usize = 100;
         const H_MAX: usize = 100;

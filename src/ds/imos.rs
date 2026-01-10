@@ -76,8 +76,11 @@ impl Index<usize> for Imos {
 
 #[cfg(test)]
 mod tests {
-    use super::Imos;
-    use rand::{Rng, SeedableRng, rngs::StdRng};
+    use rand::Rng;
+
+    use crate::utils::test_utils::initialize_rng;
+
+    use super::*;
 
     #[test]
     fn test_basic() {
@@ -95,7 +98,7 @@ mod tests {
 
     #[test]
     fn test_random() {
-        let mut rng = StdRng::seed_from_u64(1123);
+        let mut rng = initialize_rng();
 
         const T: usize = 100;
         const N_MAX: usize = 100;

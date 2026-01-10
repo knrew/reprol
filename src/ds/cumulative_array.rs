@@ -205,9 +205,12 @@ pub type CumulativeSum<T> = CumulativeArray<OpAdd<T>>;
 
 #[cfg(test)]
 mod tests {
-    use rand::{Rng, SeedableRng, rngs::StdRng};
+    use rand::Rng;
 
-    use crate::ops::{op_max::OpMax, op_min::OpMin};
+    use crate::{
+        ops::{op_max::OpMax, op_min::OpMin},
+        utils::test_utils::initialize_rng,
+    };
 
     use super::*;
 
@@ -259,7 +262,7 @@ mod tests {
     fn test_sum_random() {
         macro_rules! define_test_function {
             ($name:ident, $ty:ident) => {
-                fn $name(rng: &mut StdRng, range: Range<$ty>) {
+                fn $name(rng: &mut impl Rng, range: Range<$ty>) {
                     const T: usize = 200;
                     const N_MAX: usize = 100;
                     for _ in 0..T {
@@ -290,7 +293,7 @@ mod tests {
         define_test_function!(test_u128, u128);
         define_test_function!(test_usize, usize);
 
-        let mut rng = StdRng::seed_from_u64(30);
+        let mut rng = initialize_rng();
 
         test_i8(&mut rng, -1..2);
         test_u8(&mut rng, 0..2);
@@ -309,7 +312,7 @@ mod tests {
     fn test_min_random() {
         macro_rules! define_test_function {
             ($name:ident, $ty:ident) => {
-                fn $name(rng: &mut StdRng) {
+                fn $name(rng: &mut impl Rng) {
                     const T: usize = 100;
                     const N_MAX: usize = 100;
 
@@ -337,7 +340,7 @@ mod tests {
         define_test_function!(test_i128, i128);
         define_test_function!(test_u128, u128);
 
-        let mut rng = StdRng::seed_from_u64(30);
+        let mut rng = initialize_rng();
 
         test_i8(&mut rng);
         test_u8(&mut rng);
@@ -355,7 +358,7 @@ mod tests {
     fn test_max_random() {
         macro_rules! define_test_function {
             ($name:ident, $ty:ident) => {
-                fn $name(rng: &mut StdRng) {
+                fn $name(rng: &mut impl Rng) {
                     const T: usize = 100;
                     const N: usize = 100;
 
@@ -382,7 +385,7 @@ mod tests {
         define_test_function!(test_i128, i128);
         define_test_function!(test_u128, u128);
 
-        let mut rng = StdRng::seed_from_u64(30);
+        let mut rng = initialize_rng();
 
         test_i8(&mut rng);
         test_u8(&mut rng);
