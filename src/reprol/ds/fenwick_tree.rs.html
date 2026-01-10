@@ -147,9 +147,9 @@
 <a href=#147 id=147 data-nosnippet>147</a>
 <a href=#148 id=148 data-nosnippet>148</a><span class="attr">#[cfg(test)]
 <a href=#149 id=149 data-nosnippet>149</a></span><span class="kw">mod </span>tests {
-<a href=#150 id=150 data-nosnippet>150</a>    <span class="kw">use </span>rand::{Rng, SeedableRng, rngs::StdRng};
+<a href=#150 id=150 data-nosnippet>150</a>    <span class="kw">use </span>rand::Rng;
 <a href=#151 id=151 data-nosnippet>151</a>
-<a href=#152 id=152 data-nosnippet>152</a>    <span class="kw">use </span><span class="kw">crate</span>::ops::op_add::OpAdd;
+<a href=#152 id=152 data-nosnippet>152</a>    <span class="kw">use crate</span>::{ops::op_add::OpAdd, utils::test_utils::initialize_rng};
 <a href=#153 id=153 data-nosnippet>153</a>
 <a href=#154 id=154 data-nosnippet>154</a>    <span class="kw">use super</span>::<span class="kw-2">*</span>;
 <a href=#155 id=155 data-nosnippet>155</a>
@@ -173,7 +173,7 @@
 <a href=#173 id=173 data-nosnippet>173</a>    </span><span class="kw">fn </span>test_sum_random() {
 <a href=#174 id=174 data-nosnippet>174</a>        <span class="macro">macro_rules!</span> define_test_function {
 <a href=#175 id=175 data-nosnippet>175</a>            (<span class="macro-nonterminal">$name</span>:ident, <span class="macro-nonterminal">$ty</span>:ident) =&gt; {
-<a href=#176 id=176 data-nosnippet>176</a>                <span class="kw">fn </span><span class="macro-nonterminal">$name</span>(rng: <span class="kw-2">&amp;mut </span>StdRng, mn: <span class="macro-nonterminal">$ty</span>, mx: <span class="macro-nonterminal">$ty</span>) {
+<a href=#176 id=176 data-nosnippet>176</a>                <span class="kw">fn </span><span class="macro-nonterminal">$name</span>(rng: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>Rng, mn: <span class="macro-nonterminal">$ty</span>, mx: <span class="macro-nonterminal">$ty</span>) {
 <a href=#177 id=177 data-nosnippet>177</a>                    <span class="kw">const </span>T: usize = <span class="number">100</span>;
 <a href=#178 id=178 data-nosnippet>178</a>                    <span class="kw">const </span>N: usize = <span class="number">100</span>;
 <a href=#179 id=179 data-nosnippet>179</a>                    <span class="kw">const </span>Q: usize = <span class="number">1000</span>;
@@ -209,7 +209,7 @@
 <a href=#209 id=209 data-nosnippet>209</a>        <span class="macro">define_test_function!</span>(test_i64, i64);
 <a href=#210 id=210 data-nosnippet>210</a>        <span class="macro">define_test_function!</span>(test_u64, u64);
 <a href=#211 id=211 data-nosnippet>211</a>
-<a href=#212 id=212 data-nosnippet>212</a>        <span class="kw">let </span><span class="kw-2">mut </span>rng = StdRng::seed_from_u64(<span class="number">30</span>);
+<a href=#212 id=212 data-nosnippet>212</a>        <span class="kw">let </span><span class="kw-2">mut </span>rng = initialize_rng();
 <a href=#213 id=213 data-nosnippet>213</a>
 <a href=#214 id=214 data-nosnippet>214</a>        test_i64(<span class="kw-2">&amp;mut </span>rng, -<span class="number">1000000000</span>, <span class="number">1000000000</span>);
 <a href=#215 id=215 data-nosnippet>215</a>        test_u64(<span class="kw-2">&amp;mut </span>rng, <span class="number">0</span>, <span class="number">1000000000</span>);
