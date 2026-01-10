@@ -126,7 +126,8 @@ macro_rules! bitset {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rand::{Rng, SeedableRng, rngs::StdRng};
+    use crate::utils::test_utils::initialize_rng;
+    use rand::Rng;
     use std::cmp::Ordering;
 
     #[test]
@@ -323,7 +324,7 @@ mod tests {
             }
         }
 
-        let mut rng = StdRng::seed_from_u64(30);
+        let mut rng = initialize_rng();
         test::<1>(&mut rng);
         test::<2>(&mut rng);
         test::<10>(&mut rng);

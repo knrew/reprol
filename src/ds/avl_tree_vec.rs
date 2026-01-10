@@ -671,7 +671,10 @@ impl<T> DoubleEndedIterator for IntoIter<T> {
 
 #[cfg(test)]
 mod tests {
+    use rand::Rng;
+
     use super::*;
+    use crate::utils::test_utils::initialize_rng;
 
     /// AVL木が正しく平衡であるかを確認する
     fn is_balanced<T>(tree: &AvlTreeVec<T>) -> bool {
@@ -932,9 +935,7 @@ mod tests {
 
     #[test]
     fn test_insert_and_remove_random_small() {
-        use rand::{Rng, SeedableRng, rngs::StdRng};
-
-        let mut rng = StdRng::seed_from_u64(42);
+        let mut rng = initialize_rng();
 
         for _ in 0..5 {
             let mut avl: AvlTreeVec<i32> = AvlTreeVec::new();
@@ -969,9 +970,7 @@ mod tests {
 
     #[test]
     fn test_insert_and_remove_random_large() {
-        use rand::{Rng, SeedableRng, rngs::StdRng};
-
-        let mut rng = StdRng::seed_from_u64(42);
+        let mut rng = initialize_rng();
 
         for _ in 0..10 {
             let mut avl: AvlTreeVec<i32> = AvlTreeVec::new();

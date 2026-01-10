@@ -211,7 +211,8 @@ impl_bisect_integer_for! {
 
 #[cfg(test)]
 mod tests {
-    use rand::{Rng, SeedableRng, rngs::StdRng};
+    use crate::utils::test_utils::initialize_rng;
+    use rand::Rng;
 
     use super::*;
 
@@ -364,7 +365,7 @@ mod tests {
 
         macro_rules! define_test_function {
             ($name:ident, $ty:ident) => {
-                fn $name(rng: &mut StdRng, mn: $ty, mx: $ty) {
+                fn $name(rng: &mut impl Rng, mn: $ty, mx: $ty) {
                     const T: usize = 100;
                     const N: usize = 1000;
                     for _ in 0..T {
@@ -383,7 +384,7 @@ mod tests {
         define_test_function!(test_i64, i64);
         define_test_function!(test_u64, u64);
 
-        let mut rng = StdRng::seed_from_u64(30);
+        let mut rng = initialize_rng();
 
         test_i64(&mut rng, -1000, 1000);
         test_u64(&mut rng, 0, 1000);
