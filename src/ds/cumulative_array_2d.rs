@@ -189,7 +189,9 @@ pub type CumulativeSum2d<T> = CumulativeArray2d<OpAdd<T>>;
 
 #[cfg(test)]
 mod tests {
-    use rand::{Rng, SeedableRng, rngs::StdRng};
+    use rand::Rng;
+
+    use crate::utils::test_utils::initialize_rng;
 
     use super::*;
 
@@ -237,7 +239,7 @@ mod tests {
     fn test_sum_random() {
         macro_rules! define_test_function {
             ($name:ident, $ty:ident) => {
-                fn $name(rng: &mut StdRng, range: Range<$ty>) {
+                fn $name(rng: &mut impl Rng, range: Range<$ty>) {
                     const T: usize = 100;
                     const N_MAX: usize = 50;
 
@@ -270,7 +272,7 @@ mod tests {
         define_test_function!(test_i64, i64);
         define_test_function!(test_u64, u64);
 
-        let mut rng = StdRng::seed_from_u64(30);
+        let mut rng = initialize_rng();
         test_i64(&mut rng, -1000000000..1000000000);
         test_u64(&mut rng, 0..1000000000);
     }

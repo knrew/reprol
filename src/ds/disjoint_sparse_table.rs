@@ -139,9 +139,12 @@ where
 
 #[cfg(test)]
 mod tests {
-    use rand::{Rng, SeedableRng, rngs::StdRng};
+    use rand::Rng;
 
-    use crate::ops::{op_add::OpAdd, op_max::OpMax, op_min::OpMin};
+    use crate::{
+        ops::{op_add::OpAdd, op_max::OpMax, op_min::OpMin},
+        utils::test_utils::initialize_rng,
+    };
 
     use super::*;
 
@@ -171,7 +174,7 @@ mod tests {
     fn test_sum_random() {
         macro_rules! define_test_function {
             ($name:ident, $ty:ident) => {
-                fn $name(rng: &mut StdRng, mn: $ty, mx: $ty) {
+                fn $name(rng: &mut impl Rng, mn: $ty, mx: $ty) {
                     const T: usize = 100;
                     const N: usize = 100;
 
@@ -193,7 +196,7 @@ mod tests {
         define_test_function!(test_i64, i64);
         define_test_function!(test_u64, u64);
 
-        let mut rng = StdRng::seed_from_u64(30);
+        let mut rng = initialize_rng();
         test_i64(&mut rng, -1000000000, 1000000000);
         test_u64(&mut rng, 0, 1000000000);
     }
@@ -202,7 +205,7 @@ mod tests {
     fn test_min_random() {
         macro_rules! define_test_function {
             ($name:ident, $ty:ident) => {
-                fn $name(rng: &mut StdRng) {
+                fn $name(rng: &mut impl Rng) {
                     const T: usize = 100;
                     const N: usize = 100;
 
@@ -223,7 +226,7 @@ mod tests {
         define_test_function!(test_i64, i64);
         define_test_function!(test_u64, u64);
 
-        let mut rng = StdRng::seed_from_u64(30);
+        let mut rng = initialize_rng();
         test_i64(&mut rng);
         test_u64(&mut rng);
     }
@@ -232,7 +235,7 @@ mod tests {
     fn test_max_random() {
         macro_rules! define_test_function {
             ($name:ident, $ty:ident) => {
-                fn $name(rng: &mut StdRng) {
+                fn $name(rng: &mut impl Rng) {
                     const T: usize = 100;
                     const N: usize = 100;
 
@@ -253,7 +256,7 @@ mod tests {
         define_test_function!(test_i64, i64);
         define_test_function!(test_u64, u64);
 
-        let mut rng = StdRng::seed_from_u64(30);
+        let mut rng = initialize_rng();
         test_i64(&mut rng);
         test_u64(&mut rng);
     }

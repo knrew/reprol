@@ -6,6 +6,8 @@
 
 use std::{cmp::Ordering, fmt::Debug, mem::swap, ops::Index};
 
+#[repr(transparent)]
+#[derive(Clone)]
 pub struct SuffixArray {
     sa: Vec<usize>,
 }

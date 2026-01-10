@@ -53,9 +53,9 @@ where
                 for j in 0..n {
                     if let (Some(cost_ik), Some(cost_kj)) = (&self.costs[i][k], &self.costs[k][j]) {
                         let new_cost = cost_ik.clone() + cost_kj.clone();
-                        if !self.costs[i][j]
+                        if self.costs[i][j]
                             .as_ref()
-                            .is_some_and(|cost_ij| cost_ij <= &new_cost)
+                            .is_none_or(|cost_ij| &new_cost < cost_ij)
                         {
                             self.costs[i][j] = Some(new_cost);
                         }
@@ -69,10 +69,7 @@ where
     /// コストの計算は行われない．
     pub fn add_edge(&mut self, u: usize, v: usize, c: C) {
         self.has_build = false;
-        if !self.costs[u][v]
-            .as_ref()
-            .is_some_and(|cost_uv| cost_uv <= &c)
-        {
+        if self.costs[u][v].as_ref().is_none_or(|cost_uv| &c < cost_uv) {
             self.costs[u][v] = Some(c);
         }
     }
@@ -85,19 +82,16 @@ where
 
         let n = self.costs.len();
 
-        if !self.costs[u][v]
-            .as_ref()
-            .is_some_and(|cost_uv| cost_uv <= &c)
-        {
+        if self.costs[u][v].as_ref().is_none_or(|cost_uv| &c < cost_uv) {
             self.costs[u][v] = Some(c.clone());
 
             for s in 0..n {
                 for g in 0..n {
                     if let (Some(cost_su), Some(cost_vg)) = (&self.costs[s][u], &self.costs[v][g]) {
                         let new_cost = cost_su.clone() + c.clone() + cost_vg.clone();
-                        if !self.costs[s][g]
+                        if self.costs[s][g]
                             .as_ref()
-                            .is_some_and(|cost_sg| cost_sg <= &new_cost)
+                            .is_none_or(|cost_sg| &new_cost < cost_sg)
                         {
                             self.costs[s][g] = Some(new_cost);
                         }

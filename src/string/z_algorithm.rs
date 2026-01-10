@@ -14,9 +14,10 @@
 
 use std::{fmt::Debug, ops::Index};
 
+#[repr(transparent)]
 #[derive(Clone)]
 pub struct ZAlgorithm {
-    z: Vec<usize>,
+    z_array: Vec<usize>,
 }
 
 impl ZAlgorithm {
@@ -24,7 +25,7 @@ impl ZAlgorithm {
     /// `z[i]`: `s`と`s[i..n)`の最長共通接頭辞(LCP)の長さ．
     pub fn new<T: PartialEq>(s: &[T]) -> Self {
         if s.is_empty() {
-            return Self { z: vec![] };
+            return Self { z_array: vec![] };
         }
 
         let n = s.len();
@@ -52,22 +53,22 @@ impl ZAlgorithm {
             j -= k;
         }
 
-        Self { z }
+        Self { z_array: z }
     }
 
     pub fn get(&self, index: usize) -> Option<&usize> {
-        self.z.get(index)
+        self.z_array.get(index)
     }
 
     pub fn iter(&self) -> std::slice::Iter<'_, usize> {
-        self.z.iter()
+        self.z_array.iter()
     }
 }
 
 impl Index<usize> for ZAlgorithm {
     type Output = usize;
     fn index(&self, index: usize) -> &Self::Output {
-        &self.z[index]
+        &self.z_array[index]
     }
 }
 
@@ -75,7 +76,7 @@ impl IntoIterator for ZAlgorithm {
     type IntoIter = std::vec::IntoIter<usize>;
     type Item = usize;
     fn into_iter(self) -> Self::IntoIter {
-        self.z.into_iter()
+        self.z_array.into_iter()
     }
 }
 
@@ -89,7 +90,7 @@ impl<'a> IntoIterator for &'a ZAlgorithm {
 
 impl Debug for ZAlgorithm {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_list().entries(self.z.iter()).finish()
+        f.debug_list().entries(self.z_array.iter()).finish()
     }
 }
 

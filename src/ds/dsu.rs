@@ -94,7 +94,10 @@ impl Dsu {
 
 #[cfg(test)]
 mod tests {
+    use rand::Rng;
+
     use super::*;
+    use crate::utils::test_utils::initialize_rng;
 
     #[test]
     fn test() {
@@ -139,9 +142,7 @@ mod tests {
 
     #[test]
     fn test_merge_and_connected_random() {
-        use rand::{Rng, SeedableRng, rngs::StdRng};
-
-        let mut rng = StdRng::seed_from_u64(30);
+        let mut rng = initialize_rng();
 
         const T: usize = 10;
         const N: usize = 100;

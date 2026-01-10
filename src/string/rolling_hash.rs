@@ -45,13 +45,13 @@ impl<const P: u64> RollingHash<P> {
 
 #[cfg(test)]
 mod tests {
+    use rand::Rng;
+
     use super::*;
+    use crate::utils::test_utils::initialize_rng;
 
     #[test]
     fn test_rolling_hash() {
-        use crate::utils::test_utils::initialize_rng;
-        use rand::Rng;
-
         let testcases = vec![
             "abcabc",
             "aabcaabxaaaz",
