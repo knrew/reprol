@@ -267,7 +267,8 @@ pub type ModInt1000000007 = ModInt<1000000007>;
 mod tests {
     use std::ops::RangeInclusive;
 
-    use rand::{Rng, SeedableRng, rngs::StdRng};
+    use crate::utils::test_utils::initialize_rng;
+    use rand::Rng;
 
     const P1: u64 = 998244353;
     const P2: u64 = 1000000007;
@@ -276,8 +277,6 @@ mod tests {
 
     const RANGE_I64: RangeInclusive<i64> = i64::MIN..=i64::MAX;
     const RANGE_U64: RangeInclusive<u64> = u64::MIN..=u64::MAX;
-
-    const SEED: u64 = 30;
 
     // ランダムテストの試行回数
     const Q: usize = 10000;
@@ -294,7 +293,7 @@ mod tests {
             assert_eq!(0.add_mod(0, 3), 0);
             assert_eq!(7.add_mod(7, 7), 0);
 
-            let mut rng = StdRng::seed_from_u64(SEED);
+            let mut rng = initialize_rng();
             for _ in 0..Q {
                 // u64
                 {
@@ -324,7 +323,7 @@ mod tests {
             assert_eq!((-5).sub_mod(3, 11), 3);
             assert_eq!(0.sub_mod(0, 13), 0);
 
-            let mut rng = StdRng::seed_from_u64(SEED);
+            let mut rng = initialize_rng();
             for _ in 0..Q {
                 // u64
                 {
@@ -354,7 +353,7 @@ mod tests {
             assert_eq!(0.mul_mod(12345, 7), 0);
             assert_eq!(123.mul_mod(456, 1), 0);
 
-            let mut rng = StdRng::seed_from_u64(SEED);
+            let mut rng = initialize_rng();
             for _ in 0..Q {
                 // u64
                 {
@@ -383,7 +382,7 @@ mod tests {
             assert_eq!(9.div_mod(2, 5), 2);
             assert_eq!(0.div_mod(1, 7), 0);
 
-            let mut rng = StdRng::seed_from_u64(SEED);
+            let mut rng = initialize_rng();
             for _ in 0..Q {
                 // u64
                 {
@@ -417,7 +416,7 @@ mod tests {
             assert_eq!((-1).neg_mod(5), 1);
             assert_eq!(10.neg_mod(7), 4);
 
-            let mut rng = StdRng::seed_from_u64(SEED);
+            let mut rng = initialize_rng();
             for _ in 0..Q {
                 // u64
                 {
@@ -463,7 +462,7 @@ mod tests {
                 res
             }
 
-            let mut rng = StdRng::seed_from_u64(SEED);
+            let mut rng = initialize_rng();
             for _ in 0..Q {
                 // u64
                 {
@@ -493,7 +492,7 @@ mod tests {
             assert_eq!(1.inv_mod(5), 1);
             assert_eq!(7.inv_mod(13), 2);
 
-            let mut rng = StdRng::seed_from_u64(SEED);
+            let mut rng = initialize_rng();
             for _ in 0..Q {
                 // u64
                 {
@@ -526,7 +525,7 @@ mod tests {
                     (lhs % P + rhs % P) % P
                 );
             }
-            let mut rng = StdRng::seed_from_u64(SEED);
+            let mut rng = initialize_rng();
             for _ in 0..Q {
                 let lhs = rng.random_range(RANGE_U64);
                 let rhs = rng.random_range(RANGE_U64);
@@ -544,7 +543,7 @@ mod tests {
                     (P + lhs % P - rhs % P) % P
                 );
             }
-            let mut rng = StdRng::seed_from_u64(SEED);
+            let mut rng = initialize_rng();
             for _ in 0..Q {
                 let lhs = rng.random_range(RANGE_U64);
                 let rhs = rng.random_range(RANGE_U64);
@@ -562,7 +561,7 @@ mod tests {
                     (lhs % P * (rhs % P)) % P
                 );
             }
-            let mut rng = StdRng::seed_from_u64(SEED);
+            let mut rng = initialize_rng();
             for _ in 0..Q {
                 let lhs = rng.random_range(RANGE_U64);
                 let rhs = rng.random_range(RANGE_U64);
@@ -580,7 +579,7 @@ mod tests {
                     lhs % P * (rhs % P).inv_mod(P) % P
                 );
             }
-            let mut rng = StdRng::seed_from_u64(SEED);
+            let mut rng = initialize_rng();
             for _ in 0..Q {
                 let lhs = rng.random_range(RANGE_U64);
                 let rhs = rng.random_range(RANGE_U64);
@@ -595,7 +594,7 @@ mod tests {
             fn check<const P: u64>(lhs: u64) {
                 assert_eq!((-ModInt::<P>::new(lhs) + ModInt::<P>::new(lhs)).value(), 0);
             }
-            let mut rng = StdRng::seed_from_u64(SEED);
+            let mut rng = initialize_rng();
             for _ in 0..Q {
                 let lhs = rng.random_range(RANGE_U64);
                 check::<P1>(lhs);
@@ -623,7 +622,7 @@ mod tests {
                     naive_pow(base, exp, P)
                 );
             }
-            let mut rng = StdRng::seed_from_u64(SEED);
+            let mut rng = initialize_rng();
             for _ in 0..Q {
                 let base = rng.random_range(RANGE_U64);
                 let exp = rng.random_range(0..100);
@@ -641,7 +640,7 @@ mod tests {
                     1
                 );
             }
-            let mut rng = StdRng::seed_from_u64(SEED);
+            let mut rng = initialize_rng();
             for _ in 0..Q {
                 let lhs = rng.random_range(RANGE_U64);
                 check::<P1>(lhs);

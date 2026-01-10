@@ -49,7 +49,8 @@ mod tests {
 
     #[test]
     fn test_rolling_hash() {
-        use rand::{Rng, SeedableRng, rngs::StdRng};
+        use crate::utils::test_utils::initialize_rng;
+        use rand::Rng;
 
         let testcases = vec![
             "abcabc",
@@ -71,7 +72,7 @@ mod tests {
         const MOD1: u64 = 1000000007;
         const MOD2: u64 = 2147483647;
 
-        let mut rng = StdRng::seed_from_u64(30);
+        let mut rng = initialize_rng();
 
         for s in testcases {
             let rh1 = RollingHash::<MOD1>::new(s.as_bytes(), rng.random_range(1..MOD1));
