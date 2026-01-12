@@ -63,17 +63,23 @@ impl<T> CartesianTree<T> {
         Self::from_iter(v)
     }
 
-    /// 配列`v`と任意の比較子`cmp`からCartesian Treeを構築する．
-    /// `cmp`で比較し小さい要素が上位(根側)に配置される．
-    pub fn new_by(v: Vec<T>, cmp: impl FnMut(&T, &T) -> Ordering) -> Self {
-        Self::from_iter_by(v, cmp)
+    /// 配列`v`と任意の比較子`compare`からCartesian Treeを構築する．
+    /// `compare`で比較し小さい要素が上位(根側)に配置される．
+    pub fn new_by(v: Vec<T>, compare: impl FnMut(&T, &T) -> Ordering) -> Self {
+        Self::from_iter_by(v, compare)
     }
 
-    /// イテレータと任意の比較子`cmp`からCartesian Treeを構築する．
+    /// 配列`v`とキー抽出関数`f`からCartesian Treeを構築する．
+    /// `f`が返すキーで比較し小さい要素が上位(根側)に配置される．
+    pub fn new_by_key<K: Ord>(v: Vec<T>, f: impl FnMut(&T) -> K) -> Self {
+        Self::from_iter_by_key(v, f)
+    }
+
+    /// イテレータと任意の比較子`compare`からCartesian Treeを構築する．
     /// `cmp`で比較し小さい要素が上位(根側)に配置される．
     pub fn from_iter_by(
         iter: impl IntoIterator<Item = T>,
-        mut cmp: impl FnMut(&T, &T) -> Ordering,
+        mut compare: impl FnMut(&T, &T) -> Ordering,
     ) -> Self {
         let mut nodes = iter.into_iter().map(Node::new).collect::<Vec<_>>();
 
@@ -87,7 +93,7 @@ impl<T> CartesianTree<T> {
             let mut p = None;
 
             while let Some(j) = match stack.last() {
-                Some(&j) if cmp(&nodes[i].value, &nodes[j].value).is_lt() => stack.pop(),
+                Some(&j) if compare(&nodes[i].value, &nodes[j].value).is_lt() => stack.pop(),
                 _ => None,
             } {
                 nodes[j].right = p;
@@ -110,6 +116,15 @@ impl<T> CartesianTree<T> {
         let root = stack[0];
 
         Self { nodes, root }
+    }
+
+    /// イテレータ`iter`とキー抽出関数`f`からCartesian Treeを構築する．
+    /// `f`が返すキーで比較し小さい要素が上位(根側)に配置される．
+    pub fn from_iter_by_key<K: Ord>(
+        iter: impl IntoIterator<Item = T>,
+        mut f: impl FnMut(&T) -> K,
+    ) -> Self {
+        Self::from_iter_by(iter, |x, y| f(x).cmp(&f(y)))
     }
 
     /// ノード`v`の値を返す．
