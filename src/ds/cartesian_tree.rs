@@ -1,46 +1,99 @@
 //! Cartesian Tree
 //!
 //! 数列`v`に対応するCartesian Treeを構築する．
-//! 各ノードは配列のインデックスを持ち，親ノードの値が子ノード以下となるヒープ条件を満たす．
+//! 各ノードは配列のインデックスと値を保持し，親ノードの値が子ノード以下となるヒープ条件を満たす．
 //!
 //! # 使用例
 //! ```
 //! use reprol::ds::cartesian_tree::CartesianTree;
 //!
 //! let v = vec![3, 1, 4, 1, 5];
-//! let tree = CartesianTree::new(&v);
-//! assert_eq!(tree.root(), 1);
-//! assert_eq!(tree.left(1), Some(0));
-//! assert_eq!(tree.right(1), Some(3));
+//! let tree = CartesianTree::new(v);
+//! assert_eq!(tree.root(), (1, &1));
+//! assert_eq!(tree.left(1), Some((0, &3)));
+//! assert_eq!(tree.right(1), Some((3, &1)));
 //! ```
 
 /// Cartesian Treeの内部ノード．
-/// 親子関係として配列のインデックスを保持する．
-#[derive(Debug, Clone, Default)]
-struct Node {
+/// 配列の値と親子関係を保持する．
+#[derive(Debug, Clone)]
+struct Node<T> {
+    value: T,
     parent: Option<usize>,
     left: Option<usize>,
     right: Option<usize>,
 }
 
+impl<T> Node<T> {
+    fn new(value: T) -> Self {
+        Self {
+            value,
+            parent: None,
+            left: None,
+            right: None,
+        }
+    }
+}
+
 /// 数列から構築したCartesian Tree．
-/// 各ノードは元配列のインデックスを表す．
+/// 各ノードは元配列のインデックスと値を表す．
 #[derive(Debug, Clone)]
-pub struct CartesianTree {
-    nodes: Vec<Node>,
+pub struct CartesianTree<T> {
+    nodes: Vec<Node<T>>,
     root: usize,
 }
 
-impl CartesianTree {
-    /// 数列`v`からCartesian Treeを構築する．
-    ///
-    /// # Panics
-    /// - `v`が空のとき
-    pub fn new<T: PartialOrd>(v: &[T]) -> Self {
-        assert!(!v.is_empty());
+impl<T: PartialOrd> CartesianTree<T> {
+    /// 配列`v`からCartesian Treeを構築する．
+    pub fn new(v: Vec<T>) -> Self {
+        Self::from_iter(v.into_iter())
+    }
 
-        let n = v.len();
-        let mut nodes = vec![Node::default(); n];
+    /// ノード`v`の値を返す．
+    pub fn get(&self, v: usize) -> &T {
+        &self.nodes[v].value
+    }
+
+    /// 根に対応するインデックスと値を返す．
+    pub fn root(&self) -> (usize, &T) {
+        (self.root, &self.nodes[self.root].value)
+    }
+
+    /// ノード`v`の親のインデックスと値を返す．存在しない場合は`None`．
+    pub fn parent(&self, v: usize) -> Option<(usize, &T)> {
+        self.nodes[v].parent.map(|p| (p, &self.nodes[p].value))
+    }
+
+    /// ノード`v`の左子のインデックスと値を返す．存在しない場合は`None`．
+    pub fn left(&self, v: usize) -> Option<(usize, &T)> {
+        self.nodes[v].left.map(|l| (l, &self.nodes[l].value))
+    }
+
+    /// ノード`v`の右子のインデックスと値を返す．存在しない場合は`None`．
+    pub fn right(&self, v: usize) -> Option<(usize, &T)> {
+        self.nodes[v].right.map(|r| (r, &self.nodes[r].value))
+    }
+}
+
+impl<T: PartialOrd> From<Vec<T>> for CartesianTree<T> {
+    fn from(v: Vec<T>) -> Self {
+        Self::from_iter(v.into_iter())
+    }
+}
+
+impl<T: PartialOrd, const N: usize> From<[T; N]> for CartesianTree<T> {
+    fn from(v: [T; N]) -> Self {
+        Self::from_iter(v.into_iter())
+    }
+}
+
+impl<T: PartialOrd> FromIterator<T> for CartesianTree<T> {
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+        let mut nodes = iter.into_iter().map(Node::new).collect::<Vec<_>>();
+
+        assert!(!nodes.is_empty());
+
+        let n = nodes.len();
 
         let mut stack: Vec<usize> = Vec::with_capacity(n);
 
@@ -48,7 +101,7 @@ impl CartesianTree {
             let mut p = None;
 
             while let Some(j) = match stack.last() {
-                Some(&j) if v[j] > v[i] => stack.pop(),
+                Some(&j) if nodes[j].value > nodes[i].value => stack.pop(),
                 _ => None,
             } {
                 nodes[j].right = p;
@@ -72,26 +125,6 @@ impl CartesianTree {
 
         Self { nodes, root }
     }
-
-    /// 根に対応するインデックスを返す．
-    pub fn root(&self) -> usize {
-        self.root
-    }
-
-    /// ノード`v`の親のインデックスを返す．存在しない場合は`None`．
-    pub fn parent(&self, v: usize) -> Option<usize> {
-        self.nodes[v].parent
-    }
-
-    /// ノード`v`の左子のインデックスを返す．存在しない場合は`None`．
-    pub fn left(&self, v: usize) -> Option<usize> {
-        self.nodes[v].left
-    }
-
-    /// ノード`v`の右子のインデックスを返す．存在しない場合は`None`．
-    pub fn right(&self, v: usize) -> Option<usize> {
-        self.nodes[v].right
-    }
 }
 
 #[cfg(test)]
@@ -107,58 +140,64 @@ mod tests {
     fn test() {
         {
             let v = vec![3, 1, 4, 1, 5];
-            let tree = CartesianTree::new(&v);
+            let tree = CartesianTree::new(v);
 
-            assert_eq!(tree.root(), 1);
+            let (root_index, root_value) = tree.root();
+            assert_eq!(root_index, 1);
+            assert_eq!(*root_value, 1);
 
-            assert_eq!(tree.left(1), Some(0));
-            assert_eq!(tree.right(1), Some(3));
+            assert_eq!(tree.left(1), Some((0, &3)));
+            assert_eq!(tree.right(1), Some((3, &1)));
 
-            assert_eq!(tree.parent(0), Some(1));
-            assert_eq!(tree.parent(3), Some(1));
+            assert_eq!(tree.parent(0), Some((1, &1)));
+            assert_eq!(tree.parent(3), Some((1, &1)));
 
-            assert_eq!(tree.left(3), Some(2));
-            assert_eq!(tree.right(3), Some(4));
+            assert_eq!(tree.left(3), Some((2, &4)));
+            assert_eq!(tree.right(3), Some((4, &5)));
 
-            assert_eq!(tree.parent(2), Some(3));
-            assert_eq!(tree.parent(4), Some(3));
+            assert_eq!(tree.parent(2), Some((3, &1)));
+            assert_eq!(tree.parent(4), Some((3, &1)));
         }
 
         {
             let v = vec![1, 2, 3, 4];
-            let tree = CartesianTree::new(&v);
+            let tree = CartesianTree::new(v);
 
-            assert_eq!(tree.root(), 0);
+            let (root_index, root_value) = tree.root();
+            assert_eq!(root_index, 0);
+            assert_eq!(*root_value, 1);
 
-            assert_eq!(tree.parent(1), Some(0));
-            assert_eq!(tree.parent(2), Some(1));
-            assert_eq!(tree.parent(3), Some(2));
+            assert_eq!(tree.parent(1), Some((0, &1)));
+            assert_eq!(tree.parent(2), Some((1, &2)));
+            assert_eq!(tree.parent(3), Some((2, &3)));
 
             assert_eq!(tree.left(0), None);
             assert_eq!(tree.left(1), None);
             assert_eq!(tree.left(2), None);
             assert_eq!(tree.left(3), None);
 
-            assert_eq!(tree.right(0), Some(1));
-            assert_eq!(tree.right(1), Some(2));
-            assert_eq!(tree.right(2), Some(3));
+            assert_eq!(tree.right(0), Some((1, &2)));
+            assert_eq!(tree.right(1), Some((2, &3)));
+            assert_eq!(tree.right(2), Some((3, &4)));
             assert_eq!(tree.right(3), None);
         }
 
         {
             let v = vec![4, 3, 2, 1];
-            let tree = CartesianTree::new(&v);
+            let tree = CartesianTree::new(v);
 
-            assert_eq!(tree.root(), 3);
+            let (root_index, root_value) = tree.root();
+            assert_eq!(root_index, 3);
+            assert_eq!(*root_value, 1);
 
             assert_eq!(tree.parent(3), None);
-            assert_eq!(tree.parent(2), Some(3));
-            assert_eq!(tree.parent(1), Some(2));
-            assert_eq!(tree.parent(0), Some(1));
+            assert_eq!(tree.parent(2), Some((3, &1)));
+            assert_eq!(tree.parent(1), Some((2, &2)));
+            assert_eq!(tree.parent(0), Some((1, &3)));
 
-            assert_eq!(tree.left(3), Some(2));
-            assert_eq!(tree.left(2), Some(1));
-            assert_eq!(tree.left(1), Some(0));
+            assert_eq!(tree.left(3), Some((2, &2)));
+            assert_eq!(tree.left(2), Some((1, &3)));
+            assert_eq!(tree.left(1), Some((0, &4)));
             assert_eq!(tree.left(0), None);
 
             assert_eq!(tree.right(3), None);
@@ -169,9 +208,11 @@ mod tests {
 
         {
             let v = vec![42];
-            let tree = CartesianTree::new(&v);
+            let tree = CartesianTree::new(v.clone());
 
-            assert_eq!(tree.root(), 0);
+            let (root_index, root_value) = tree.root();
+            assert_eq!(root_index, 0);
+            assert_eq!(*root_value, 42);
             assert_eq!(tree.parent(0), None);
             assert_eq!(tree.left(0), None);
             assert_eq!(tree.right(0), None);
@@ -182,27 +223,29 @@ mod tests {
     fn test_reverse() {
         let v = vec![3, 1, 4, 1, 5];
         let reversed = v.iter().copied().map(Reverse).collect::<Vec<_>>();
-        let tree = CartesianTree::new(&reversed);
+        let tree = CartesianTree::new(reversed);
 
-        assert_eq!(tree.root(), 4);
+        let (root_index, root_value) = tree.root();
+        assert_eq!(root_index, 4);
+        assert_eq!(*root_value, Reverse(5));
 
-        assert_eq!(tree.left(4), Some(2));
+        assert_eq!(tree.left(4), Some((2, &Reverse(4))));
         assert_eq!(tree.right(4), None);
         assert_eq!(tree.parent(4), None);
 
-        assert_eq!(tree.parent(2), Some(4));
-        assert_eq!(tree.left(2), Some(0));
-        assert_eq!(tree.right(2), Some(3));
+        assert_eq!(tree.parent(2), Some((4, &Reverse(5))));
+        assert_eq!(tree.left(2), Some((0, &Reverse(3))));
+        assert_eq!(tree.right(2), Some((3, &Reverse(1))));
 
-        assert_eq!(tree.parent(0), Some(2));
+        assert_eq!(tree.parent(0), Some((2, &Reverse(4))));
         assert_eq!(tree.left(0), None);
-        assert_eq!(tree.right(0), Some(1));
+        assert_eq!(tree.right(0), Some((1, &Reverse(1))));
 
-        assert_eq!(tree.parent(1), Some(0));
+        assert_eq!(tree.parent(1), Some((0, &Reverse(3))));
         assert_eq!(tree.left(1), None);
         assert_eq!(tree.right(1), None);
 
-        assert_eq!(tree.parent(3), Some(2));
+        assert_eq!(tree.parent(3), Some((2, &Reverse(4))));
         assert_eq!(tree.left(3), None);
         assert_eq!(tree.right(3), None);
     }
@@ -217,24 +260,26 @@ mod tests {
 
                     for _ in 0..T {
                         let n = rng.random_range(1..=N_MAX);
-                        let v: Vec<$ty> = (0..n)
+                        let v = (0..n)
                             .map(|_| rng.random_range(<$ty>::MIN..=<$ty>::MAX))
-                            .collect();
-                        let tree = CartesianTree::new(&v);
+                            .collect::<Vec<_>>();
+                        let tree = CartesianTree::new(v.clone());
 
-                        let min_value = *v.iter().min().unwrap();
-                        assert_eq!(v[tree.root()], min_value);
-                        assert_eq!(tree.parent(tree.root()), None);
+                        let (root_index, root_value) = tree.root();
+                        let min_value = v.iter().min().unwrap();
+                        assert_eq!(&v[root_index], min_value);
+                        assert_eq!(root_value, min_value);
+                        assert_eq!(tree.parent(root_index), None);
 
                         for i in 0..n {
-                            if let Some(p) = tree.parent(i) {
-                                assert!(v[p] <= v[i]);
+                            if let Some((_p, parent_value)) = tree.parent(i) {
+                                assert!(parent_value <= &v[i]);
                             }
-                            if let Some(l) = tree.left(i) {
-                                assert!(v[i] <= v[l]);
+                            if let Some((_l, left_value)) = tree.left(i) {
+                                assert!(&v[i] <= left_value);
                             }
-                            if let Some(r) = tree.right(i) {
-                                assert!(v[i] <= v[r]);
+                            if let Some((_r, right_value)) = tree.right(i) {
+                                assert!(&v[i] <= right_value);
                             }
                         }
                     }
