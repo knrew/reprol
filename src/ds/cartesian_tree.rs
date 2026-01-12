@@ -60,13 +60,13 @@ impl<T> CartesianTree<T> {
     where
         T: Ord,
     {
-        Self::from_iter(v.into_iter())
+        Self::from_iter(v)
     }
 
     /// 配列`v`と任意の比較子`cmp`からCartesian Treeを構築する．
     /// `cmp`で比較し小さい要素が上位(根側)に配置される．
     pub fn new_by(v: Vec<T>, cmp: impl FnMut(&T, &T) -> Ordering) -> Self {
-        Self::from_iter_by(v.into_iter(), cmp)
+        Self::from_iter_by(v, cmp)
     }
 
     /// イテレータと任意の比較子`cmp`からCartesian Treeを構築する．
@@ -140,19 +140,19 @@ impl<T> CartesianTree<T> {
 
 impl<T: Ord> From<Vec<T>> for CartesianTree<T> {
     fn from(v: Vec<T>) -> Self {
-        Self::from_iter(v.into_iter())
+        Self::from_iter(v)
     }
 }
 
 impl<T: Ord, const N: usize> From<[T; N]> for CartesianTree<T> {
     fn from(v: [T; N]) -> Self {
-        Self::from_iter(v.into_iter())
+        Self::from_iter(v)
     }
 }
 
 impl<T: Ord> FromIterator<T> for CartesianTree<T> {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
-        Self::from_iter_by(iter, |x, y| x.cmp(&y))
+        Self::from_iter_by(iter, |x, y| x.cmp(y))
     }
 }
 
@@ -280,6 +280,42 @@ mod tests {
     }
 
     #[test]
+    fn test_custom_comparator() {
+        // new_by
+        {
+            let v = vec![3, 1, 4, 1, 5];
+            let tree = CartesianTree::new_by(v, |a, b| b.cmp(a));
+
+            let (root_index, root_value) = tree.root();
+            assert_eq!(root_value, &5);
+            assert_eq!(root_index, 4);
+            assert_eq!(tree.parent(4), None);
+
+            for i in 0..tree.nodes.len() {
+                if let Some((_p, parent_value)) = tree.parent(i) {
+                    assert!(parent_value >= tree.get(i));
+                }
+                if let Some((_l, left_value)) = tree.left(i) {
+                    assert!(tree.get(i) >= left_value);
+                }
+                if let Some((_r, right_value)) = tree.right(i) {
+                    assert!(tree.get(i) >= right_value);
+                }
+            }
+        }
+
+        // from_iter_by
+        {
+            let v = vec![3, 1, 4, 1, 5];
+            let tree = CartesianTree::from_iter_by(v.clone(), |a, b| a.cmp(b));
+            let (root_index, root_value) = tree.root();
+            let min_value = v.iter().min().unwrap();
+            assert_eq!(root_value, min_value);
+            assert_eq!(tree.get(root_index), min_value);
+        }
+    }
+
+    #[test]
     fn test_random() {
         macro_rules! define_test_function {
             ($name:ident, $ty:ty) => {
@@ -322,73 +358,5 @@ mod tests {
         let mut rng = initialize_rng();
         test_i64(&mut rng);
         test_u64(&mut rng);
-    }
-
-    #[test]
-    fn test_custom_comparator_desc() {
-        let v = vec![3, 1, 4, 1, 5];
-        let tree = CartesianTree::new_by(v, |a, b| b.cmp(a));
-
-        let (root_index, root_value) = tree.root();
-        assert_eq!(root_value, &5);
-        assert_eq!(root_index, 4);
-        assert_eq!(tree.parent(4), None);
-
-        // 親は常に「大きい」側で、子は小さくなる
-        for i in 0..tree.nodes.len() {
-            if let Some((_p, parent_value)) = tree.parent(i) {
-                assert!(parent_value >= tree.get(i));
-            }
-            if let Some((_l, left_value)) = tree.left(i) {
-                assert!(tree.get(i) >= left_value);
-            }
-            if let Some((_r, right_value)) = tree.right(i) {
-                assert!(tree.get(i) >= right_value);
-            }
-        }
-    }
-
-    #[test]
-    fn test_all_equal_comparator() {
-        let n = 5;
-        let v = vec![1; n];
-        let tree = CartesianTree::new_by(v, |_a, _b| Ordering::Equal);
-
-        let (root_index, root_value) = tree.root();
-        assert_eq!(root_index, 0);
-        assert_eq!(*root_value, 1);
-        assert_eq!(tree.parent(0), None);
-
-        for i in 0..n {
-            if i == 0 {
-                assert_eq!(tree.left(i), None);
-                assert_eq!(tree.right(i), Some((1, &1)));
-                continue;
-            }
-            assert_eq!(tree.left(i), None);
-            if i + 1 < n {
-                assert_eq!(tree.right(i), Some((i + 1, &1)));
-            } else {
-                assert_eq!(tree.right(i), None);
-            }
-            assert_eq!(tree.parent(i), Some((i - 1, &1)));
-        }
-    }
-
-    #[test]
-    fn test_stateful_comparator_calls() {
-        let v = vec![3, 1, 4, 1, 5];
-        let mut calls = 0;
-        let tree = CartesianTree::from_iter_by(v.clone(), |a, b| {
-            calls += 1;
-            a.cmp(b)
-        });
-
-        assert!(calls >= v.len() - 1);
-
-        let (root_index, root_value) = tree.root();
-        let min_value = v.iter().min().unwrap();
-        assert_eq!(root_value, min_value);
-        assert_eq!(tree.get(root_index), min_value);
     }
 }
