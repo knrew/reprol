@@ -19,12 +19,12 @@
 //! assert_eq!(cum.fold(0..3, 0..3), 45);
 //! assert_eq!(cum.fold(1..3, 1..3), 28);
 //! assert_eq!(cum.fold(0..2, 0..2), 12);
-//! assert_eq!(cum[(2, 2)], 12);
+//! assert_eq!(*cum.prefix(2, 2), 12);
 //! ```
 
 use std::{
     fmt::Debug,
-    ops::{Index, Range, RangeBounds},
+    ops::{Range, RangeBounds},
 };
 
 use crate::{
@@ -75,8 +75,15 @@ impl<O: Monoid> CumulativeArray2d<O> {
     }
 
     /// `[0, i) x [0, j)`の累積積を返す．
-    pub fn get(&self, i: usize, j: usize) -> &O::Value {
+    pub fn prefix(&self, i: usize, j: usize) -> &O::Value {
         &self.inner[i][j]
+    }
+
+    pub fn get(&self, i: usize, j: usize) -> O::Value
+    where
+        O: Group,
+    {
+        self.fold(i..=i, j..=j)
     }
 
     /// 区間`[il, ir) x [jl, jr)`の累積積を返す．
@@ -103,18 +110,14 @@ impl<O: Monoid> CumulativeArray2d<O> {
     }
 }
 
-impl<O> From<(Vec<Vec<O::Value>>, O)> for CumulativeArray2d<O>
-where
-    O: Group,
-{
+impl<O: Group> From<(Vec<Vec<O::Value>>, O)> for CumulativeArray2d<O> {
     fn from((v, op): (Vec<Vec<O::Value>>, O)) -> Self {
         CumulativeArray2d::with_op(v, op)
     }
 }
 
-impl<O, const N: usize, const M: usize> From<([[O::Value; M]; N], O)> for CumulativeArray2d<O>
-where
-    O: Group,
+impl<O: Group, const N: usize, const M: usize> From<([[O::Value; M]; N], O)>
+    for CumulativeArray2d<O>
 {
     fn from((v, op): ([[O::Value; M]; N], O)) -> Self {
         let v: Vec<Vec<O::Value>> = v.into_iter().map(|vi| vi.into_iter().collect()).collect();
@@ -122,18 +125,14 @@ where
     }
 }
 
-impl<O> From<Vec<Vec<O::Value>>> for CumulativeArray2d<O>
-where
-    O: Group + Default,
-{
+impl<O: Group + Default> From<Vec<Vec<O::Value>>> for CumulativeArray2d<O> {
     fn from(v: Vec<Vec<O::Value>>) -> Self {
         CumulativeArray2d::new(v)
     }
 }
 
-impl<O, const N: usize, const M: usize> From<[[O::Value; M]; N]> for CumulativeArray2d<O>
-where
-    O: Group + Default,
+impl<O: Group + Default, const N: usize, const M: usize> From<[[O::Value; M]; N]>
+    for CumulativeArray2d<O>
 {
     fn from(v: [[O::Value; M]; N]) -> Self {
         let v: Vec<Vec<O::Value>> = v.into_iter().map(|vi| vi.into_iter().collect()).collect();
@@ -141,9 +140,8 @@ where
     }
 }
 
-impl<O> Clone for CumulativeArray2d<O>
+impl<O: Monoid + Clone> Clone for CumulativeArray2d<O>
 where
-    O: Monoid + Clone,
     O::Value: Clone,
 {
     fn clone(&self) -> Self {
@@ -154,29 +152,8 @@ where
     }
 }
 
-impl<O> Index<[usize; 2]> for CumulativeArray2d<O>
+impl<O: Monoid> Debug for CumulativeArray2d<O>
 where
-    O: Monoid,
-{
-    type Output = O::Value;
-    fn index(&self, [i, j]: [usize; 2]) -> &Self::Output {
-        &self.inner[i][j]
-    }
-}
-
-impl<O> Index<(usize, usize)> for CumulativeArray2d<O>
-where
-    O: Monoid,
-{
-    type Output = O::Value;
-    fn index(&self, (i, j): (usize, usize)) -> &Self::Output {
-        &self.inner[i][j]
-    }
-}
-
-impl<O> Debug for CumulativeArray2d<O>
-where
-    O: Monoid,
     O::Value: Debug,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

@@ -2,7 +2,7 @@
 
 use std::{
     fmt::Debug,
-    ops::{Index, Range, RangeBounds},
+    ops::{Range, RangeBounds},
 };
 
 use crate::{
@@ -66,8 +66,15 @@ impl<O: Monoid> CumulativeArray3d<O> {
     }
 
     /// `[0, i) x [0, j) x [0, k)`の累積積を返す．
-    pub fn get(&self, i: usize, j: usize, k: usize) -> &O::Value {
+    pub fn prefix(&self, i: usize, j: usize, k: usize) -> &O::Value {
         &self.inner[i][j][k]
+    }
+
+    pub fn get(&self, i: usize, j: usize, k: usize) -> O::Value
+    where
+        O: Group,
+    {
+        self.fold(i..=i, j..=j, k..=k)
     }
 
     /// 区間`[il, ir) x [jl, jr) x [kl, kr)`の累積積を返す．
@@ -106,19 +113,14 @@ impl<O: Monoid> CumulativeArray3d<O> {
     }
 }
 
-impl<O> From<(Vec<Vec<Vec<O::Value>>>, O)> for CumulativeArray3d<O>
-where
-    O: Group,
-{
+impl<O: Group> From<(Vec<Vec<Vec<O::Value>>>, O)> for CumulativeArray3d<O> {
     fn from((v, op): (Vec<Vec<Vec<O::Value>>>, O)) -> Self {
         CumulativeArray3d::with_op(v, op)
     }
 }
 
-impl<O, const N: usize, const M: usize, const L: usize> From<([[[O::Value; L]; M]; N], O)>
+impl<O: Group, const N: usize, const M: usize, const L: usize> From<([[[O::Value; L]; M]; N], O)>
     for CumulativeArray3d<O>
-where
-    O: Group,
 {
     fn from((v, op): ([[[O::Value; L]; M]; N], O)) -> Self {
         let v: Vec<Vec<Vec<O::Value>>> = v
@@ -133,19 +135,14 @@ where
     }
 }
 
-impl<O> From<Vec<Vec<Vec<O::Value>>>> for CumulativeArray3d<O>
-where
-    O: Group + Default,
-{
+impl<O: Group + Default> From<Vec<Vec<Vec<O::Value>>>> for CumulativeArray3d<O> {
     fn from(v: Vec<Vec<Vec<O::Value>>>) -> Self {
         CumulativeArray3d::new(v)
     }
 }
 
-impl<O, const N: usize, const M: usize, const L: usize> From<[[[O::Value; L]; M]; N]>
-    for CumulativeArray3d<O>
-where
-    O: Group + Default,
+impl<O: Group + Default, const N: usize, const M: usize, const L: usize>
+    From<[[[O::Value; L]; M]; N]> for CumulativeArray3d<O>
 {
     fn from(v: [[[O::Value; L]; M]; N]) -> Self {
         let v: Vec<Vec<Vec<O::Value>>> = v
@@ -160,9 +157,8 @@ where
     }
 }
 
-impl<O> Clone for CumulativeArray3d<O>
+impl<O: Monoid + Clone> Clone for CumulativeArray3d<O>
 where
-    O: Monoid + Clone,
     O::Value: Clone,
 {
     fn clone(&self) -> Self {
@@ -173,29 +169,8 @@ where
     }
 }
 
-impl<O> Index<[usize; 3]> for CumulativeArray3d<O>
+impl<O: Monoid> Debug for CumulativeArray3d<O>
 where
-    O: Monoid,
-{
-    type Output = O::Value;
-    fn index(&self, [i, j, k]: [usize; 3]) -> &Self::Output {
-        &self.inner[i][j][k]
-    }
-}
-
-impl<O> Index<(usize, usize, usize)> for CumulativeArray3d<O>
-where
-    O: Monoid,
-{
-    type Output = O::Value;
-    fn index(&self, (i, j, k): (usize, usize, usize)) -> &Self::Output {
-        &self.inner[i][j][k]
-    }
-}
-
-impl<O> Debug for CumulativeArray3d<O>
-where
-    O: Monoid,
     O::Value: Debug,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -210,9 +185,8 @@ pub type CumulativeSum3d<T> = CumulativeArray3d<OpAdd<T>>;
 mod tests {
     use rand::Rng;
 
-    use crate::utils::test_utils::initialize_rng;
-
     use super::*;
+    use crate::utils::test_utils::initialize_rng;
 
     #[test]
     fn test() {

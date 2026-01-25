@@ -9,7 +9,7 @@
 //! use reprol::ds::cumulative_array::CumulativeSum;
 //! let v = vec![1, 2, 3, 4, 5];
 //! let cum = CumulativeSum::new(v);
-//! assert_eq!(cum[3], 6); // [0, 3)の区間和
+//! assert_eq!(*cum.prefix(3), 6); // [0, 3)の区間和
 //! assert_eq!(cum.fold(1..4), 9); // [1, 4)の区間和
 //! ```
 
@@ -19,8 +19,8 @@
 //! use reprol::{ds::cumulative_array::CumulativeArray, ops::op_min::OpMin};
 //! let v = vec![3, 5, 4, 1, 5];
 //! let cum = CumulativeArray::<OpMin<i32>>::new(v);
-//! assert_eq!(cum[3], 3); // [0, 3)の最小値
-//! assert_eq!(cum[4], 1); // [0, 4)の最小値
+//! assert_eq!(*cum.prefix(3), 3); // [0, 3)の最小値
+//! assert_eq!(*cum.prefix(4), 1); // [0, 4)の最小値
 //! ```
 //!
 //! ## 演算を定義する
@@ -52,14 +52,14 @@
 //! }
 //! let v = vec![3, 1, 4, 1, 5, 9, 2];
 //! let cum = CumulativeArray::<Op>::new(v);
-//! assert_eq!(cum[3], 6); // [0, 3)の区間xor
+//! assert_eq!(*cum.prefix(3), 6); // [0, 3)の区間xor
 //! assert_eq!(cum.fold(1..5), 1); // [1, 5)の区間xor
 //!```
 
 use std::{
     fmt::Debug,
     iter::FromIterator,
-    ops::{Index, Range, RangeBounds},
+    ops::{Range, RangeBounds},
 };
 
 use crate::{
@@ -93,9 +93,17 @@ impl<O: Monoid> CumulativeArray<O> {
         Self { inner, op }
     }
 
-    /// 累積配列の`r`番目の要素を返す(区間`[0, r)`の区間積を返す)．
-    pub fn get(&self, r: usize) -> &O::Value {
+    /// 区間`[0, r)`の区間積を返す．
+    pub fn prefix(&self, r: usize) -> &O::Value {
         &self.inner[r]
+    }
+
+    /// `index`番目の要素の値を返す．
+    pub fn get(&self, index: usize) -> O::Value
+    where
+        O: Group,
+    {
+        self.fold(index..=index)
     }
 
     /// `[l, r)`の区間積を返す．
@@ -125,36 +133,26 @@ impl<O: Monoid, const N: usize> From<([O::Value; N], O)> for CumulativeArray<O> 
     }
 }
 
-impl<O> From<Vec<O::Value>> for CumulativeArray<O>
-where
-    O: Monoid + Default,
-{
+impl<O: Monoid + Default> From<Vec<O::Value>> for CumulativeArray<O> {
     fn from(v: Vec<O::Value>) -> Self {
         CumulativeArray::from((v, O::default()))
     }
 }
 
-impl<O, const N: usize> From<[O::Value; N]> for CumulativeArray<O>
-where
-    O: Monoid + Default,
-{
+impl<O: Monoid + Default, const N: usize> From<[O::Value; N]> for CumulativeArray<O> {
     fn from(v: [O::Value; N]) -> Self {
         CumulativeArray::from((v, O::default()))
     }
 }
 
-impl<O> FromIterator<O::Value> for CumulativeArray<O>
-where
-    O: Monoid + Default,
-{
+impl<O: Monoid + Default> FromIterator<O::Value> for CumulativeArray<O> {
     fn from_iter<I: IntoIterator<Item = O::Value>>(iter: I) -> Self {
         Self::new(iter.into_iter().collect())
     }
 }
 
-impl<O> Clone for CumulativeArray<O>
+impl<O: Monoid + Clone> Clone for CumulativeArray<O>
 where
-    O: Monoid + Clone,
     O::Value: Clone,
 {
     fn clone(&self) -> Self {
@@ -162,13 +160,6 @@ where
             inner: self.inner.clone(),
             op: self.op.clone(),
         }
-    }
-}
-
-impl<O: Monoid> Index<usize> for CumulativeArray<O> {
-    type Output = O::Value;
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.inner[index]
     }
 }
 
@@ -190,9 +181,8 @@ impl<O: Monoid> IntoIterator for CumulativeArray<O> {
     }
 }
 
-impl<O> Debug for CumulativeArray<O>
+impl<O: Monoid> Debug for CumulativeArray<O>
 where
-    O: Monoid,
     O::Value: Debug,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -207,12 +197,11 @@ pub type CumulativeSum<T> = CumulativeArray<OpAdd<T>>;
 mod tests {
     use rand::Rng;
 
+    use super::*;
     use crate::{
         ops::{op_max::OpMax, op_min::OpMin},
         utils::test_utils::initialize_rng,
     };
-
-    use super::*;
 
     #[test]
     fn test_cumulative_sum() {
@@ -228,7 +217,7 @@ mod tests {
         ];
         let cum = CumulativeSum::<i64>::from(v);
         assert_eq!(cum.fold(..), 15);
-        assert_eq!(cum.get(5), &15);
+        assert_eq!(cum.prefix(5), &15);
         for ((l, r), expected) in testcases {
             assert_eq!(cum.fold(l..r), expected);
         }
@@ -254,7 +243,7 @@ mod tests {
         let testcases = vec![(1, 8), (2, 8), (3, -4), (4, -4), (5, -4)];
         let cum = CumulativeArray::<OpMin<i32>>::new(v);
         for (r, expected) in testcases {
-            assert_eq!(cum.get(r), &expected);
+            assert_eq!(cum.prefix(r), &expected);
         }
     }
 
@@ -321,8 +310,8 @@ mod tests {
                         let v = (0..n).map(|_| rng.random()).collect::<Vec<_>>();
                         let cum = CumulativeArray::<OpMin<_>>::new(v.clone());
                         for r in 0..=v.len() {
-                            let naive = *v[..r].iter().min().unwrap_or(&$ty::MAX);
-                            assert_eq!(cum[r], naive);
+                            let naive = v[..r].iter().min().unwrap_or(&$ty::MAX);
+                            assert_eq!(cum.prefix(r), naive);
                         }
                     }
                 }
@@ -366,8 +355,8 @@ mod tests {
                         let v = (0..N).map(|_| rng.random()).collect::<Vec<_>>();
                         let cum = CumulativeArray::<OpMax<_>>::new(v.clone());
                         for r in 0..=v.len() {
-                            let naive = *v[..r].iter().max().unwrap_or(&$ty::MIN);
-                            assert_eq!(cum[r], naive);
+                            let naive = v[..r].iter().max().unwrap_or(&$ty::MIN);
+                            assert_eq!(cum.prefix(r), naive);
                         }
                     }
                 }

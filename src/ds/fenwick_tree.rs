@@ -69,7 +69,7 @@ impl<O: Group> FenwickTree<O> {
     }
 
     /// 区間`[0, r)`の区間積を返す．
-    fn cum(&self, mut r: usize) -> O::Value {
+    fn prefix(&self, mut r: usize) -> O::Value {
         assert!(r <= self.nodes.len());
         let mut res = self.op.identity();
         while r > 0 {
@@ -83,8 +83,8 @@ impl<O: Group> FenwickTree<O> {
     pub fn fold(&self, range: impl RangeBounds<usize>) -> O::Value {
         let Range { start: l, end: r } = to_half_open_index_range(range, self.nodes.len());
         assert!(l <= r);
-        let cl = self.cum(l);
-        let cr = self.cum(r);
+        let cl = self.prefix(l);
+        let cr = self.prefix(r);
         self.op.op(&cr, &self.op.inv(&cl))
     }
 }
@@ -105,43 +105,21 @@ impl<O: Group, const N: usize> From<([O::Value; N], O)> for FenwickTree<O> {
     }
 }
 
-impl<O> From<Vec<O::Value>> for FenwickTree<O>
-where
-    O: Group + Default,
-{
+impl<O: Group + Default> From<Vec<O::Value>> for FenwickTree<O> {
     fn from(v: Vec<O::Value>) -> Self {
         Self::from((v, O::default()))
     }
 }
 
-impl<O, const N: usize> From<[O::Value; N]> for FenwickTree<O>
-where
-    O: Group + Default,
-{
+impl<O: Group + Default, const N: usize> From<[O::Value; N]> for FenwickTree<O> {
     fn from(v: [O::Value; N]) -> Self {
         Self::from((v, O::default()))
     }
 }
 
-impl<O> FromIterator<O::Value> for FenwickTree<O>
-where
-    O: Group + Default,
-{
+impl<O: Group + Default> FromIterator<O::Value> for FenwickTree<O> {
     fn from_iter<I: IntoIterator<Item = O::Value>>(iter: I) -> Self {
         Self::from(iter.into_iter().collect::<Vec<_>>())
-    }
-}
-
-impl<O> Clone for FenwickTree<O>
-where
-    O: Group + Clone,
-    O::Value: Clone,
-{
-    fn clone(&self) -> Self {
-        Self {
-            nodes: self.nodes.clone(),
-            op: self.op.clone(),
-        }
     }
 }
 
@@ -149,9 +127,8 @@ where
 mod tests {
     use rand::Rng;
 
-    use crate::{ops::op_add::OpAdd, utils::test_utils::initialize_rng};
-
     use super::*;
+    use crate::{ops::op_add::OpAdd, utils::test_utils::initialize_rng};
 
     #[test]
     fn test_sum() {
