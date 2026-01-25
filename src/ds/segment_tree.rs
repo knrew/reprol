@@ -37,7 +37,7 @@
 
 use std::{
     iter::FromIterator,
-    ops::{Index, Range, RangeBounds},
+    ops::{Deref, DerefMut, Index, Range, RangeBounds},
 };
 
 use crate::{ops::monoid::Monoid, utils::range::to_half_open_index_range};
@@ -80,15 +80,16 @@ impl<O: Monoid> SegmentTree<O> {
     }
 
     /// `index`番目の要素を`value`に更新する．
+    #[inline(always)]
     pub fn set(&mut self, index: usize, value: O::Value) {
+        *self.entry_mut(index) = value;
+    }
+
+    pub fn entry_mut(&mut self, index: usize) -> EntryMut<'_, O> {
         assert!(index < self.len);
-        let mut index = index + self.nodes.len() / 2;
-        self.nodes[index] = value;
-        while index > 1 {
-            index /= 2;
-            self.nodes[index] = self
-                .op
-                .op(&self.nodes[2 * index], &self.nodes[2 * index + 1]);
+        EntryMut {
+            segment_tree: self,
+            index,
         }
     }
 
@@ -229,47 +230,18 @@ impl<O: Monoid> SegmentTree<O> {
     }
 }
 
-impl<O> From<(Vec<O::Value>, O)> for SegmentTree<O>
-where
-    O: Monoid,
-    O::Value: Clone,
-{
+impl<O: Monoid> From<(Vec<O::Value>, O)> for SegmentTree<O> {
     fn from((v, op): (Vec<O::Value>, O)) -> Self {
-        Self::from((&v, op))
-    }
-}
+        assert!(!v.is_empty());
 
-impl<O, const N: usize> From<([O::Value; N], O)> for SegmentTree<O>
-where
-    O: Monoid,
-    O::Value: Clone,
-{
-    fn from((v, op): ([O::Value; N], O)) -> Self {
-        Self::from((v.as_slice(), op))
-    }
-}
-
-impl<O> From<(&Vec<O::Value>, O)> for SegmentTree<O>
-where
-    O: Monoid,
-    O::Value: Clone,
-{
-    fn from((v, op): (&Vec<O::Value>, O)) -> Self {
-        Self::from((v.as_slice(), op))
-    }
-}
-
-impl<O> From<(&[O::Value], O)> for SegmentTree<O>
-where
-    O: Monoid,
-    O::Value: Clone,
-{
-    fn from((v, op): (&[O::Value], O)) -> Self {
         let len = v.len();
         let offset = len.next_power_of_two();
-        let mut nodes = vec![op.identity(); 2 * offset];
 
-        nodes[offset..offset + len].clone_from_slice(v);
+        let mut nodes = (0..2 * offset).map(|_| op.identity()).collect::<Vec<_>>();
+
+        for (node_i, vi) in nodes[offset..offset + len].iter_mut().zip(v) {
+            *node_i = vi;
+        }
 
         for i in (1..offset).rev() {
             nodes[i] = op.op(&nodes[2 * i], &nodes[2 * i + 1]);
@@ -279,72 +251,80 @@ where
     }
 }
 
-impl<O> From<Vec<O::Value>> for SegmentTree<O>
-where
-    O: Monoid + Default,
-    O::Value: Clone,
-{
+impl<O: Monoid, const N: usize> From<([O::Value; N], O)> for SegmentTree<O> {
+    fn from((v, op): ([O::Value; N], O)) -> Self {
+        Self::from((v.into_iter().collect::<Vec<_>>(), op))
+    }
+}
+
+impl<O: Monoid + Default> From<Vec<O::Value>> for SegmentTree<O> {
     fn from(v: Vec<O::Value>) -> Self {
         Self::from((v, O::default()))
     }
 }
 
-impl<O, const N: usize> From<[O::Value; N]> for SegmentTree<O>
-where
-    O: Monoid + Default,
-    O::Value: Clone,
-{
+impl<O: Monoid + Default, const N: usize> From<[O::Value; N]> for SegmentTree<O> {
     fn from(v: [O::Value; N]) -> Self {
         Self::from((v, O::default()))
     }
 }
 
-impl<O> From<&Vec<O::Value>> for SegmentTree<O>
-where
-    O: Monoid + Default,
-    O::Value: Clone,
-{
-    fn from(v: &Vec<O::Value>) -> Self {
-        Self::from((v, O::default()))
-    }
-}
-
-impl<O> From<&[O::Value]> for SegmentTree<O>
-where
-    O: Monoid + Default,
-    O::Value: Clone,
-{
-    fn from(v: &[O::Value]) -> Self {
-        Self::from((v, O::default()))
-    }
-}
-
-impl<O> FromIterator<O::Value> for SegmentTree<O>
-where
-    O: Monoid + Default,
-    O::Value: Clone,
-{
+impl<O: Monoid + Default> FromIterator<O::Value> for SegmentTree<O> {
     fn from_iter<I: IntoIterator<Item = O::Value>>(iter: I) -> Self {
         Self::from(iter.into_iter().collect::<Vec<_>>())
     }
 }
 
-impl<O> Index<usize> for SegmentTree<O>
-where
-    O: Monoid,
-{
+impl<O: Monoid> Index<usize> for SegmentTree<O> {
     type Output = O::Value;
+    #[inline]
     fn index(&self, index: usize) -> &Self::Output {
-        assert!(index < self.len);
-        &self.nodes[index + self.nodes.len() / 2]
+        self.get(index)
+    }
+}
+
+pub struct EntryMut<'a, O: Monoid> {
+    segment_tree: &'a mut SegmentTree<O>,
+    index: usize,
+}
+
+impl<'a, O: Monoid> Deref for EntryMut<'a, O> {
+    type Target = O::Value;
+    fn deref(&self) -> &Self::Target {
+        self.segment_tree.get(self.index)
+    }
+}
+
+impl<'a, O: Monoid> DerefMut for EntryMut<'a, O> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        let offset = self.segment_tree.nodes.len() / 2;
+        &mut self.segment_tree.nodes[offset + self.index]
+    }
+}
+
+impl<'a, O: Monoid> Drop for EntryMut<'a, O> {
+    fn drop(&mut self) {
+        let offset = self.segment_tree.nodes.len() / 2;
+        let mut index = self.index + offset;
+        while index > 1 {
+            index /= 2;
+            self.segment_tree.nodes[index] = self.segment_tree.op.op(
+                &self.segment_tree.nodes[2 * index],
+                &self.segment_tree.nodes[2 * index + 1],
+            );
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{ops::op_add::OpAdd, ops::op_min::OpMin};
+    use rand::{Rng, random_range};
 
-    use super::SegmentTree;
+    use super::*;
+    use crate::{
+        ops::{op_add::OpAdd, op_max::OpMax, op_min::OpMin},
+        utils::test_utils::initialize_rng,
+    };
 
     #[test]
     fn test_add() {
@@ -368,5 +348,385 @@ mod tests {
         assert_eq!(seg.fold(..=4), 2);
         seg.set(3, 0);
         assert_eq!(seg.fold(0..4), 0);
+    }
+
+    #[test]
+    fn test_entry_mut() {
+        // 代入
+        {
+            let v = vec![1, 3, 5, 7, 9, 11];
+            let mut seg = SegmentTree::<OpAdd<i64>>::from(v);
+            *seg.entry_mut(2) = 6;
+            assert_eq!(seg.fold(0..3), 10);
+            assert_eq!(seg[2], 6);
+            assert_eq!(seg.fold(..), 37);
+        }
+
+        // in-place 更新
+        {
+            let v = vec![1, 3, 5, 7, 9, 11];
+            let mut seg = SegmentTree::<OpAdd<i64>>::from(v);
+            *seg.entry_mut(4) += 100;
+            assert_eq!(seg[4], 109);
+            assert_eq!(seg.fold(4..=4), 109);
+            assert_eq!(seg.fold(..), 136);
+        }
+
+        // 境界
+        {
+            let v = vec![5, 2, 6, 3, 7, 1];
+            let mut seg = SegmentTree::<OpMin<i32>>::from(v);
+
+            {
+                let mut e = seg.entry_mut(0);
+                *e = 10;
+            } // ここでdrop
+
+            assert_eq!(seg[0], 10);
+            assert_eq!(seg.fold(..), 1);
+
+            let mut e = seg.entry_mut(5);
+            *e = 20;
+            drop(e); // 明示的にdrop
+
+            assert_eq!(seg.fold(..), 2);
+        }
+    }
+
+    #[test]
+    fn test_custom_monoid_mod() {
+        #[derive(Clone, Copy, Debug)]
+        struct OpModAdd {
+            m: i64,
+        }
+
+        impl Monoid for OpModAdd {
+            type Value = i64;
+
+            fn identity(&self) -> Self::Value {
+                0
+            }
+
+            fn op(&self, lhs: &Self::Value, rhs: &Self::Value) -> Self::Value {
+                (lhs + rhs) % self.m
+            }
+        }
+
+        {
+            let op = OpModAdd { m: 7 };
+            let mut seg = SegmentTree::with_op(5, op);
+            for (i, x) in [10, 20, 30, 40, 50].into_iter().enumerate() {
+                seg.set(i, x);
+            }
+            assert_eq!(seg.fold(..), 3);
+            assert_eq!(seg.fold(1..4), (20 + 30 + 40) % 7);
+        }
+
+        {
+            let seg = SegmentTree::from((vec![1, 2, 3, 4], OpModAdd { m: 5 }));
+            assert_eq!(seg.fold(..), (1 + 2 + 3 + 4) % 5);
+            assert_eq!(seg.fold(2..=3), (3 + 4) % 5);
+        }
+    }
+
+    #[test]
+    fn test_custom_monoid_affine() {
+        // アフィン変換 f(x) = a*x + b
+        #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+        struct Affine {
+            a: i64,
+            b: i64,
+        }
+
+        #[derive(Debug, Clone, Copy)]
+        struct OpAffine;
+
+        impl Monoid for OpAffine {
+            type Value = Affine;
+
+            fn identity(&self) -> Self::Value {
+                Affine { a: 1, b: 0 }
+            }
+
+            // (a1,b1) ∘ (a2,b2) = (a1*a2, a1*b2 + b1)
+            fn op(&self, lhs: &Self::Value, rhs: &Self::Value) -> Self::Value {
+                Affine {
+                    a: lhs.a * rhs.a,
+                    b: lhs.a * rhs.b + lhs.b,
+                }
+            }
+        }
+
+        // 変換列: f0, f1, f2
+        // f0(x)=2x+1, f1(x)=3x+4, f2(x)=5x+6
+        let v = vec![
+            Affine { a: 2, b: 1 },
+            Affine { a: 3, b: 4 },
+            Affine { a: 5, b: 6 },
+        ];
+
+        let mut seg = SegmentTree::from((v, OpAffine));
+
+        assert_eq!(seg.fold(..), Affine { a: 30, b: 45 });
+        assert_eq!(seg.fold(1..3), Affine { a: 15, b: 22 });
+        assert_eq!(seg.fold(1..=1), Affine { a: 3, b: 4 });
+        assert_eq!(seg.fold(0..2), Affine { a: 6, b: 9 });
+        seg.set(1, Affine { a: 1, b: 10 });
+        assert_eq!(seg.fold(..), Affine { a: 10, b: 33 });
+        *seg.entry_mut(2) = Affine { a: 7, b: 0 };
+        assert_eq!(seg.fold(..), Affine { a: 14, b: 21 });
+
+        assert_eq!(
+            SegmentTree::from((vec![Affine { a: 3, b: 4 }, Affine { a: 2, b: 1 }], OpAffine))
+                .fold(..),
+            Affine { a: 6, b: 7 }
+        );
+    }
+
+    #[test]
+    fn test_bisect_add() {
+        let mut seg = SegmentTree::<OpAdd<i64>>::from(vec![1, 3, 5, 7, 9, 11]);
+
+        assert_eq!(seg.bisect_right(0, |s| *s <= 4), 2);
+        assert_eq!(seg.bisect_right(2, |s| *s < 5), 2);
+        assert_eq!(seg.bisect_left(6, |s| *s <= 20), 4);
+        assert_eq!(seg.bisect_left(3, |s| *s < 9), 1);
+
+        seg.set(2, 6);
+
+        assert_eq!(seg.bisect_right(0, |s| *s <= 4), 2);
+        assert_eq!(seg.bisect_right(0, |s| *s <= 9), 2);
+        assert_eq!(seg.bisect_left(6, |s| *s <= 20), 4);
+        assert_eq!(seg.bisect_left(3, |s| *s <= 9), 1);
+
+        *seg.entry_mut(4) += 100;
+
+        assert_eq!(seg.bisect_right(4, |s| *s <= 108), 4);
+        assert_eq!(seg.bisect_right(4, |s| *s < 109), 4);
+        assert_eq!(seg.bisect_left(6, |s| *s <= 11), 5);
+    }
+
+    #[test]
+    fn test_bisect_min() {
+        let mut seg = SegmentTree::<OpMin<i32>>::from(vec![5, 2, 6, 3, 7, 1]);
+
+        assert_eq!(seg.bisect_right(0, |m| *m >= 2), 5);
+        assert_eq!(seg.bisect_right(0, |m| *m > 2), 1);
+        assert_eq!(seg.bisect_left(5, |m| *m >= 3), 2);
+
+        seg.set(5, 10);
+
+        assert_eq!(seg.bisect_right(0, |m| *m >= 2), 6);
+        assert_eq!(seg.bisect_left(6, |m| *m >= 2), 0);
+        assert_eq!(seg.bisect_left(6, |m| *m > 2), 2);
+
+        *seg.entry_mut(1) = 8;
+
+        assert_eq!(seg.bisect_right(0, |m| *m >= 3), 6);
+        assert_eq!(seg.bisect_left(4, |m| *m > 5), 4);
+    }
+
+    #[test]
+    fn test_add_random() {
+        fn naive_bisect_right(v: &[i64], l: usize, mut f: impl FnMut(i64) -> bool) -> usize {
+            let mut sum = 0;
+            let mut r = l;
+            while r < v.len() {
+                let ns = sum + v[r];
+                if f(ns) {
+                    sum = ns;
+                    r += 1;
+                } else {
+                    break;
+                }
+            }
+            r
+        }
+
+        fn naive_bisect_left(v: &[i64], r: usize, mut f: impl FnMut(i64) -> bool) -> usize {
+            let mut sum = 0;
+            let mut l = r;
+            while l > 0 {
+                let nl = l - 1;
+                let ns = v[nl] + sum;
+                if f(ns) {
+                    sum = ns;
+                    l = nl;
+                } else {
+                    break;
+                }
+            }
+            l
+        }
+
+        let mut rng = initialize_rng();
+
+        const T: usize = 10;
+        const Q: usize = 100000;
+        const N_MAX: usize = 1000;
+        const MIN: i64 = 0;
+        const MAX: i64 = 1000000000;
+
+        for _ in 0..T {
+            let n = rng.random_range(10..=N_MAX);
+
+            let mut v = (0..n)
+                .map(|_| rng.random_range(MIN..=MAX))
+                .collect::<Vec<_>>();
+
+            let mut seg = SegmentTree::<OpAdd<_>>::from(v.clone());
+
+            for _ in 0..Q {
+                match rng.random_range(0..=4) {
+                    0 => {
+                        // set
+                        let i = rng.random_range(0..n);
+                        let vi = rng.random_range(MIN..=MAX);
+                        v[i] = vi;
+                        seg.set(i, vi);
+                        assert_eq!(seg[i], v[i]);
+                    }
+                    1 => {
+                        // entry_mut
+                        let i = rng.random_range(0..n);
+                        let d = rng.random_range(MIN..=MAX);
+                        v[i] += d;
+                        *seg.entry_mut(i) += d;
+                        assert_eq!(seg[i], v[i]);
+                    }
+                    2 => {
+                        // fold
+                        let l = random_range(0..n);
+                        let r = random_range(l + 1..=n);
+                        assert_eq!(seg.fold(l..r), v[l..r].iter().sum::<i64>());
+                    }
+                    3 => {
+                        // bisect_right
+                        let l = rng.random_range(0..=n);
+                        let t = rng.random_range(5 * MIN..=5 * MAX);
+                        assert_eq!(
+                            seg.bisect_right(l, |s| *s <= t),
+                            naive_bisect_right(&v, l, |s| s <= t)
+                        );
+                    }
+                    4 => {
+                        // bisect_left
+                        let r = rng.random_range(0..=n);
+                        let t = rng.random_range(5 * MIN..=5 * MAX);
+                        assert_eq!(
+                            seg.bisect_left(r, |s| *s <= t),
+                            naive_bisect_left(&v, r, |s| s <= t)
+                        );
+                    }
+                    _ => unreachable!(),
+                }
+
+                if rng.random_bool(0.05) {
+                    assert_eq!(seg.fold(..), v.iter().sum());
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_max_random() {
+        fn naive_bisect_right(v: &[i32], l: usize, mut f: impl FnMut(i32) -> bool) -> usize {
+            let mut cur = i32::MIN;
+            let mut r = l;
+            while r < v.len() {
+                let nm = cur.max(v[r]);
+                if f(nm) {
+                    cur = nm;
+                    r += 1;
+                } else {
+                    break;
+                }
+            }
+            r
+        }
+
+        fn naive_bisect_left(v: &[i32], r: usize, mut f: impl FnMut(i32) -> bool) -> usize {
+            let mut cur = i32::MIN;
+            let mut l = r;
+            while l > 0 {
+                let nl = l - 1;
+                let nm = v[nl].max(cur);
+                if f(nm) {
+                    cur = nm;
+                    l = nl;
+                } else {
+                    break;
+                }
+            }
+            l
+        }
+
+        let mut rng = initialize_rng();
+
+        const T: usize = 10;
+        const Q: usize = 100000;
+        const N_MAX: usize = 1000;
+        const MIN: i32 = -1000000000;
+        const MAX: i32 = 1000000000;
+
+        for _ in 0..T {
+            let n = rng.random_range(10..=N_MAX);
+
+            let mut v = (0..n)
+                .map(|_| rng.random_range(MIN..=MAX))
+                .collect::<Vec<_>>();
+
+            let mut seg = SegmentTree::<OpMax<i32>>::from(v.clone());
+
+            for _ in 0..Q {
+                match rng.random_range(0..=4) {
+                    0 => {
+                        // set
+                        let i = rng.random_range(0..n);
+                        let vi = rng.random_range(MIN..=MAX);
+                        v[i] = vi;
+                        seg.set(i, vi);
+                        assert_eq!(seg[i], v[i]);
+                    }
+                    1 => {
+                        // entry_mut
+                        let i = rng.random_range(0..n);
+                        let d = rng.random_range(-1000..=1000);
+                        v[i] += d;
+                        *seg.entry_mut(i) += d;
+                        assert_eq!(seg[i], v[i]);
+                    }
+                    2 => {
+                        let l = random_range(0..n);
+                        let r = random_range(l + 1..=n);
+                        let naive = *v[l..r].iter().max().unwrap();
+                        assert_eq!(seg.fold(l..r), naive);
+                    }
+                    3 => {
+                        // bisect_right
+                        let l = rng.random_range(0..=n);
+                        let t = rng.random_range(MIN..=MAX);
+                        assert_eq!(
+                            seg.bisect_right(l, |m| *m <= t),
+                            naive_bisect_right(&v, l, |m| m <= t)
+                        );
+                    }
+                    4 => {
+                        // bisect_left
+                        let r = rng.random_range(0..=n);
+                        let t = rng.random_range(MIN..=MAX);
+                        assert_eq!(
+                            seg.bisect_left(r, |m| *m <= t),
+                            naive_bisect_left(&v, r, |m| m <= t)
+                        );
+                    }
+                    _ => unreachable!(),
+                }
+
+                if rng.random_bool(0.05) {
+                    assert_eq!(seg.fold(..), *v.iter().max().unwrap());
+                }
+            }
+        }
     }
 }
