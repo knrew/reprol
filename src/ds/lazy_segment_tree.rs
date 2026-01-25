@@ -75,7 +75,7 @@
 use std::{
     iter::FromIterator,
     mem::replace,
-    ops::{Range, RangeBounds},
+    ops::{Deref, DerefMut, Range, RangeBounds},
 };
 
 use crate::{
@@ -144,15 +144,23 @@ impl<O: Monoid, A: Action<O>> LazySegmentTree<O, A> {
     where
         A::Value: PartialEq,
     {
+        *self.entry_mut(index) = value;
+    }
+
+    pub fn entry_mut(&mut self, index: usize) -> EntryMut<'_, O, A>
+    where
+        A::Value: PartialEq,
+    {
         assert!(index < self.len);
-        let index = index + self.nodes.len() / 2;
+        let leaf = index + self.nodes.len() / 2;
+
         for i in (1..=self.log).rev() {
-            self.propagate(index >> i);
+            self.propagate(leaf >> i);
         }
-        self.nodes[index] = value;
-        for i in 1..=self.log {
-            let k = index >> i;
-            self.nodes[k] = self.op.op(&self.nodes[2 * k], &self.nodes[2 * k + 1]);
+
+        EntryMut {
+            segment_tree: self,
+            leaf,
         }
     }
 
@@ -394,52 +402,16 @@ impl<O: Monoid, A: Action<O>> LazySegmentTree<O, A> {
     }
 }
 
-impl<O, A> From<(Vec<O::Value>, O, A)> for LazySegmentTree<O, A>
-where
-    O: Monoid,
-    O::Value: Clone,
-    A: Action<O>,
-{
+impl<O: Monoid, A: Action<O>> From<(Vec<O::Value>, O, A)> for LazySegmentTree<O, A> {
     fn from((v, op, action): (Vec<O::Value>, O, A)) -> Self {
-        Self::from((v.as_slice(), op, action))
-    }
-}
-
-impl<O, A, const N: usize> From<([O::Value; N], O, A)> for LazySegmentTree<O, A>
-where
-    O: Monoid,
-    O::Value: Clone,
-    A: Action<O>,
-{
-    fn from((v, op, action): ([O::Value; N], O, A)) -> Self {
-        Self::from((v.as_slice(), op, action))
-    }
-}
-
-impl<O, A> From<(&Vec<O::Value>, O, A)> for LazySegmentTree<O, A>
-where
-    O: Monoid,
-    O::Value: Clone,
-    A: Action<O>,
-{
-    fn from((v, op, action): (&Vec<O::Value>, O, A)) -> Self {
-        Self::from((v.as_slice(), op, action))
-    }
-}
-
-impl<O, A> From<(&[O::Value], O, A)> for LazySegmentTree<O, A>
-where
-    O: Monoid,
-    O::Value: Clone,
-    A: Action<O>,
-{
-    fn from((v, op, action): (&[O::Value], O, A)) -> Self {
         let len = v.len();
         let offset = len.next_power_of_two();
 
-        let mut nodes = vec![op.identity(); 2 * offset];
+        let mut nodes = (0..2 * offset).map(|_| op.identity()).collect::<Vec<_>>();
 
-        nodes[offset..offset + len].clone_from_slice(v);
+        for (node_i, vi) in nodes[offset..offset + len].iter_mut().zip(v) {
+            *node_i = vi;
+        }
 
         for i in (1..offset).rev() {
             nodes[i] = op.op(&nodes[2 * i], &nodes[2 * i + 1]);
@@ -456,103 +428,115 @@ where
     }
 }
 
-impl<O, A> From<Vec<O::Value>> for LazySegmentTree<O, A>
-where
-    O: Monoid + Default,
-    O::Value: Clone,
-    A: Action<O> + Default,
+impl<O: Monoid, A: Action<O>, const N: usize> From<([O::Value; N], O, A)>
+    for LazySegmentTree<O, A>
 {
+    fn from((v, op, action): ([O::Value; N], O, A)) -> Self {
+        Self::from((v.into_iter().collect::<Vec<_>>(), op, action))
+    }
+}
+
+impl<O: Monoid + Default, A: Action<O> + Default> From<Vec<O::Value>> for LazySegmentTree<O, A> {
     fn from(v: Vec<O::Value>) -> Self {
         Self::from((v, O::default(), A::default()))
     }
 }
 
-impl<O, A, const N: usize> From<[O::Value; N]> for LazySegmentTree<O, A>
-where
-    O: Monoid + Default,
-    O::Value: Clone,
-    A: Action<O> + Default,
+impl<O: Monoid + Default, A: Action<O> + Default, const N: usize> From<[O::Value; N]>
+    for LazySegmentTree<O, A>
 {
     fn from(v: [O::Value; N]) -> Self {
         Self::from((v, O::default(), A::default()))
     }
 }
 
-impl<O, A> From<&Vec<O::Value>> for LazySegmentTree<O, A>
-where
-    O: Monoid + Default,
-    O::Value: Clone,
-    A: Action<O> + Default,
-{
-    fn from(v: &Vec<O::Value>) -> Self {
-        Self::from((v, O::default(), A::default()))
-    }
-}
-
-impl<O, A> From<&[O::Value]> for LazySegmentTree<O, A>
-where
-    O: Monoid + Default,
-    O::Value: Clone,
-    A: Action<O> + Default,
-{
-    fn from(v: &[O::Value]) -> Self {
-        Self::from((v, O::default(), A::default()))
-    }
-}
-
-impl<O, A> FromIterator<O::Value> for LazySegmentTree<O, A>
-where
-    O: Monoid + Default,
-    O::Value: Clone,
-    A: Action<O> + Default,
-{
+impl<O: Monoid + Default, A: Action<O> + Default> FromIterator<O::Value> for LazySegmentTree<O, A> {
     fn from_iter<I: IntoIterator<Item = O::Value>>(iter: I) -> Self {
         Self::from(iter.into_iter().collect::<Vec<_>>())
     }
 }
 
+pub struct EntryMut<'a, O: Monoid, A: Action<O>>
+where
+    A::Value: PartialEq,
+{
+    segment_tree: &'a mut LazySegmentTree<O, A>,
+    leaf: usize,
+}
+
+impl<'a, O: Monoid, A: Action<O>> Deref for EntryMut<'a, O, A>
+where
+    A::Value: PartialEq,
+{
+    type Target = O::Value;
+    fn deref(&self) -> &Self::Target {
+        &self.segment_tree.nodes[self.leaf]
+    }
+}
+
+impl<'a, O: Monoid, A: Action<O>> DerefMut for EntryMut<'a, O, A>
+where
+    A::Value: PartialEq,
+{
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.segment_tree.nodes[self.leaf]
+    }
+}
+
+impl<'a, O: Monoid, A: Action<O>> Drop for EntryMut<'a, O, A>
+where
+    A::Value: PartialEq,
+{
+    fn drop(&mut self) {
+        for i in 1..=self.segment_tree.log {
+            let k = self.leaf >> i;
+            self.segment_tree.nodes[k] = self.segment_tree.op.op(
+                &self.segment_tree.nodes[2 * k],
+                &self.segment_tree.nodes[2 * k + 1],
+            );
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    mod op_opmax_actadd {
-        use crate::ops::{act_add::ActAdd, op_max::OpMax};
+    use super::*;
+    use crate::ops::{act_add::ActAdd, op_max::OpMax};
 
-        use super::super::LazySegmentTree;
-
+    #[test]
+    fn test_opmax_actadd() {
         type Op = OpMax<i64>;
         type Act = ActAdd<i64>;
 
-        #[test]
-        fn test_lazy_segment_tree() {
-            {
-                let v = vec![4, 4, 4, 4, 4];
-                let mut seg = LazySegmentTree::<Op, Act>::from(v);
-                seg.act(1..4, &2);
-                assert_eq!(
-                    (0..5).map(|i| *seg.get(i)).collect::<Vec<_>>(),
-                    vec![4, 6, 6, 6, 4]
-                );
-                assert_eq!(seg.fold(0..=2), 6);
-                seg.act(0..5, &(-1));
-                assert_eq!(
-                    (0..5).map(|i| *seg.get(i)).collect::<Vec<_>>(),
-                    vec![3, 5, 5, 5, 3]
-                );
-                assert_eq!(seg.fold(..), 5);
-            }
+        {
+            let v = vec![4, 4, 4, 4, 4];
+            let mut seg = LazySegmentTree::<Op, Act>::from(v);
+            seg.act(1..4, &2);
+            assert_eq!(
+                (0..5).map(|i| *seg.get(i)).collect::<Vec<_>>(),
+                vec![4, 6, 6, 6, 4]
+            );
+            assert_eq!(seg.fold(0..=2), 6);
+            seg.act(0..5, &(-1));
+            assert_eq!(
+                (0..5).map(|i| *seg.get(i)).collect::<Vec<_>>(),
+                vec![3, 5, 5, 5, 3]
+            );
+            assert_eq!(seg.fold(..), 5);
+        }
 
-            {
-                let mut seg = LazySegmentTree::<OpMax<i64>, ActAdd<i64>>::from(vec![0; 4]);
-                seg.act(0..4, &5);
-                assert_eq!(*seg.get(0), 5);
-            }
+        {
+            let mut seg = LazySegmentTree::<OpMax<i64>, ActAdd<i64>>::from(vec![0; 4]);
+            seg.act(0..4, &5);
+            assert_eq!(*seg.get(0), 5);
+        }
 
-            // test set
-            {
-                let mut seg = LazySegmentTree::<Op, Act>::from(vec![1, 2, 3, 4]);
-                assert_eq!(seg.fold(..), 4);
-                seg.set(2, 10);
-                assert_eq!(seg.fold(..), 10);
-            }
+        // test set
+        {
+            let mut seg = LazySegmentTree::<Op, Act>::from(vec![1, 2, 3, 4]);
+            assert_eq!(seg.fold(..), 4);
+            seg.set(2, 10);
+            assert_eq!(seg.fold(..), 10);
         }
     }
 }
