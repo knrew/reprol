@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["SegmentTree"]};
+window.SIDEBAR_ITEMS = {"struct":["EntryMut","SegmentTree"]};
