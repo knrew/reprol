@@ -31,7 +31,10 @@ use crate::{
 
 /// 2次元累積積を管理するデータ構造
 pub struct CumulativeArray2d<O: Monoid> {
-    inner: Vec<Vec<O::Element>>,
+    len_rows: usize,
+    len_cols: usize,
+    stride_rows: usize,
+    inner: Vec<O::Element>,
     op: O,
 }
 
@@ -53,27 +56,41 @@ impl<O: Monoid> CumulativeArray2d<O> {
         assert!(!v[0].is_empty());
         debug_assert!(v.iter().all(|vi| vi.len() == v[0].len()));
 
-        let row_len = v.len();
-        let col_len = v[0].len();
-        let mut inner: Vec<Vec<O::Element>> = (0..row_len + 1)
-            .map(|_| (0..col_len + 1).map(|_| op.id()).collect())
-            .collect();
+        let len_rows = v.len();
+        let len_cols = v[0].len();
+        let stride_rows = len_cols + 1;
+        let len = (len_rows + 1) * stride_rows;
 
-        for i in 0..row_len {
-            for j in 0..col_len {
-                let mut datum = op.op(&inner[i + 1][j], &inner[i][j + 1]);
-                datum = op.op(&datum, &op.inv(&inner[i][j]));
-                datum = op.op(&datum, &v[i][j]);
-                inner[i + 1][j + 1] = datum;
+        let mut cum = Self {
+            len_rows,
+            len_cols,
+            stride_rows,
+            inner: (0..len).map(|_| op.id()).collect(),
+            op,
+        };
+
+        for i in 0..len_rows {
+            for j in 0..len_cols {
+                let mut datum = cum.op.op(cum.prefix(i + 1, j), cum.prefix(i, j + 1));
+                datum = cum.op.op(&datum, &cum.op.inv(cum.prefix(i, j)));
+                datum = cum.op.op(&datum, &v[i][j]);
+                let index = cum.idx(i + 1, j + 1);
+                cum.inner[index] = datum;
             }
         }
 
-        Self { inner, op }
+        cum
+    }
+
+    #[inline(always)]
+    fn idx(&self, i: usize, j: usize) -> usize {
+        i * self.stride_rows + j
     }
 
     /// `[0, i) x [0, j)`の累積積を返す．
+    #[inline]
     pub fn prefix(&self, i: usize, j: usize) -> &O::Element {
-        &self.inner[i][j]
+        &self.inner[self.idx(i, j)]
     }
 
     pub fn get(&self, i: usize, j: usize) -> O::Element
@@ -92,18 +109,14 @@ impl<O: Monoid> CumulativeArray2d<O> {
     where
         O: Group,
     {
-        debug_assert!(!self.inner.is_empty());
-        debug_assert!(!self.inner[0].is_empty());
-        let Range { start: il, end: ir } =
-            to_half_open_index_range(row_range, self.inner.len() - 1);
-        let Range { start: jl, end: jr } =
-            to_half_open_index_range(col_range, self.inner[0].len() - 1);
+        let Range { start: il, end: ir } = to_half_open_index_range(row_range, self.len_rows);
+        let Range { start: jl, end: jr } = to_half_open_index_range(col_range, self.len_cols);
         assert!(il <= ir);
         assert!(jl <= jr);
-        let mut res = self.op.op(&self.inner[ir][jr], &self.inner[il][jl]);
-        res = self.op.op(&res, &self.op.inv(&self.inner[il][jr]));
-        res = self.op.op(&res, &self.op.inv(&self.inner[ir][jl]));
-        res
+        let mut prod = self.op.op(self.prefix(ir, jr), self.prefix(il, jl));
+        prod = self.op.op(&prod, &self.op.inv(self.prefix(il, jr)));
+        prod = self.op.op(&prod, &self.op.inv(&self.prefix(ir, jl)));
+        prod
     }
 }
 
@@ -143,6 +156,9 @@ where
 {
     fn clone(&self) -> Self {
         Self {
+            len_rows: self.len_rows,
+            len_cols: self.len_cols,
+            stride_rows: self.stride_rows,
             inner: self.inner.clone(),
             op: self.op.clone(),
         }

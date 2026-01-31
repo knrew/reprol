@@ -9,7 +9,12 @@ use crate::{
 
 /// 3次元累積積を管理するデータ構造
 pub struct CumulativeArray3d<O: Monoid> {
-    inner: Vec<Vec<Vec<O::Element>>>,
+    len_i: usize,
+    len_j: usize,
+    len_k: usize,
+    stride_i: usize,
+    stride_j: usize,
+    inner: Vec<O::Element>,
     op: O,
 }
 
@@ -30,41 +35,56 @@ impl<O: Monoid> CumulativeArray3d<O> {
         assert!(!v.is_empty());
         assert!(!v[0].is_empty());
         assert!(!v[0][0].is_empty());
-        debug_assert!(v.iter().all(|vi| vi.len() == v[0].len() && vi.iter().all(|vij|vij.len() == v[0][0].len())));
+        debug_assert!(v
+            .iter()
+            .all(|vi| vi.len() == v[0].len() && vi.iter().all(|vij| vij.len() == v[0][0].len())));
 
-        let i_len = v.len();
-        let j_len = v[0].len();
-        let k_len = v[0][0].len();
+        let len_i = v.len();
+        let len_j = v[0].len();
+        let len_k = v[0][0].len();
+        let stride_j = len_k + 1;
+        let stride_i = (len_j + 1) * stride_j;
+        let len = (len_i + 1) * stride_i;
 
-        let mut inner: Vec<Vec<Vec<O::Element>>> = (0..i_len + 1)
-            .map(|_| {
-                (0..j_len + 1)
-                    .map(|_| (0..k_len + 1).map(|_| op.id()).collect())
-                    .collect()
-            })
-            .collect();
+        let mut cum = Self {
+            len_i,
+            len_j,
+            len_k,
+            stride_i,
+            stride_j,
+            inner: (0..len).map(|_| op.id()).collect(),
+            op,
+        };
 
-        for i in 0..i_len {
-            for j in 0..j_len {
-                for k in 0..k_len {
-                    let mut datum = op.op(&inner[i][j + 1][k + 1], &inner[i + 1][j][k + 1]);
-                    datum = op.op(&datum, &inner[i + 1][j + 1][k]);
-                    datum = op.op(&datum, &inner[i][j][k]);
-                    datum = op.op(&datum, &op.inv(&inner[i][j][k + 1]));
-                    datum = op.op(&datum, &op.inv(&inner[i][j + 1][k]));
-                    datum = op.op(&datum, &op.inv(&inner[i + 1][j][k]));
-                    datum = op.op(&datum, &v[i][j][k]);
-                    inner[i + 1][j + 1][k + 1] = datum;
+        for i in 0..len_i {
+            for j in 0..len_j {
+                for k in 0..len_k {
+                    let mut datum = cum
+                        .op
+                        .op(cum.prefix(i, j + 1, k + 1), cum.prefix(i + 1, j, k + 1));
+                    datum = cum.op.op(&datum, cum.prefix(i + 1, j + 1, k));
+                    datum = cum.op.op(&datum, cum.prefix(i, j, k));
+                    datum = cum.op.op(&datum, &cum.op.inv(cum.prefix(i, j, k + 1)));
+                    datum = cum.op.op(&datum, &cum.op.inv(cum.prefix(i, j + 1, k)));
+                    datum = cum.op.op(&datum, &cum.op.inv(cum.prefix(i + 1, j, k)));
+                    datum = cum.op.op(&datum, &v[i][j][k]);
+                    let index = cum.idx(i + 1, j + 1, k + 1);
+                    cum.inner[index] = datum;
                 }
             }
         }
 
-        Self { inner, op }
+        cum
+    }
+
+    #[inline(always)]
+    fn idx(&self, i: usize, j: usize, k: usize) -> usize {
+        i * self.stride_i + j * self.stride_j + k
     }
 
     /// `[0, i) x [0, j) x [0, k)`の累積積を返す．
     pub fn prefix(&self, i: usize, j: usize, k: usize) -> &O::Element {
-        &self.inner[i][j][k]
+        &self.inner[self.idx(i, j, k)]
     }
 
     pub fn get(&self, i: usize, j: usize, k: usize) -> O::Element
@@ -84,29 +104,23 @@ impl<O: Monoid> CumulativeArray3d<O> {
     where
         O: Group,
     {
-        debug_assert!(!self.inner.is_empty());
-        debug_assert!(!self.inner[0].is_empty());
-        debug_assert!(!self.inner[0][0].is_empty());
-
-        let Range { start: il, end: ir } = to_half_open_index_range(i_range, self.inner.len() - 1);
-        let Range { start: jl, end: jr } =
-            to_half_open_index_range(j_range, self.inner[0].len() - 1);
-        let Range { start: kl, end: kr } =
-            to_half_open_index_range(k_range, self.inner[0][0].len() - 1);
+        let Range { start: il, end: ir } = to_half_open_index_range(i_range, self.len_i);
+        let Range { start: jl, end: jr } = to_half_open_index_range(j_range, self.len_j);
+        let Range { start: kl, end: kr } = to_half_open_index_range(k_range, self.len_k);
 
         assert!(il <= ir);
         assert!(jl <= jr);
         assert!(kl <= kr);
 
-        let mut res = self.op.op(&self.inner[ir][jr][kr], &self.inner[il][jl][kr]);
-        res = self.op.op(&res, &self.inner[il][jr][kl]);
-        res = self.op.op(&res, &self.inner[ir][jl][kl]);
-        res = self.op.op(&res, &self.op.inv(&self.inner[il][jr][kr]));
-        res = self.op.op(&res, &self.op.inv(&self.inner[ir][jl][kr]));
-        res = self.op.op(&res, &self.op.inv(&self.inner[ir][jr][kl]));
-        res = self.op.op(&res, &self.op.inv(&self.inner[il][jl][kl]));
+        let mut prod = self.op.op(self.prefix(ir, jr, kr), self.prefix(il, jl, kr));
+        prod = self.op.op(&prod, self.prefix(il, jr, kl));
+        prod = self.op.op(&prod, self.prefix(ir, jl, kl));
+        prod = self.op.op(&prod, &self.op.inv(self.prefix(il, jr, kr)));
+        prod = self.op.op(&prod, &self.op.inv(self.prefix(ir, jl, kr)));
+        prod = self.op.op(&prod, &self.op.inv(self.prefix(ir, jr, kl)));
+        prod = self.op.op(&prod, &self.op.inv(self.prefix(il, jl, kl)));
 
-        res
+        prod
     }
 }
 
@@ -160,6 +174,11 @@ where
 {
     fn clone(&self) -> Self {
         Self {
+            len_i: self.len_i,
+            len_j: self.len_j,
+            len_k: self.len_k,
+            stride_i: self.stride_i,
+            stride_j: self.stride_j,
             inner: self.inner.clone(),
             op: self.op.clone(),
         }
