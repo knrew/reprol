@@ -13,13 +13,13 @@
 //! struct Op;
 //!
 //! impl Monoid for Op {
-//!     type Value = i64;
+//!     type Element = i64;
 //!
-//!     fn identity(&self) -> Self::Value {
+//!     fn id(&self) -> Self::Element {
 //!         0
 //!     }
 //!
-//!     fn op(&self, lhs: &Self::Value, rhs: &Self::Value) -> Self::Value {
+//!     fn op(&self, lhs: &Self::Element, rhs: &Self::Element) -> Self::Element {
 //!         lhs + rhs
 //!     }
 //! }
@@ -47,8 +47,10 @@ pub struct SegmentTree<O: Monoid> {
     /// 列の長さ(nodesの長さではない)
     len: usize,
 
+    offset: usize,
+
     /// セグ木を構成するノード
-    nodes: Vec<O::Value>,
+    nodes: Vec<O::Element>,
 
     /// 演算(モノイド)
     op: O,
@@ -68,43 +70,41 @@ impl<O: Monoid> SegmentTree<O> {
         let offset = len.next_power_of_two();
         Self {
             len,
-            nodes: (0..2 * offset).map(|_| op.identity()).collect(),
+            offset,
+            nodes: (0..2 * offset).map(|_| op.id()).collect(),
             op,
         }
     }
 
     /// `index`番目の要素を返す．
-    pub fn get(&self, index: usize) -> &O::Value {
+    pub fn get(&self, index: usize) -> &O::Element {
         assert!(index < self.len);
-        &self.nodes[index + self.nodes.len() / 2]
+        &self.nodes[index + self.offset]
     }
 
     /// `index`番目の要素を`value`に更新する．
     #[inline(always)]
-    pub fn set(&mut self, index: usize, value: O::Value) {
+    pub fn set(&mut self, index: usize, value: O::Element) {
         *self.entry_mut(index) = value;
     }
 
     pub fn entry_mut(&mut self, index: usize) -> EntryMut<'_, O> {
         assert!(index < self.len);
-        EntryMut {
-            segment_tree: self,
-            index,
-        }
+        EntryMut { seg: self, index }
     }
 
     /// 区間`range`の要素の総積を返す．
-    pub fn fold(&self, range: impl RangeBounds<usize>) -> O::Value {
+    pub fn fold(&self, range: impl RangeBounds<usize>) -> O::Element {
         let Range { start: l, end: r } = to_half_open_index_range(range, self.len);
         assert!(l <= r);
         assert!(r <= self.len);
 
-        let offset = self.nodes.len() / 2;
+        let offset = self.offset;
         let mut l = l + offset;
         let mut r = r + offset;
 
-        let mut res_l = self.op.identity();
-        let mut res_r = self.op.identity();
+        let mut res_l = self.op.id();
+        let mut res_r = self.op.id();
 
         while l < r {
             if l % 2 == 1 {
@@ -133,17 +133,16 @@ impl<O: Monoid> SegmentTree<O> {
     /// # 制約
     /// - `0 <= l <= len`
     /// - `f(identity()) = true`
-    pub fn bisect_right(&self, l: usize, mut f: impl FnMut(&O::Value) -> bool) -> usize {
+    pub fn bisect_right(&self, l: usize, mut f: impl FnMut(&O::Element) -> bool) -> usize {
         assert!(l <= self.len);
-        debug_assert!(f(&self.op.identity()));
+        debug_assert!(f(&self.op.id()));
 
         if l == self.len {
             return self.len;
         }
 
-        let offset = self.nodes.len() / 2;
-        let mut l = l + offset;
-        let mut prod = self.op.identity();
+        let mut l = l + self.offset;
+        let mut prod = self.op.id();
 
         loop {
             while l.is_multiple_of(2) {
@@ -152,7 +151,7 @@ impl<O: Monoid> SegmentTree<O> {
 
             let tmp = self.op.op(&prod, &self.nodes[l]);
             if !f(&tmp) {
-                while l < offset {
+                while l < self.offset {
                     l *= 2;
 
                     let tmp = self.op.op(&prod, &self.nodes[l]);
@@ -162,7 +161,7 @@ impl<O: Monoid> SegmentTree<O> {
                     }
                 }
 
-                return l - offset;
+                return l - self.offset;
             }
 
             prod = tmp;
@@ -187,17 +186,16 @@ impl<O: Monoid> SegmentTree<O> {
     /// # 制約
     /// - `0 <= r <= len`
     /// - `f(identity()) = true`
-    pub fn bisect_left(&self, r: usize, mut f: impl FnMut(&O::Value) -> bool) -> usize {
+    pub fn bisect_left(&self, r: usize, mut f: impl FnMut(&O::Element) -> bool) -> usize {
         assert!(r <= self.len);
-        debug_assert!(f(&self.op.identity()));
+        debug_assert!(f(&self.op.id()));
 
         if r == 0 {
             return 0;
         }
 
-        let offset = self.nodes.len() / 2;
-        let mut r = r + offset;
-        let mut prod = self.op.identity();
+        let mut r = r + self.offset;
+        let mut prod = self.op.id();
 
         loop {
             r -= 1;
@@ -207,7 +205,7 @@ impl<O: Monoid> SegmentTree<O> {
 
             let tmp = self.op.op(&self.nodes[r], &prod);
             if !f(&tmp) {
-                while r < offset {
+                while r < self.offset {
                     r = 2 * r + 1;
                     let tmp = self.op.op(&self.nodes[r], &prod);
                     if f(&tmp) {
@@ -216,7 +214,7 @@ impl<O: Monoid> SegmentTree<O> {
                     }
                 }
 
-                return r + 1 - offset;
+                return r + 1 - self.offset;
             }
 
             prod = tmp;
@@ -230,14 +228,14 @@ impl<O: Monoid> SegmentTree<O> {
     }
 }
 
-impl<O: Monoid> From<(Vec<O::Value>, O)> for SegmentTree<O> {
-    fn from((v, op): (Vec<O::Value>, O)) -> Self {
+impl<O: Monoid> From<(Vec<O::Element>, O)> for SegmentTree<O> {
+    fn from((v, op): (Vec<O::Element>, O)) -> Self {
         assert!(!v.is_empty());
 
         let len = v.len();
         let offset = len.next_power_of_two();
 
-        let mut nodes = (0..2 * offset).map(|_| op.identity()).collect::<Vec<_>>();
+        let mut nodes = (0..2 * offset).map(|_| op.id()).collect::<Vec<_>>();
 
         for (node_i, vi) in nodes[offset..offset + len].iter_mut().zip(v) {
             *node_i = vi;
@@ -247,36 +245,41 @@ impl<O: Monoid> From<(Vec<O::Value>, O)> for SegmentTree<O> {
             nodes[i] = op.op(&nodes[2 * i], &nodes[2 * i + 1]);
         }
 
-        Self { len, nodes, op }
+        Self {
+            len,
+            offset,
+            nodes,
+            op,
+        }
     }
 }
 
-impl<O: Monoid, const N: usize> From<([O::Value; N], O)> for SegmentTree<O> {
-    fn from((v, op): ([O::Value; N], O)) -> Self {
+impl<O: Monoid, const N: usize> From<([O::Element; N], O)> for SegmentTree<O> {
+    fn from((v, op): ([O::Element; N], O)) -> Self {
         Self::from((v.into_iter().collect::<Vec<_>>(), op))
     }
 }
 
-impl<O: Monoid + Default> From<Vec<O::Value>> for SegmentTree<O> {
-    fn from(v: Vec<O::Value>) -> Self {
+impl<O: Monoid + Default> From<Vec<O::Element>> for SegmentTree<O> {
+    fn from(v: Vec<O::Element>) -> Self {
         Self::from((v, O::default()))
     }
 }
 
-impl<O: Monoid + Default, const N: usize> From<[O::Value; N]> for SegmentTree<O> {
-    fn from(v: [O::Value; N]) -> Self {
+impl<O: Monoid + Default, const N: usize> From<[O::Element; N]> for SegmentTree<O> {
+    fn from(v: [O::Element; N]) -> Self {
         Self::from((v, O::default()))
     }
 }
 
-impl<O: Monoid + Default> FromIterator<O::Value> for SegmentTree<O> {
-    fn from_iter<I: IntoIterator<Item = O::Value>>(iter: I) -> Self {
+impl<O: Monoid + Default> FromIterator<O::Element> for SegmentTree<O> {
+    fn from_iter<I: IntoIterator<Item = O::Element>>(iter: I) -> Self {
         Self::from(iter.into_iter().collect::<Vec<_>>())
     }
 }
 
 impl<O: Monoid> Index<usize> for SegmentTree<O> {
-    type Output = O::Value;
+    type Output = O::Element;
     #[inline]
     fn index(&self, index: usize) -> &Self::Output {
         self.get(index)
@@ -284,41 +287,39 @@ impl<O: Monoid> Index<usize> for SegmentTree<O> {
 }
 
 pub struct EntryMut<'a, O: Monoid> {
-    segment_tree: &'a mut SegmentTree<O>,
+    seg: &'a mut SegmentTree<O>,
     index: usize,
 }
 
 impl<'a, O: Monoid> Deref for EntryMut<'a, O> {
-    type Target = O::Value;
+    type Target = O::Element;
     fn deref(&self) -> &Self::Target {
-        self.segment_tree.get(self.index)
+        self.seg.get(self.index)
     }
 }
 
 impl<'a, O: Monoid> DerefMut for EntryMut<'a, O> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        let offset = self.segment_tree.nodes.len() / 2;
-        &mut self.segment_tree.nodes[offset + self.index]
+        &mut self.seg.nodes[self.index + self.seg.offset]
     }
 }
 
 impl<'a, O: Monoid> Drop for EntryMut<'a, O> {
     fn drop(&mut self) {
-        let offset = self.segment_tree.nodes.len() / 2;
-        let mut index = self.index + offset;
+        let mut index = self.index + self.seg.offset;
         while index > 1 {
             index /= 2;
-            self.segment_tree.nodes[index] = self.segment_tree.op.op(
-                &self.segment_tree.nodes[2 * index],
-                &self.segment_tree.nodes[2 * index + 1],
-            );
+            self.seg.nodes[index] = self
+                .seg
+                .op
+                .op(&self.seg.nodes[2 * index], &self.seg.nodes[2 * index + 1]);
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use rand::{Rng, random_range};
+    use rand::Rng;
 
     use super::*;
     use crate::{
@@ -401,13 +402,13 @@ mod tests {
         }
 
         impl Monoid for OpModAdd {
-            type Value = i64;
+            type Element = i64;
 
-            fn identity(&self) -> Self::Value {
+            fn id(&self) -> Self::Element {
                 0
             }
 
-            fn op(&self, lhs: &Self::Value, rhs: &Self::Value) -> Self::Value {
+            fn op(&self, lhs: &Self::Element, rhs: &Self::Element) -> Self::Element {
                 (lhs + rhs) % self.m
             }
         }
@@ -442,14 +443,14 @@ mod tests {
         struct OpAffine;
 
         impl Monoid for OpAffine {
-            type Value = Affine;
+            type Element = Affine;
 
-            fn identity(&self) -> Self::Value {
+            fn id(&self) -> Self::Element {
                 Affine { a: 1, b: 0 }
             }
 
             // (a1,b1) ∘ (a2,b2) = (a1*a2, a1*b2 + b1)
-            fn op(&self, lhs: &Self::Value, rhs: &Self::Value) -> Self::Value {
+            fn op(&self, lhs: &Self::Element, rhs: &Self::Element) -> Self::Element {
                 Affine {
                     a: lhs.a * rhs.a,
                     b: lhs.a * rhs.b + lhs.b,
@@ -596,8 +597,8 @@ mod tests {
                     }
                     2 => {
                         // fold
-                        let l = random_range(0..n);
-                        let r = random_range(l + 1..=n);
+                        let l = rng.random_range(0..n);
+                        let r = rng.random_range(l + 1..=n);
                         assert_eq!(seg.fold(l..r), v[l..r].iter().sum::<i64>());
                     }
                     3 => {
@@ -697,8 +698,8 @@ mod tests {
                         assert_eq!(seg[i], v[i]);
                     }
                     2 => {
-                        let l = random_range(0..n);
-                        let r = random_range(l + 1..=n);
+                        let l = rng.random_range(0..n);
+                        let r = rng.random_range(l + 1..=n);
                         let naive = *v[l..r].iter().max().unwrap();
                         assert_eq!(seg.fold(l..r), naive);
                     }

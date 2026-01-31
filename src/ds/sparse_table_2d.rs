@@ -14,9 +14,9 @@ pub struct SparseTable2d<M: Monoid> {
 impl<M> SparseTable2d<M>
 where
     M: Monoid,
-    M::Value: Clone,
+    M::Element: Clone,
 {
-    pub fn new(v: Vec<Vec<M::Value>>) -> Self
+    pub fn new(v: Vec<Vec<M::Element>>) -> Self
     where
         M: Default,
     {
@@ -64,7 +64,7 @@ where
         }
     }
 
-    pub fn with_op(v: Vec<Vec<M::Value>>, monoid: M) -> Self
+    pub fn with_op(v: Vec<Vec<M::Element>>, monoid: M) -> Self
     where
         M: Clone,
     {
@@ -113,11 +113,11 @@ where
         &self,
         row_range: impl RangeBounds<usize>,
         col_range: impl RangeBounds<usize>,
-    ) -> M::Value {
+    ) -> M::Element {
         let Range { start: il, end: ir } = to_half_open_index_range(row_range, self.h);
         let Range { start: jl, end: jr } = to_half_open_index_range(col_range, self.w);
         if il >= ir {
-            return self.monoid.identity();
+            return self.monoid.id();
         }
         let k = (ir - il + 1).next_power_of_two().trailing_zeros() as usize - 1;
         self.monoid.op(
@@ -127,32 +127,32 @@ where
     }
 }
 
-impl<M> From<Vec<Vec<M::Value>>> for SparseTable2d<M>
+impl<M> From<Vec<Vec<M::Element>>> for SparseTable2d<M>
 where
     M: Monoid + Default,
-    M::Value: Clone,
+    M::Element: Clone,
 {
-    fn from(v: Vec<Vec<M::Value>>) -> Self {
+    fn from(v: Vec<Vec<M::Element>>) -> Self {
         Self::new(v)
     }
 }
 
-impl<M> From<&Vec<Vec<M::Value>>> for SparseTable2d<M>
+impl<M> From<&Vec<Vec<M::Element>>> for SparseTable2d<M>
 where
     M: Monoid + Default,
-    M::Value: Clone,
+    M::Element: Clone,
 {
-    fn from(v: &Vec<Vec<M::Value>>) -> Self {
+    fn from(v: &Vec<Vec<M::Element>>) -> Self {
         Self::new(v.clone())
     }
 }
 
-impl<M> From<&[Vec<M::Value>]> for SparseTable2d<M>
+impl<M> From<&[Vec<M::Element>]> for SparseTable2d<M>
 where
     M: Monoid + Default,
-    M::Value: Clone,
+    M::Element: Clone,
 {
-    fn from(v: &[Vec<M::Value>]) -> Self {
+    fn from(v: &[Vec<M::Element>]) -> Self {
         Self::new(v.to_vec())
     }
 }

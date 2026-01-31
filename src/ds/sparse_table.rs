@@ -2,19 +2,18 @@ use std::ops::{Range, RangeBounds};
 
 use crate::{ops::monoid::Monoid, utils::range::to_half_open_index_range};
 
-/// なんか遅い？
 pub struct SparseTable<M: Monoid> {
     n: usize,
-    nodes: Vec<Vec<M::Value>>,
+    nodes: Vec<Vec<M::Element>>,
     monoid: M,
 }
 
 impl<M> SparseTable<M>
 where
     M: Monoid,
-    M::Value: Clone,
+    M::Element: Clone,
 {
-    pub fn new(v: Vec<M::Value>) -> Self
+    pub fn new(v: Vec<M::Element>) -> Self
     where
         M: Default,
     {
@@ -22,7 +21,7 @@ where
     }
 
     /// 演算(モノイド)を引数で指定
-    pub fn with_op(v: Vec<M::Value>, monoid: M) -> Self {
+    pub fn with_op(v: Vec<M::Element>, monoid: M) -> Self {
         assert!(!v.is_empty());
         let n = v.len();
         let len = v.len().next_power_of_two().trailing_zeros() as usize + 1;
@@ -38,57 +37,57 @@ where
         Self { n, nodes, monoid }
     }
 
-    pub fn fold(&self, range: impl RangeBounds<usize>) -> M::Value {
+    pub fn fold(&self, range: impl RangeBounds<usize>) -> M::Element {
         let Range { start: l, end: r } = to_half_open_index_range(range, self.n);
         if l >= r {
-            return self.monoid.identity();
+            return self.monoid.id();
         }
         let k = (r - l + 1).next_power_of_two().trailing_zeros() as usize - 1;
         self.monoid
             .op(&self.nodes[k][l], &self.nodes[k][r - (1 << k)])
     }
 
-    pub fn raw(&self) -> &Vec<Vec<M::Value>> {
+    pub fn raw(&self) -> &Vec<Vec<M::Element>> {
         &self.nodes
     }
 }
 
-impl<M> From<Vec<M::Value>> for SparseTable<M>
+impl<M> From<Vec<M::Element>> for SparseTable<M>
 where
     M: Monoid + Default,
-    M::Value: Clone,
+    M::Element: Clone,
 {
-    fn from(v: Vec<M::Value>) -> Self {
+    fn from(v: Vec<M::Element>) -> Self {
         Self::new(v)
     }
 }
 
-impl<M> From<&Vec<M::Value>> for SparseTable<M>
+impl<M> From<&Vec<M::Element>> for SparseTable<M>
 where
     M: Monoid + Default,
-    M::Value: Clone,
+    M::Element: Clone,
 {
-    fn from(v: &Vec<M::Value>) -> Self {
+    fn from(v: &Vec<M::Element>) -> Self {
         Self::new(v.clone())
     }
 }
 
-impl<M> From<&[M::Value]> for SparseTable<M>
+impl<M> From<&[M::Element]> for SparseTable<M>
 where
     M: Monoid + Default,
-    M::Value: Clone,
+    M::Element: Clone,
 {
-    fn from(v: &[M::Value]) -> Self {
+    fn from(v: &[M::Element]) -> Self {
         Self::new(v.to_vec())
     }
 }
 
-impl<M> FromIterator<M::Value> for SparseTable<M>
+impl<M> FromIterator<M::Element> for SparseTable<M>
 where
     M: Monoid + Default,
-    M::Value: Clone,
+    M::Element: Clone,
 {
-    fn from_iter<T: IntoIterator<Item = M::Value>>(iter: T) -> Self {
+    fn from_iter<T: IntoIterator<Item = M::Element>>(iter: T) -> Self {
         Self::new(iter.into_iter().collect::<Vec<_>>())
     }
 }

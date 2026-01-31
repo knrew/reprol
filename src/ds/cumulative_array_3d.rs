@@ -1,9 +1,6 @@
 //! 3次元累積積(累積和)
 
-use std::{
-    fmt::Debug,
-    ops::{Range, RangeBounds},
-};
+use std::ops::{Range, RangeBounds};
 
 use crate::{
     ops::{group::Group, monoid::Monoid, op_add::OpAdd},
@@ -12,13 +9,13 @@ use crate::{
 
 /// 3次元累積積を管理するデータ構造
 pub struct CumulativeArray3d<O: Monoid> {
-    inner: Vec<Vec<Vec<O::Value>>>,
+    inner: Vec<Vec<Vec<O::Element>>>,
     op: O,
 }
 
 impl<O: Monoid> CumulativeArray3d<O> {
     /// 3次元配列の累積配列を構築する．
-    pub fn new(v: Vec<Vec<Vec<O::Value>>>) -> Self
+    pub fn new(v: Vec<Vec<Vec<O::Element>>>) -> Self
     where
         O: Group + Default,
     {
@@ -26,7 +23,7 @@ impl<O: Monoid> CumulativeArray3d<O> {
     }
 
     /// 演算`op`を明示的に渡して3次元配列の累積配列を構築する．
-    pub fn with_op(v: Vec<Vec<Vec<O::Value>>>, op: O) -> Self
+    pub fn with_op(v: Vec<Vec<Vec<O::Element>>>, op: O) -> Self
     where
         O: Group,
     {
@@ -39,10 +36,10 @@ impl<O: Monoid> CumulativeArray3d<O> {
         let j_len = v[0].len();
         let k_len = v[0][0].len();
 
-        let mut inner: Vec<Vec<Vec<O::Value>>> = (0..i_len + 1)
+        let mut inner: Vec<Vec<Vec<O::Element>>> = (0..i_len + 1)
             .map(|_| {
                 (0..j_len + 1)
-                    .map(|_| (0..k_len + 1).map(|_| op.identity()).collect())
+                    .map(|_| (0..k_len + 1).map(|_| op.id()).collect())
                     .collect()
             })
             .collect();
@@ -66,11 +63,11 @@ impl<O: Monoid> CumulativeArray3d<O> {
     }
 
     /// `[0, i) x [0, j) x [0, k)`の累積積を返す．
-    pub fn prefix(&self, i: usize, j: usize, k: usize) -> &O::Value {
+    pub fn prefix(&self, i: usize, j: usize, k: usize) -> &O::Element {
         &self.inner[i][j][k]
     }
 
-    pub fn get(&self, i: usize, j: usize, k: usize) -> O::Value
+    pub fn get(&self, i: usize, j: usize, k: usize) -> O::Element
     where
         O: Group,
     {
@@ -83,7 +80,7 @@ impl<O: Monoid> CumulativeArray3d<O> {
         i_range: impl RangeBounds<usize>,
         j_range: impl RangeBounds<usize>,
         k_range: impl RangeBounds<usize>,
-    ) -> O::Value
+    ) -> O::Element
     where
         O: Group,
     {
@@ -113,17 +110,17 @@ impl<O: Monoid> CumulativeArray3d<O> {
     }
 }
 
-impl<O: Group> From<(Vec<Vec<Vec<O::Value>>>, O)> for CumulativeArray3d<O> {
-    fn from((v, op): (Vec<Vec<Vec<O::Value>>>, O)) -> Self {
+impl<O: Group> From<(Vec<Vec<Vec<O::Element>>>, O)> for CumulativeArray3d<O> {
+    fn from((v, op): (Vec<Vec<Vec<O::Element>>>, O)) -> Self {
         CumulativeArray3d::with_op(v, op)
     }
 }
 
-impl<O: Group, const N: usize, const M: usize, const L: usize> From<([[[O::Value; L]; M]; N], O)>
+impl<O: Group, const N: usize, const M: usize, const L: usize> From<([[[O::Element; L]; M]; N], O)>
     for CumulativeArray3d<O>
 {
-    fn from((v, op): ([[[O::Value; L]; M]; N], O)) -> Self {
-        let v: Vec<Vec<Vec<O::Value>>> = v
+    fn from((v, op): ([[[O::Element; L]; M]; N], O)) -> Self {
+        let v: Vec<Vec<Vec<O::Element>>> = v
             .into_iter()
             .map(|vi| {
                 vi.into_iter()
@@ -135,17 +132,17 @@ impl<O: Group, const N: usize, const M: usize, const L: usize> From<([[[O::Value
     }
 }
 
-impl<O: Group + Default> From<Vec<Vec<Vec<O::Value>>>> for CumulativeArray3d<O> {
-    fn from(v: Vec<Vec<Vec<O::Value>>>) -> Self {
+impl<O: Group + Default> From<Vec<Vec<Vec<O::Element>>>> for CumulativeArray3d<O> {
+    fn from(v: Vec<Vec<Vec<O::Element>>>) -> Self {
         CumulativeArray3d::new(v)
     }
 }
 
 impl<O: Group + Default, const N: usize, const M: usize, const L: usize>
-    From<[[[O::Value; L]; M]; N]> for CumulativeArray3d<O>
+    From<[[[O::Element; L]; M]; N]> for CumulativeArray3d<O>
 {
-    fn from(v: [[[O::Value; L]; M]; N]) -> Self {
-        let v: Vec<Vec<Vec<O::Value>>> = v
+    fn from(v: [[[O::Element; L]; M]; N]) -> Self {
+        let v: Vec<Vec<Vec<O::Element>>> = v
             .into_iter()
             .map(|vi| {
                 vi.into_iter()
@@ -159,22 +156,13 @@ impl<O: Group + Default, const N: usize, const M: usize, const L: usize>
 
 impl<O: Monoid + Clone> Clone for CumulativeArray3d<O>
 where
-    O::Value: Clone,
+    O::Element: Clone,
 {
     fn clone(&self) -> Self {
         Self {
             inner: self.inner.clone(),
             op: self.op.clone(),
         }
-    }
-}
-
-impl<O: Monoid> Debug for CumulativeArray3d<O>
-where
-    O::Value: Debug,
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_list().entries(self.inner.iter()).finish()
     }
 }
 

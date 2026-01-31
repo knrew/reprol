@@ -27,13 +27,13 @@ use crate::{ops::monoid::Monoid, utils::range::to_half_open_index_range};
 
 pub struct DisjointSparseTable<O: Monoid> {
     len: usize,
-    data: Vec<Vec<O::Value>>,
+    data: Vec<Vec<O::Element>>,
     op: O,
 }
 
 impl<O: Monoid> DisjointSparseTable<O> {
     /// 配列`v`からDisjoint Sparse Tableを構築する．
-    pub fn new(v: Vec<O::Value>) -> Self
+    pub fn new(v: Vec<O::Element>) -> Self
     where
         O: Default,
     {
@@ -41,17 +41,17 @@ impl<O: Monoid> DisjointSparseTable<O> {
     }
 
     /// 演算`op`を指定して，配列`v`からDisjoint Sparse Tableを構築する．
-    pub fn with_op(v: Vec<O::Value>, op: O) -> Self {
+    pub fn with_op(v: Vec<O::Element>, op: O) -> Self {
         assert!(!v.is_empty());
 
         let n = v.len() + 2;
         let h = n.next_power_of_two().trailing_zeros() as usize;
 
         let mut data = Vec::with_capacity(h);
-        data.push((0..n).map(|_| op.identity()).collect());
+        data.push((0..n).map(|_| op.id()).collect());
 
         for w in (1..h).map(|k| 1 << k) {
-            let mut datum = (0..n).map(|_| op.identity()).collect::<Vec<_>>();
+            let mut datum = (0..n).map(|_| op.id()).collect::<Vec<_>>();
 
             for i in (w..n).step_by(w * 2) {
                 for j in (i - w + 1..i).rev() {
@@ -73,12 +73,12 @@ impl<O: Monoid> DisjointSparseTable<O> {
     }
 
     /// 指定したindexの値を返す．
-    pub fn get(&self, index: usize) -> O::Value {
+    pub fn get(&self, index: usize) -> O::Element {
         self.fold(index..=index)
     }
 
     /// 区間`[l, r)`の区間積を返す．
-    pub fn fold(&self, range: impl RangeBounds<usize>) -> O::Value {
+    pub fn fold(&self, range: impl RangeBounds<usize>) -> O::Element {
         let Range {
             start: l,
             end: mut r,
@@ -92,47 +92,47 @@ impl<O: Monoid> DisjointSparseTable<O> {
     }
 }
 
-impl<O> From<(Vec<O::Value>, O)> for DisjointSparseTable<O>
+impl<O> From<(Vec<O::Element>, O)> for DisjointSparseTable<O>
 where
     O: Monoid,
 {
-    fn from((v, op): (Vec<O::Value>, O)) -> Self {
+    fn from((v, op): (Vec<O::Element>, O)) -> Self {
         Self::with_op(v, op)
     }
 }
 
-impl<O, const N: usize> From<([O::Value; N], O)> for DisjointSparseTable<O>
+impl<O, const N: usize> From<([O::Element; N], O)> for DisjointSparseTable<O>
 where
     O: Monoid,
 {
-    fn from((v, op): ([O::Value; N], O)) -> Self {
+    fn from((v, op): ([O::Element; N], O)) -> Self {
         Self::with_op(v.into_iter().collect(), op)
     }
 }
 
-impl<O> From<Vec<O::Value>> for DisjointSparseTable<O>
+impl<O> From<Vec<O::Element>> for DisjointSparseTable<O>
 where
     O: Monoid + Default,
 {
-    fn from(v: Vec<O::Value>) -> Self {
+    fn from(v: Vec<O::Element>) -> Self {
         Self::new(v)
     }
 }
 
-impl<O, const N: usize> From<[O::Value; N]> for DisjointSparseTable<O>
+impl<O, const N: usize> From<[O::Element; N]> for DisjointSparseTable<O>
 where
     O: Monoid + Default,
 {
-    fn from(v: [O::Value; N]) -> Self {
+    fn from(v: [O::Element; N]) -> Self {
         Self::new(v.into_iter().collect())
     }
 }
 
-impl<O> FromIterator<O::Value> for DisjointSparseTable<O>
+impl<O> FromIterator<O::Element> for DisjointSparseTable<O>
 where
     O: Monoid + Default,
 {
-    fn from_iter<I: IntoIterator<Item = O::Value>>(iter: I) -> Self {
+    fn from_iter<I: IntoIterator<Item = O::Element>>(iter: I) -> Self {
         Self::new(iter.into_iter().collect())
     }
 }

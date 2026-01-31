@@ -30,7 +30,7 @@ use crate::ops::group::Group;
 pub struct PotentializedDsu<O: Group> {
     parents: Vec<usize>,
     sizes: Vec<usize>,
-    potentials: Vec<O::Value>,
+    potentials: Vec<O::Element>,
     count_components: usize,
     op: O,
 }
@@ -49,7 +49,7 @@ impl<O: Group> PotentializedDsu<O> {
         Self {
             parents: (0..n).collect(),
             sizes: vec![1; n],
-            potentials: (0..n).map(|_| op.identity()).collect(),
+            potentials: (0..n).map(|_| op.id()).collect(),
             count_components: n,
             op,
         }
@@ -74,9 +74,9 @@ impl<O: Group> PotentializedDsu<O> {
     /// `potential[u]+d=potential[v]`となるようにポテンシャルを更新する．
     /// すでに`u`と`v`が同じ集合に属しており，既存の差と矛盾があれば更新は行われずfalseを返す．
     /// そうでない場合にはtrueを返す．
-    pub fn merge(&mut self, u: usize, v: usize, d: O::Value) -> bool
+    pub fn merge(&mut self, u: usize, v: usize, d: O::Element) -> bool
     where
-        O::Value: PartialEq,
+        O::Element: PartialEq,
     {
         let mut w = {
             let _ = self.find(u);
@@ -118,7 +118,7 @@ impl<O: Group> PotentializedDsu<O> {
     }
 
     /// 要素`v`に置かれたポテンシャルを返す．
-    pub fn potential(&mut self, v: usize) -> &O::Value {
+    pub fn potential(&mut self, v: usize) -> &O::Element {
         let _ = self.find(v);
         &self.potentials[v]
     }
@@ -126,7 +126,7 @@ impl<O: Group> PotentializedDsu<O> {
     /// 要素`u`と`v`が同じ集合に属している場合に，
     /// それらのポテンシャルの差(`potential[v] - potential[u]`)を返す．
     /// `u`と`v`が同じ集合に属していない場合はpanicする．
-    pub fn diff_potential(&mut self, u: usize, v: usize) -> O::Value {
+    pub fn diff_potential(&mut self, u: usize, v: usize) -> O::Element {
         assert!(self.connected(u, v));
         let _ = self.find(u);
         let _ = self.find(v);

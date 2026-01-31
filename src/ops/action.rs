@@ -9,5 +9,5 @@ where
 {
     // f: M -> M
     // xにfを作用させる(f(x)をする)
-    fn act(&self, f: &Self::Value, x: &Operand::Value) -> Operand::Value;
+    fn act(&self, f: &Self::Element, x: &Operand::Element) -> Operand::Element;
 }

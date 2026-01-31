@@ -1,60 +1,55 @@
 use std::marker::PhantomData;
 
-use crate::ops::monoid::Monoid;
+use crate::ops::monoid::{IdempotentMonoid, Monoid};
 
 #[derive(Default, Clone)]
 pub struct OpMin<T> {
-    _phantom: PhantomData<T>,
+    phantom: PhantomData<T>,
 }
 
-impl<T> Monoid for OpMin<T>
-where
-    T: Copy + PartialOrd + Max,
-{
-    type Value = T;
+impl<T: Copy + PartialOrd + OpMinUtils> Monoid for OpMin<T> {
+    type Element = T;
 
     #[inline]
-    fn identity(&self) -> Self::Value {
-        T::max()
+    fn id(&self) -> Self::Element {
+        T::MAX
     }
 
     #[inline]
-    fn op(&self, &x: &Self::Value, &y: &Self::Value) -> Self::Value {
+    fn op(&self, &x: &Self::Element, &y: &Self::Element) -> Self::Element {
         if x < y { x } else { y }
     }
 }
 
-pub trait Max {
-    fn max() -> Self;
+impl<T: Copy + PartialOrd + OpMinUtils> IdempotentMonoid for OpMin<T> {}
+
+pub trait OpMinUtils {
+    const MAX: Self;
 }
 
-macro_rules! impl_max {
+macro_rules! impl_opminutils {
     ($ty: ty) => {
-        impl Max for $ty {
-            #[inline(always)]
-            fn max() -> Self {
-                <$ty>::MAX
-            }
+        impl OpMinUtils for $ty {
+            const MAX: Self = <$ty>::MAX;
         }
     };
 }
 
-macro_rules! impl_max_for {
+macro_rules! impl_opminutils_for {
     ($($ty: ty),* $(,)?) => {
-        $( impl_max!($ty); )*
+        $( impl_opminutils!($ty); )*
     };
 }
 
-impl_max_for! {
+impl_opminutils_for! {
     i8, i16, i32, i64, i128, isize,
     u8, u16, u32, u64, u128, usize,
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::ops::monoid::Monoid;
-
     use super::*;
+    use crate::ops::monoid::Monoid;
 
     #[test]
     fn test_opmin() {
@@ -64,7 +59,7 @@ mod tests {
         assert_eq!(op.op(&2, &28), 2);
         assert_eq!(op.op(&38, &69), 38);
         assert_eq!(op.op(&13, &48), 13);
-        assert_eq!(op.op(&op.identity(), &5), 5);
-        assert_eq!(op.op(&op.identity(), &3332), 3332);
+        assert_eq!(op.op(&op.id(), &5), 5);
+        assert_eq!(op.op(&op.id(), &3332), 3332);
     }
 }
