@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["DijkstraImpl","NoPath","WithPath"],"trait":["PathTracker"],"type":["Dijkstra","DijkstraWithPath"]};
+window.SIDEBAR_ITEMS = {"struct":["DijkstraImpl"],"type":["Dijkstra","DijkstraWithPath"]};
