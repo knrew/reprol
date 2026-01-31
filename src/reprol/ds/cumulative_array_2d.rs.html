@@ -69,13 +69,13 @@
 <a href=#69 id=69 data-nosnippet>69</a>            op,
 <a href=#70 id=70 data-nosnippet>70</a>        };
 <a href=#71 id=71 data-nosnippet>71</a>
-<a href=#72 id=72 data-nosnippet>72</a>        <span class="kw">for </span>i <span class="kw">in </span><span class="number">0</span>..len_rows {
-<a href=#73 id=73 data-nosnippet>73</a>            <span class="kw">for </span>j <span class="kw">in </span><span class="number">0</span>..len_cols {
-<a href=#74 id=74 data-nosnippet>74</a>                <span class="kw">let </span><span class="kw-2">mut </span>datum = cum.op.op(cum.prefix(i + <span class="number">1</span>, j), cum.prefix(i, j + <span class="number">1</span>));
-<a href=#75 id=75 data-nosnippet>75</a>                datum = cum.op.op(<span class="kw-2">&amp;</span>datum, <span class="kw-2">&amp;</span>cum.op.inv(cum.prefix(i, j)));
-<a href=#76 id=76 data-nosnippet>76</a>                datum = cum.op.op(<span class="kw-2">&amp;</span>datum, <span class="kw-2">&amp;</span>v[i][j]);
+<a href=#72 id=72 data-nosnippet>72</a>        <span class="kw">for </span>(i, vi) <span class="kw">in </span>v.iter().enumerate() {
+<a href=#73 id=73 data-nosnippet>73</a>            <span class="kw">for </span>(j, vij) <span class="kw">in </span>vi.iter().enumerate() {
+<a href=#74 id=74 data-nosnippet>74</a>                <span class="kw">let </span><span class="kw-2">mut </span>value = cum.op.op(cum.prefix(i + <span class="number">1</span>, j), cum.prefix(i, j + <span class="number">1</span>));
+<a href=#75 id=75 data-nosnippet>75</a>                value = cum.op.op(<span class="kw-2">&amp;</span>value, <span class="kw-2">&amp;</span>cum.op.inv(cum.prefix(i, j)));
+<a href=#76 id=76 data-nosnippet>76</a>                value = cum.op.op(<span class="kw-2">&amp;</span>value, vij);
 <a href=#77 id=77 data-nosnippet>77</a>                <span class="kw">let </span>index = cum.idx(i + <span class="number">1</span>, j + <span class="number">1</span>);
-<a href=#78 id=78 data-nosnippet>78</a>                cum.inner[index] = datum;
+<a href=#78 id=78 data-nosnippet>78</a>                cum.inner[index] = value;
 <a href=#79 id=79 data-nosnippet>79</a>            }
 <a href=#80 id=80 data-nosnippet>80</a>        }
 <a href=#81 id=81 data-nosnippet>81</a>
@@ -115,7 +115,7 @@
 <a href=#115 id=115 data-nosnippet>115</a>        <span class="macro">assert!</span>(jl &lt;= jr);
 <a href=#116 id=116 data-nosnippet>116</a>        <span class="kw">let </span><span class="kw-2">mut </span>prod = <span class="self">self</span>.op.op(<span class="self">self</span>.prefix(ir, jr), <span class="self">self</span>.prefix(il, jl));
 <a href=#117 id=117 data-nosnippet>117</a>        prod = <span class="self">self</span>.op.op(<span class="kw-2">&amp;</span>prod, <span class="kw-2">&amp;</span><span class="self">self</span>.op.inv(<span class="self">self</span>.prefix(il, jr)));
-<a href=#118 id=118 data-nosnippet>118</a>        prod = <span class="self">self</span>.op.op(<span class="kw-2">&amp;</span>prod, <span class="kw-2">&amp;</span><span class="self">self</span>.op.inv(<span class="kw-2">&amp;</span><span class="self">self</span>.prefix(ir, jl)));
+<a href=#118 id=118 data-nosnippet>118</a>        prod = <span class="self">self</span>.op.op(<span class="kw-2">&amp;</span>prod, <span class="kw-2">&amp;</span><span class="self">self</span>.op.inv(<span class="self">self</span>.prefix(ir, jl)));
 <a href=#119 id=119 data-nosnippet>119</a>        prod
 <a href=#120 id=120 data-nosnippet>120</a>    }
 <a href=#121 id=121 data-nosnippet>121</a>}

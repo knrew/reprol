@@ -56,20 +56,20 @@
 <a href=#56 id=56 data-nosnippet>56</a>            op,
 <a href=#57 id=57 data-nosnippet>57</a>        };
 <a href=#58 id=58 data-nosnippet>58</a>
-<a href=#59 id=59 data-nosnippet>59</a>        <span class="kw">for </span>i <span class="kw">in </span><span class="number">0</span>..len_i {
-<a href=#60 id=60 data-nosnippet>60</a>            <span class="kw">for </span>j <span class="kw">in </span><span class="number">0</span>..len_j {
-<a href=#61 id=61 data-nosnippet>61</a>                <span class="kw">for </span>k <span class="kw">in </span><span class="number">0</span>..len_k {
-<a href=#62 id=62 data-nosnippet>62</a>                    <span class="kw">let </span><span class="kw-2">mut </span>datum = cum
+<a href=#59 id=59 data-nosnippet>59</a>        <span class="kw">for </span>(i, vi) <span class="kw">in </span>v.iter().enumerate() {
+<a href=#60 id=60 data-nosnippet>60</a>            <span class="kw">for </span>(j, vij) <span class="kw">in </span>vi.iter().enumerate() {
+<a href=#61 id=61 data-nosnippet>61</a>                <span class="kw">for </span>(k, vijk) <span class="kw">in </span>vij.iter().enumerate() {
+<a href=#62 id=62 data-nosnippet>62</a>                    <span class="kw">let </span><span class="kw-2">mut </span>value = cum
 <a href=#63 id=63 data-nosnippet>63</a>                        .op
 <a href=#64 id=64 data-nosnippet>64</a>                        .op(cum.prefix(i, j + <span class="number">1</span>, k + <span class="number">1</span>), cum.prefix(i + <span class="number">1</span>, j, k + <span class="number">1</span>));
-<a href=#65 id=65 data-nosnippet>65</a>                    datum = cum.op.op(<span class="kw-2">&amp;</span>datum, cum.prefix(i + <span class="number">1</span>, j + <span class="number">1</span>, k));
-<a href=#66 id=66 data-nosnippet>66</a>                    datum = cum.op.op(<span class="kw-2">&amp;</span>datum, cum.prefix(i, j, k));
-<a href=#67 id=67 data-nosnippet>67</a>                    datum = cum.op.op(<span class="kw-2">&amp;</span>datum, <span class="kw-2">&amp;</span>cum.op.inv(cum.prefix(i, j, k + <span class="number">1</span>)));
-<a href=#68 id=68 data-nosnippet>68</a>                    datum = cum.op.op(<span class="kw-2">&amp;</span>datum, <span class="kw-2">&amp;</span>cum.op.inv(cum.prefix(i, j + <span class="number">1</span>, k)));
-<a href=#69 id=69 data-nosnippet>69</a>                    datum = cum.op.op(<span class="kw-2">&amp;</span>datum, <span class="kw-2">&amp;</span>cum.op.inv(cum.prefix(i + <span class="number">1</span>, j, k)));
-<a href=#70 id=70 data-nosnippet>70</a>                    datum = cum.op.op(<span class="kw-2">&amp;</span>datum, <span class="kw-2">&amp;</span>v[i][j][k]);
+<a href=#65 id=65 data-nosnippet>65</a>                    value = cum.op.op(<span class="kw-2">&amp;</span>value, cum.prefix(i + <span class="number">1</span>, j + <span class="number">1</span>, k));
+<a href=#66 id=66 data-nosnippet>66</a>                    value = cum.op.op(<span class="kw-2">&amp;</span>value, cum.prefix(i, j, k));
+<a href=#67 id=67 data-nosnippet>67</a>                    value = cum.op.op(<span class="kw-2">&amp;</span>value, <span class="kw-2">&amp;</span>cum.op.inv(cum.prefix(i, j, k + <span class="number">1</span>)));
+<a href=#68 id=68 data-nosnippet>68</a>                    value = cum.op.op(<span class="kw-2">&amp;</span>value, <span class="kw-2">&amp;</span>cum.op.inv(cum.prefix(i, j + <span class="number">1</span>, k)));
+<a href=#69 id=69 data-nosnippet>69</a>                    value = cum.op.op(<span class="kw-2">&amp;</span>value, <span class="kw-2">&amp;</span>cum.op.inv(cum.prefix(i + <span class="number">1</span>, j, k)));
+<a href=#70 id=70 data-nosnippet>70</a>                    value = cum.op.op(<span class="kw-2">&amp;</span>value, vijk);
 <a href=#71 id=71 data-nosnippet>71</a>                    <span class="kw">let </span>index = cum.idx(i + <span class="number">1</span>, j + <span class="number">1</span>, k + <span class="number">1</span>);
-<a href=#72 id=72 data-nosnippet>72</a>                    cum.inner[index] = datum;
+<a href=#72 id=72 data-nosnippet>72</a>                    cum.inner[index] = value;
 <a href=#73 id=73 data-nosnippet>73</a>                }
 <a href=#74 id=74 data-nosnippet>74</a>            }
 <a href=#75 id=75 data-nosnippet>75</a>        }
