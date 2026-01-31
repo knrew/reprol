@@ -29,93 +29,7 @@
 
 use std::{cmp::Reverse, collections::BinaryHeap, fmt::Debug, ops::Add};
 
-/// 経路情報を管理するためのトレイト．
-pub trait PathTracker<V> {
-    fn new(n: usize) -> Self;
-
-    /// `index`の直前の頂点を返す．
-    fn get_previous(&self, index: usize) -> Option<&V>;
-
-    /// `index`の直前の頂点を`v`に更新する．
-    fn set_previous(&mut self, index: usize, v: &V);
-
-    /// 始点から`end`までの経路を構築する．
-    fn construct_path<C>(
-        &self,
-        to_index: &impl Fn(&V) -> usize,
-        costs: &[Option<C>],
-        end: &V,
-    ) -> Option<Vec<V>>;
-}
-
-/// 経路を保存する場合に用いる構造体．
-/// 各頂点の直前の頂点を保存する．
-pub struct WithPath<V> {
-    previous: Vec<Option<V>>,
-}
-
-impl<V: Clone> PathTracker<V> for WithPath<V> {
-    fn new(n: usize) -> Self {
-        Self {
-            previous: vec![None; n],
-        }
-    }
-
-    fn get_previous(&self, index: usize) -> Option<&V> {
-        self.previous[index].as_ref()
-    }
-
-    fn set_previous(&mut self, index: usize, value: &V) {
-        self.previous[index] = Some(value.clone());
-    }
-
-    fn construct_path<C>(
-        &self,
-        to_index: &impl Fn(&V) -> usize,
-        costs: &[Option<C>],
-        end: &V,
-    ) -> Option<Vec<V>> {
-        costs[to_index(end)].as_ref()?;
-
-        let mut v = end;
-        let mut path = vec![v];
-
-        while let Some(pv) = self.previous[to_index(v)].as_ref() {
-            path.push(pv);
-            v = pv;
-        }
-
-        Some(path.into_iter().rev().cloned().collect())
-    }
-}
-
-/// 経路を保存しない場合に用いる構造体(ダミー)．
-pub struct NoPath;
-
-impl<V> PathTracker<V> for NoPath {
-    #[inline(always)]
-    fn new(_: usize) -> Self {
-        Self
-    }
-
-    #[inline(always)]
-    fn get_previous(&self, _: usize) -> Option<&V> {
-        None
-    }
-
-    #[inline(always)]
-    fn set_previous(&mut self, _: usize, _: &V) {}
-
-    #[inline(always)]
-    fn construct_path<C>(
-        &self,
-        _: &impl Fn(&V) -> usize,
-        _: &[Option<C>],
-        _: &V,
-    ) -> Option<Vec<V>> {
-        None
-    }
-}
+use crate::path_tracker::{NoPath, PathTracker, WithPath};
 
 /// ダイクストラの本体．
 ///
@@ -157,24 +71,21 @@ where
 
         while let Some((Reverse(cost), v)) = heap.pop() {
             let index_v = to_index(&v);
-            match &costs[index_v] {
-                Some(cost_v) if cost_v < &cost => {
-                    continue;
-                }
-                _ => {}
+            if costs[index_v].as_ref().is_some_and(|cost_v| cost_v < &cost) {
+                continue;
             }
 
             for (nv, dcost) in neighbors(&v) {
                 let index_nv = to_index(&nv);
                 let new_cost_nv = cost.clone() + dcost;
 
-                match &costs[index_nv] {
-                    Some(cost_nv) if cost_nv <= &new_cost_nv => {}
-                    _ => {
-                        costs[index_nv] = Some(new_cost_nv.clone());
-                        path_tracker.set_previous(index_nv, &v);
-                        heap.push((Reverse(new_cost_nv), nv));
-                    }
+                if costs[index_nv]
+                    .as_ref()
+                    .is_none_or(|cost_nv| &new_cost_nv < cost_nv)
+                {
+                    costs[index_nv] = Some(new_cost_nv.clone());
+                    path_tracker.set_previous(index_nv, &v);
+                    heap.push((Reverse(new_cost_nv), nv));
                 }
             }
         }
@@ -211,8 +122,8 @@ where
 
     /// 始点から`end`までの経路を構築する．
     pub fn path(&self, end: &V) -> Option<Vec<V>> {
-        self.path_tracker
-            .construct_path(&self.to_index, &self.costs, end)
+        self.cost(end)?;
+        Some(self.path_tracker.construct_path(&self.to_index, end))
     }
 }
 
