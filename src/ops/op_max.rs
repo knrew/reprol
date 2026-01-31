@@ -1,21 +1,21 @@
 use std::marker::PhantomData;
 
-use crate::ops::monoid::Monoid;
+use crate::ops::monoid::{IdempotentMonoid, Monoid};
 
 #[derive(Default, Clone)]
 pub struct OpMax<T> {
-    _phantom: PhantomData<T>,
+    phantom: PhantomData<T>,
 }
 
 impl<T> Monoid for OpMax<T>
 where
-    T: Copy + PartialOrd + Min,
+    T: Copy + PartialOrd + OpMaxUtils,
 {
     type Value = T;
 
     #[inline]
     fn identity(&self) -> Self::Value {
-        T::min()
+        T::MIN
     }
 
     #[inline]
@@ -24,37 +24,35 @@ where
     }
 }
 
-pub trait Min {
-    fn min() -> Self;
+impl<T: Copy + PartialOrd + OpMaxUtils> IdempotentMonoid for OpMax<T> {}
+
+trait OpMaxUtils {
+    const MIN: Self;
 }
 
-macro_rules! impl_min {
+macro_rules! impl_opmaxutils {
     ($ty: ty) => {
-        impl Min for $ty {
-            #[inline(always)]
-            fn min() -> Self {
-                <$ty>::MIN
-            }
+        impl OpMaxUtils for $ty {
+            const MIN: Self = <$ty>::MIN;
         }
     };
 }
 
-macro_rules! impl_min_for {
+macro_rules! impl_opmaxutils_for {
     ($($ty: ty),* $(,)?) => {
-        $( impl_min!($ty); )*
+        $( impl_opmaxutils!($ty); )*
     };
 }
 
-impl_min_for! {
+impl_opmaxutils_for! {
     i8, i16, i32, i64, i128, isize,
     u8, u16, u32, u64, u128, usize,
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::ops::monoid::Monoid;
-
     use super::*;
+    use crate::ops::monoid::Monoid;
 
     #[test]
     fn test_opmax() {

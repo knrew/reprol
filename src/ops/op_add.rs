@@ -1,21 +1,21 @@
 use std::marker::PhantomData;
 
-use crate::{math::modint::ModInt, ops::group::Group, ops::monoid::Monoid};
+use crate::{
+    math::modint::ModInt,
+    ops::{group::Group, monoid::Monoid},
+};
 
 #[derive(Default, Clone)]
 pub struct OpAdd<T> {
-    _phantom: PhantomData<T>,
+    phantom: PhantomData<T>,
 }
 
-impl<T> Monoid for OpAdd<T>
-where
-    T: Copy + ZeroAddNeg,
-{
+impl<T: Copy + OpAddUtils> Monoid for OpAdd<T> {
     type Value = T;
 
     #[inline]
     fn identity(&self) -> Self::Value {
-        T::zero()
+        T::ZERO
     }
 
     #[inline]
@@ -26,7 +26,7 @@ where
 
 impl<T> Group for OpAdd<T>
 where
-    T: Copy + ZeroAddNeg,
+    T: Copy + OpAddUtils,
 {
     #[inline]
     fn inv(&self, &x: &Self::Value) -> Self::Value {
@@ -34,19 +34,16 @@ where
     }
 }
 
-trait ZeroAddNeg {
-    fn zero() -> Self;
+trait OpAddUtils {
+    const ZERO: Self;
     fn add_(self, rhs: Self) -> Self;
     fn neg_(self) -> Self;
 }
 
-macro_rules! impl_zeroaddneg_signed {
+macro_rules! impl_opaddutils_signed {
     ($ty: ty) => {
-        impl ZeroAddNeg for $ty {
-            #[inline(always)]
-            fn zero() -> Self {
-                0
-            }
+        impl OpAddUtils for $ty {
+            const ZERO: Self = 0;
 
             #[inline(always)]
             fn add_(self, rhs: Self) -> Self {
@@ -61,13 +58,10 @@ macro_rules! impl_zeroaddneg_signed {
     };
 }
 
-macro_rules! impl_zeroaddneg_unsigned {
+macro_rules! impl_opaddutils_unsigned {
     ($ty: ty) => {
-        impl ZeroAddNeg for $ty {
-            #[inline(always)]
-            fn zero() -> Self {
-                0
-            }
+        impl OpAddUtils for $ty {
+            const ZERO: Self = 0;
 
             #[inline(always)]
             fn add_(self, rhs: Self) -> Self {
@@ -82,23 +76,20 @@ macro_rules! impl_zeroaddneg_unsigned {
     };
 }
 
-macro_rules! impl_zeroaddneg_for {
+macro_rules! impl_opaddutils_for {
     (unsigned: [$($u:ty),* $(,)?], signed: [$($i:ty),* $(,)?]$(,)?) => {
-        $( impl_zeroaddneg_unsigned!($u); )*
-        $( impl_zeroaddneg_signed!($i); )*
+        $( impl_opaddutils_unsigned!($u); )*
+        $( impl_opaddutils_signed!($i); )*
     };
 }
 
-impl_zeroaddneg_for! {
+impl_opaddutils_for! {
     unsigned: [u8, u16, u32, u64, u128, usize],
     signed:   [i8, i16, i32, i64, i128, isize],
 }
 
-impl<const P: u64> ZeroAddNeg for ModInt<P> {
-    #[inline(always)]
-    fn zero() -> Self {
-        0.into()
-    }
+impl<const P: u64> OpAddUtils for ModInt<P> {
+    const ZERO: Self = ModInt::new(0);
 
     #[inline(always)]
     fn add_(self, rhs: Self) -> Self {
@@ -113,9 +104,8 @@ impl<const P: u64> ZeroAddNeg for ModInt<P> {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::ops::{group::Group, monoid::Monoid};
-
-    use super::OpAdd;
 
     #[test]
     fn test_opadd() {

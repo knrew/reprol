@@ -1,10 +1,13 @@
+//! 群(Group)
+
 use crate::ops::monoid::Monoid;
 
-/// 群
-/// 逆元を持つモノイド
+/// 群(Group)
+///
+/// 逆元を持つモノイド．
+/// 単位元を`e`として，集合の任意の要素`x`に対して，逆元`y`が存在して，
+/// `x * y =y * x　= e`を満たす．
 pub trait Group: Monoid {
-    /// 逆元$x^{-1}$を返す
-    /// 単位元を$e$として，任意の元$x$に対して，元$x^{-1}$が存在して，
-    /// $x \cdot x^{-1} = x^{-1} \cdot x = e$を満たす
+    /// `x`の逆元を返す．
     fn inv(&self, x: &<Self as Monoid>::Value) -> Self::Value;
 }
