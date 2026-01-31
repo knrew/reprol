@@ -11,6 +11,7 @@ pub mod lowlink;
 pub mod math;
 pub mod nonnan_float;
 pub mod ops;
+mod path_tracker;
 pub mod permutation;
 pub mod rle;
 pub mod scc;
