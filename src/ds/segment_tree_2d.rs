@@ -7,7 +7,8 @@ pub struct SegmentTree2d<O: Monoid> {
     len_cols: usize,
     offset_row: usize,
     offset_col: usize,
-    nodes: Vec<Vec<O::Value>>,
+    nodes: Vec<O::Value>,
+    nodes_len_cols: usize,
     op: O,
 }
 
@@ -27,10 +28,9 @@ impl<O: Monoid> SegmentTree2d<O> {
 
         let nodes_len_rows = 2 * offset_row;
         let nodes_len_cols = 2 * offset_col;
+        let nodes_len = nodes_len_rows * nodes_len_cols;
 
-        let nodes: Vec<Vec<_>> = (0..nodes_len_rows)
-            .map(|_| (0..nodes_len_cols).map(|_| op.identity()).collect())
-            .collect();
+        let nodes = (0..nodes_len).map(|_| op.identity()).collect();
 
         Self {
             len_rows: h,
@@ -38,13 +38,19 @@ impl<O: Monoid> SegmentTree2d<O> {
             offset_row,
             offset_col,
             nodes,
+            nodes_len_cols,
             op,
         }
     }
 
+    #[inline(always)]
+    fn idx(&self, i: usize, j: usize) -> usize {
+        i * self.nodes_len_cols + j
+    }
+
     pub fn get(&self, i: usize, j: usize) -> &O::Value {
         assert!(i < self.len_rows && j < self.len_cols);
-        &self.nodes[i + self.offset_row][j + self.offset_col]
+        &self.nodes[self.idx(i + self.offset_row, j + self.offset_col)]
     }
 
     #[inline(always)]
@@ -101,10 +107,10 @@ impl<O: Monoid> SegmentTree2d<O> {
         let mut node_index_j = j + self.offset_col;
         while node_index_j > 1 {
             node_index_j /= 2;
-            self.nodes[node_index_i][node_index_j] = self.op.op(
-                &self.nodes[node_index_i][2 * node_index_j],
-                &self.nodes[node_index_i][2 * node_index_j + 1],
-            );
+            let index = self.idx(node_index_i, node_index_j);
+            let index_l = self.idx(node_index_i, 2 * node_index_j);
+            let index_r = self.idx(node_index_i, 2 * node_index_j + 1);
+            self.nodes[index] = self.op.op(&self.nodes[index_l], &self.nodes[index_r]);
         }
     }
 
@@ -119,13 +125,13 @@ impl<O: Monoid> SegmentTree2d<O> {
 
         while l < r {
             if l % 2 == 1 {
-                prod_l = self.op.op(&prod_l, &self.nodes[node_index_i][l]);
+                prod_l = self.op.op(&prod_l, &self.nodes[self.idx(node_index_i, l)]);
                 l += 1;
             }
 
             if r % 2 == 1 {
                 r -= 1;
-                prod_r = self.op.op(&self.nodes[node_index_i][r], &prod_r);
+                prod_r = self.op.op(&self.nodes[self.idx(node_index_i, r)], &prod_r);
             }
 
             l /= 2;
@@ -151,20 +157,24 @@ impl<O: Monoid> From<(Vec<Vec<O::Value>>, O)> for SegmentTree2d<O> {
             let node_index_i = i + seg.offset_row;
 
             for (j, vij) in vi.into_iter().enumerate() {
-                seg.nodes[node_index_i][j + seg.offset_col] = vij;
+                let index = seg.idx(node_index_i, j + seg.offset_col);
+                seg.nodes[index] = vij;
             }
 
             for j in (1..seg.offset_col).rev() {
-                seg.nodes[node_index_i][j] = seg.op.op(
-                    &seg.nodes[node_index_i][2 * j],
-                    &seg.nodes[node_index_i][2 * j + 1],
-                );
+                let index = seg.idx(node_index_i, j);
+                let index_l = seg.idx(node_index_i, 2 * j);
+                let index_r = seg.idx(node_index_i, 2 * j + 1);
+                seg.nodes[index] = seg.op.op(&seg.nodes[index_l], &seg.nodes[index_r]);
             }
         }
 
         for i in (1..seg.offset_row).rev() {
             for j in 1..2 * seg.offset_col {
-                seg.nodes[i][j] = seg.op.op(&seg.nodes[2 * i][j], &seg.nodes[2 * i + 1][j]);
+                let index = seg.idx(i, j);
+                let index_l = seg.idx(2 * i, j);
+                let index_r = seg.idx(2 * i + 1, j);
+                seg.nodes[index] = seg.op.op(&seg.nodes[index_l], &seg.nodes[index_r]);
             }
         }
 
@@ -224,7 +234,8 @@ impl<'a, O: Monoid> DerefMut for EntryMut<'a, O> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         let node_index_i = self.index_row + self.seg.offset_row;
         let node_index_j = self.index_col + self.seg.offset_col;
-        &mut self.seg.nodes[node_index_i][node_index_j]
+        let index = self.seg.idx(node_index_i, node_index_j);
+        &mut self.seg.nodes[index]
     }
 }
 
@@ -239,10 +250,13 @@ impl<'a, O: Monoid> Drop for EntryMut<'a, O> {
 
             let node_index_j = self.index_col + self.seg.offset_col;
 
-            self.seg.nodes[node_index_i][node_index_j] = self.seg.op.op(
-                &self.seg.nodes[2 * node_index_i][node_index_j],
-                &self.seg.nodes[2 * node_index_i + 1][node_index_j],
-            );
+            let index = self.seg.idx(node_index_i, node_index_j);
+            let index_l = self.seg.idx(2 * node_index_i, node_index_j);
+            let index_r = self.seg.idx(2 * node_index_i + 1, node_index_j);
+            self.seg.nodes[index] = self
+                .seg
+                .op
+                .op(&self.seg.nodes[index_l], &self.seg.nodes[index_r]);
 
             self.seg.rebuild_col(node_index_i, self.index_col);
         }
