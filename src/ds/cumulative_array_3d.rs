@@ -56,20 +56,20 @@ impl<O: Monoid> CumulativeArray3d<O> {
             op,
         };
 
-        for i in 0..len_i {
-            for j in 0..len_j {
-                for k in 0..len_k {
-                    let mut datum = cum
+        for (i, vi) in v.iter().enumerate() {
+            for (j, vij) in vi.iter().enumerate() {
+                for (k, vijk) in vij.iter().enumerate() {
+                    let mut value = cum
                         .op
                         .op(cum.prefix(i, j + 1, k + 1), cum.prefix(i + 1, j, k + 1));
-                    datum = cum.op.op(&datum, cum.prefix(i + 1, j + 1, k));
-                    datum = cum.op.op(&datum, cum.prefix(i, j, k));
-                    datum = cum.op.op(&datum, &cum.op.inv(cum.prefix(i, j, k + 1)));
-                    datum = cum.op.op(&datum, &cum.op.inv(cum.prefix(i, j + 1, k)));
-                    datum = cum.op.op(&datum, &cum.op.inv(cum.prefix(i + 1, j, k)));
-                    datum = cum.op.op(&datum, &v[i][j][k]);
+                    value = cum.op.op(&value, cum.prefix(i + 1, j + 1, k));
+                    value = cum.op.op(&value, cum.prefix(i, j, k));
+                    value = cum.op.op(&value, &cum.op.inv(cum.prefix(i, j, k + 1)));
+                    value = cum.op.op(&value, &cum.op.inv(cum.prefix(i, j + 1, k)));
+                    value = cum.op.op(&value, &cum.op.inv(cum.prefix(i + 1, j, k)));
+                    value = cum.op.op(&value, vijk);
                     let index = cum.idx(i + 1, j + 1, k + 1);
-                    cum.inner[index] = datum;
+                    cum.inner[index] = value;
                 }
             }
         }

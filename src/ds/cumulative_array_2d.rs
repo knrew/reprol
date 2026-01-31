@@ -69,13 +69,13 @@ impl<O: Monoid> CumulativeArray2d<O> {
             op,
         };
 
-        for i in 0..len_rows {
-            for j in 0..len_cols {
-                let mut datum = cum.op.op(cum.prefix(i + 1, j), cum.prefix(i, j + 1));
-                datum = cum.op.op(&datum, &cum.op.inv(cum.prefix(i, j)));
-                datum = cum.op.op(&datum, &v[i][j]);
+        for (i, vi) in v.iter().enumerate() {
+            for (j, vij) in vi.iter().enumerate() {
+                let mut value = cum.op.op(cum.prefix(i + 1, j), cum.prefix(i, j + 1));
+                value = cum.op.op(&value, &cum.op.inv(cum.prefix(i, j)));
+                value = cum.op.op(&value, vij);
                 let index = cum.idx(i + 1, j + 1);
-                cum.inner[index] = datum;
+                cum.inner[index] = value;
             }
         }
 
@@ -115,7 +115,7 @@ impl<O: Monoid> CumulativeArray2d<O> {
         assert!(jl <= jr);
         let mut prod = self.op.op(self.prefix(ir, jr), self.prefix(il, jl));
         prod = self.op.op(&prod, &self.op.inv(self.prefix(il, jr)));
-        prod = self.op.op(&prod, &self.op.inv(&self.prefix(ir, jl)));
+        prod = self.op.op(&prod, &self.op.inv(self.prefix(ir, jl)));
         prod
     }
 }
