@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["act_add","act_set","action","group","monoid","op_add","op_max","op_min","op_xor"]};
+window.SIDEBAR_ITEMS = {"mod":["act_add","act_set","action","group","monoid","op_add","op_gcd","op_max","op_min","op_xor"]};
