@@ -16,6 +16,7 @@ pub mod lazy_segment_tree;
 pub mod monoid_dsu;
 pub mod potentialized_dsu;
 pub mod segment_tree;
+pub mod segment_tree_2d;
 pub mod skew_heap;
 pub mod sparse_table;
 pub mod sparse_table_2d;
