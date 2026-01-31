@@ -34,19 +34,19 @@
 //! #[derive(Default)]
 //! struct Op;
 //! impl Monoid for Op {
-//!    type Value = u32;
+//!    type Element = u32;
 //!    // 単位元
-//!    fn identity(&self) -> Self::Value {
+//!    fn id(&self) -> Self::Element {
 //!        0
 //!    }
 //!    // 演算
-//!    fn op(&self, x: &Self::Value, y: &Self::Value) -> Self::Value {
+//!    fn op(&self, x: &Self::Element, y: &Self::Element) -> Self::Element {
 //!        x ^ y
 //!    }
 //! }
 //! impl Group for Op {
 //!     // 逆元
-//!    fn inv(&self, &x: &Self::Value) -> Self::Value {
+//!    fn inv(&self, &x: &Self::Element) -> Self::Element {
 //!        x
 //!    }
 //! }
@@ -57,7 +57,6 @@
 //!```
 
 use std::{
-    fmt::Debug,
     iter::FromIterator,
     ops::{Range, RangeBounds},
 };
@@ -69,13 +68,13 @@ use crate::{
 
 /// 累積積を管理するデータ構造
 pub struct CumulativeArray<O: Monoid> {
-    inner: Vec<O::Value>,
+    inner: Vec<O::Element>,
     op: O,
 }
 
 impl<O: Monoid> CumulativeArray<O> {
     /// 配列の累積配列を構築する．
-    pub fn new(v: Vec<O::Value>) -> Self
+    pub fn new(v: Vec<O::Element>) -> Self
     where
         O: Default,
     {
@@ -83,10 +82,10 @@ impl<O: Monoid> CumulativeArray<O> {
     }
 
     /// 演算`op`を明示的に渡して配列の累積配列を構築する．
-    pub fn with_op(v: Vec<O::Value>, op: O) -> Self {
+    pub fn with_op(v: Vec<O::Element>, op: O) -> Self {
         assert!(!v.is_empty());
         let mut inner = Vec::with_capacity(v.len() + 1);
-        inner.push(op.identity());
+        inner.push(op.id());
         for i in 0..v.len() {
             inner.push(op.op(&inner[i], &v[i]));
         }
@@ -94,12 +93,12 @@ impl<O: Monoid> CumulativeArray<O> {
     }
 
     /// 区間`[0, r)`の区間積を返す．
-    pub fn prefix(&self, r: usize) -> &O::Value {
+    pub fn prefix(&self, r: usize) -> &O::Element {
         &self.inner[r]
     }
 
     /// `index`番目の要素の値を返す．
-    pub fn get(&self, index: usize) -> O::Value
+    pub fn get(&self, index: usize) -> O::Element
     where
         O: Group,
     {
@@ -107,7 +106,7 @@ impl<O: Monoid> CumulativeArray<O> {
     }
 
     /// `[l, r)`の区間積を返す．
-    pub fn fold(&self, range: impl RangeBounds<usize>) -> O::Value
+    pub fn fold(&self, range: impl RangeBounds<usize>) -> O::Element
     where
         O: Group,
     {
@@ -116,44 +115,44 @@ impl<O: Monoid> CumulativeArray<O> {
         self.op.op(&self.inner[r], &self.op.inv(&self.inner[l]))
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = &O::Value> {
+    pub fn iter(&self) -> impl Iterator<Item = &O::Element> {
         self.inner.iter()
     }
 }
 
-impl<O: Monoid> From<(Vec<O::Value>, O)> for CumulativeArray<O> {
-    fn from((v, op): (Vec<O::Value>, O)) -> Self {
+impl<O: Monoid> From<(Vec<O::Element>, O)> for CumulativeArray<O> {
+    fn from((v, op): (Vec<O::Element>, O)) -> Self {
         CumulativeArray::with_op(v, op)
     }
 }
 
-impl<O: Monoid, const N: usize> From<([O::Value; N], O)> for CumulativeArray<O> {
-    fn from((v, op): ([O::Value; N], O)) -> Self {
+impl<O: Monoid, const N: usize> From<([O::Element; N], O)> for CumulativeArray<O> {
+    fn from((v, op): ([O::Element; N], O)) -> Self {
         CumulativeArray::with_op(v.into_iter().collect(), op)
     }
 }
 
-impl<O: Monoid + Default> From<Vec<O::Value>> for CumulativeArray<O> {
-    fn from(v: Vec<O::Value>) -> Self {
+impl<O: Monoid + Default> From<Vec<O::Element>> for CumulativeArray<O> {
+    fn from(v: Vec<O::Element>) -> Self {
         CumulativeArray::from((v, O::default()))
     }
 }
 
-impl<O: Monoid + Default, const N: usize> From<[O::Value; N]> for CumulativeArray<O> {
-    fn from(v: [O::Value; N]) -> Self {
+impl<O: Monoid + Default, const N: usize> From<[O::Element; N]> for CumulativeArray<O> {
+    fn from(v: [O::Element; N]) -> Self {
         CumulativeArray::from((v, O::default()))
     }
 }
 
-impl<O: Monoid + Default> FromIterator<O::Value> for CumulativeArray<O> {
-    fn from_iter<I: IntoIterator<Item = O::Value>>(iter: I) -> Self {
+impl<O: Monoid + Default> FromIterator<O::Element> for CumulativeArray<O> {
+    fn from_iter<I: IntoIterator<Item = O::Element>>(iter: I) -> Self {
         Self::new(iter.into_iter().collect())
     }
 }
 
 impl<O: Monoid + Clone> Clone for CumulativeArray<O>
 where
-    O::Value: Clone,
+    O::Element: Clone,
 {
     fn clone(&self) -> Self {
         Self {
@@ -164,8 +163,8 @@ where
 }
 
 impl<'a, O: Monoid> IntoIterator for &'a CumulativeArray<O> {
-    type IntoIter = std::slice::Iter<'a, O::Value>;
-    type Item = &'a O::Value;
+    type IntoIter = std::slice::Iter<'a, O::Element>;
+    type Item = &'a O::Element;
 
     fn into_iter(self) -> Self::IntoIter {
         self.inner.iter()
@@ -173,20 +172,11 @@ impl<'a, O: Monoid> IntoIterator for &'a CumulativeArray<O> {
 }
 
 impl<O: Monoid> IntoIterator for CumulativeArray<O> {
-    type IntoIter = std::vec::IntoIter<O::Value>;
-    type Item = O::Value;
+    type IntoIter = std::vec::IntoIter<O::Element>;
+    type Item = O::Element;
 
     fn into_iter(self) -> Self::IntoIter {
         self.inner.into_iter()
-    }
-}
-
-impl<O: Monoid> Debug for CumulativeArray<O>
-where
-    O::Value: Debug,
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_list().entries(self.inner.iter()).finish()
     }
 }
 

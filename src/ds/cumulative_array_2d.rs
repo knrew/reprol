@@ -22,10 +22,7 @@
 //! assert_eq!(*cum.prefix(2, 2), 12);
 //! ```
 
-use std::{
-    fmt::Debug,
-    ops::{Range, RangeBounds},
-};
+use std::ops::{Range, RangeBounds};
 
 use crate::{
     ops::{group::Group, monoid::Monoid, op_add::OpAdd},
@@ -34,13 +31,13 @@ use crate::{
 
 /// 2次元累積積を管理するデータ構造
 pub struct CumulativeArray2d<O: Monoid> {
-    inner: Vec<Vec<O::Value>>,
+    inner: Vec<Vec<O::Element>>,
     op: O,
 }
 
 impl<O: Monoid> CumulativeArray2d<O> {
     /// 2次元配列の累積配列を構築する．
-    pub fn new(v: Vec<Vec<O::Value>>) -> Self
+    pub fn new(v: Vec<Vec<O::Element>>) -> Self
     where
         O: Group + Default,
     {
@@ -48,7 +45,7 @@ impl<O: Monoid> CumulativeArray2d<O> {
     }
 
     /// 演算`op`を明示的に渡して2次元配列の累積配列を構築する．
-    pub fn with_op(v: Vec<Vec<O::Value>>, op: O) -> Self
+    pub fn with_op(v: Vec<Vec<O::Element>>, op: O) -> Self
     where
         O: Group,
     {
@@ -58,8 +55,8 @@ impl<O: Monoid> CumulativeArray2d<O> {
 
         let row_len = v.len();
         let col_len = v[0].len();
-        let mut inner: Vec<Vec<O::Value>> = (0..row_len + 1)
-            .map(|_| (0..col_len + 1).map(|_| op.identity()).collect())
+        let mut inner: Vec<Vec<O::Element>> = (0..row_len + 1)
+            .map(|_| (0..col_len + 1).map(|_| op.id()).collect())
             .collect();
 
         for i in 0..row_len {
@@ -75,11 +72,11 @@ impl<O: Monoid> CumulativeArray2d<O> {
     }
 
     /// `[0, i) x [0, j)`の累積積を返す．
-    pub fn prefix(&self, i: usize, j: usize) -> &O::Value {
+    pub fn prefix(&self, i: usize, j: usize) -> &O::Element {
         &self.inner[i][j]
     }
 
-    pub fn get(&self, i: usize, j: usize) -> O::Value
+    pub fn get(&self, i: usize, j: usize) -> O::Element
     where
         O: Group,
     {
@@ -91,7 +88,7 @@ impl<O: Monoid> CumulativeArray2d<O> {
         &self,
         row_range: impl RangeBounds<usize>,
         col_range: impl RangeBounds<usize>,
-    ) -> O::Value
+    ) -> O::Element
     where
         O: Group,
     {
@@ -110,54 +107,45 @@ impl<O: Monoid> CumulativeArray2d<O> {
     }
 }
 
-impl<O: Group> From<(Vec<Vec<O::Value>>, O)> for CumulativeArray2d<O> {
-    fn from((v, op): (Vec<Vec<O::Value>>, O)) -> Self {
+impl<O: Group> From<(Vec<Vec<O::Element>>, O)> for CumulativeArray2d<O> {
+    fn from((v, op): (Vec<Vec<O::Element>>, O)) -> Self {
         CumulativeArray2d::with_op(v, op)
     }
 }
 
-impl<O: Group, const N: usize, const M: usize> From<([[O::Value; M]; N], O)>
+impl<O: Group, const N: usize, const M: usize> From<([[O::Element; M]; N], O)>
     for CumulativeArray2d<O>
 {
-    fn from((v, op): ([[O::Value; M]; N], O)) -> Self {
-        let v: Vec<Vec<O::Value>> = v.into_iter().map(|vi| vi.into_iter().collect()).collect();
+    fn from((v, op): ([[O::Element; M]; N], O)) -> Self {
+        let v: Vec<Vec<O::Element>> = v.into_iter().map(|vi| vi.into_iter().collect()).collect();
         CumulativeArray2d::from((v, op))
     }
 }
 
-impl<O: Group + Default> From<Vec<Vec<O::Value>>> for CumulativeArray2d<O> {
-    fn from(v: Vec<Vec<O::Value>>) -> Self {
-        CumulativeArray2d::new(v)
+impl<O: Group + Default> From<Vec<Vec<O::Element>>> for CumulativeArray2d<O> {
+    fn from(v: Vec<Vec<O::Element>>) -> Self {
+        CumulativeArray2d::from((v, O::default()))
     }
 }
 
-impl<O: Group + Default, const N: usize, const M: usize> From<[[O::Value; M]; N]>
+impl<O: Group + Default, const N: usize, const M: usize> From<[[O::Element; M]; N]>
     for CumulativeArray2d<O>
 {
-    fn from(v: [[O::Value; M]; N]) -> Self {
-        let v: Vec<Vec<O::Value>> = v.into_iter().map(|vi| vi.into_iter().collect()).collect();
+    fn from(v: [[O::Element; M]; N]) -> Self {
+        let v: Vec<Vec<O::Element>> = v.into_iter().map(|vi| vi.into_iter().collect()).collect();
         CumulativeArray2d::from(v)
     }
 }
 
 impl<O: Monoid + Clone> Clone for CumulativeArray2d<O>
 where
-    O::Value: Clone,
+    O::Element: Clone,
 {
     fn clone(&self) -> Self {
         Self {
             inner: self.inner.clone(),
             op: self.op.clone(),
         }
-    }
-}
-
-impl<O: Monoid> Debug for CumulativeArray2d<O>
-where
-    O::Value: Debug,
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_list().entries(self.inner.iter()).finish()
     }
 }
 
@@ -168,9 +156,8 @@ pub type CumulativeSum2d<T> = CumulativeArray2d<OpAdd<T>>;
 mod tests {
     use rand::Rng;
 
-    use crate::utils::test_utils::initialize_rng;
-
     use super::*;
+    use crate::utils::test_utils::initialize_rng;
 
     #[test]
     fn test_cumulative_sum_2d() {

@@ -5,13 +5,13 @@ use crate::ops::monoid::Monoid;
 pub struct MonoidDsu<O: Monoid> {
     parents: Vec<usize>,
     sizes: Vec<usize>,
-    states: Vec<O::Value>,
+    states: Vec<O::Element>,
     count_components: usize,
     monoid: O,
 }
 
 impl<O: Monoid> MonoidDsu<O> {
-    pub fn new(initial_states: Vec<O::Value>, monoid: O) -> Self {
+    pub fn new(initial_states: Vec<O::Element>, monoid: O) -> Self {
         let n = initial_states.len();
         Self {
             parents: (0..n).collect(),
@@ -66,7 +66,7 @@ impl<O: Monoid> MonoidDsu<O> {
         self.sizes[v]
     }
 
-    pub fn state(&mut self, v: usize) -> &O::Value {
+    pub fn state(&mut self, v: usize) -> &O::Element {
         let v = self.find(v);
         &self.states[v]
     }

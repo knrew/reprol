@@ -40,7 +40,7 @@ pub struct SegmentTree2d<O: Monoid> {
     offset_col: usize,
 
     /// セグ木を構成するノード
-    nodes: Vec<O::Value>,
+    nodes: Vec<O::Element>,
 
     /// nodesの列数
     nodes_len_cols: usize,
@@ -69,7 +69,7 @@ impl<O: Monoid> SegmentTree2d<O> {
         let nodes_len_cols = 2 * offset_col;
         let nodes_len = nodes_len_rows * nodes_len_cols;
 
-        let nodes = (0..nodes_len).map(|_| op.identity()).collect();
+        let nodes = (0..nodes_len).map(|_| op.id()).collect();
 
         Self {
             len_rows: h,
@@ -88,14 +88,14 @@ impl<O: Monoid> SegmentTree2d<O> {
     }
 
     /// (`i`, `j`)番目の要素を返す．
-    pub fn get(&self, i: usize, j: usize) -> &O::Value {
+    pub fn get(&self, i: usize, j: usize) -> &O::Element {
         assert!(i < self.len_rows && j < self.len_cols);
         &self.nodes[self.idx(i + self.offset_row, j + self.offset_col)]
     }
 
     /// (`i`, `j`)番目の要素を`value`に更新する．
     #[inline(always)]
-    pub fn set(&mut self, i: usize, j: usize, value: O::Value) {
+    pub fn set(&mut self, i: usize, j: usize, value: O::Element) {
         *self.entry_mut(i, j) = value;
     }
 
@@ -114,7 +114,7 @@ impl<O: Monoid> SegmentTree2d<O> {
         &self,
         row_range: impl RangeBounds<usize>,
         col_range: impl RangeBounds<usize>,
-    ) -> O::Value {
+    ) -> O::Element {
         let Range { start: il, end: ir } = to_half_open_index_range(row_range, self.len_rows);
         let Range { start: jl, end: jr } = to_half_open_index_range(col_range, self.len_cols);
         assert!(il <= ir && ir <= self.len_rows);
@@ -123,8 +123,8 @@ impl<O: Monoid> SegmentTree2d<O> {
         let mut l = il + self.offset_row;
         let mut r = ir + self.offset_row;
 
-        let mut prod_l = self.op.identity();
-        let mut prod_r = self.op.identity();
+        let mut prod_l = self.op.id();
+        let mut prod_r = self.op.id();
 
         while l < r {
             if l % 2 == 1 {
@@ -157,14 +157,14 @@ impl<O: Monoid> SegmentTree2d<O> {
         }
     }
 
-    fn fold_col(&self, node_index_i: usize, col_range: Range<usize>) -> O::Value {
+    fn fold_col(&self, node_index_i: usize, col_range: Range<usize>) -> O::Element {
         let Range { start: jl, end: jr } = col_range;
 
         let mut l = jl + self.offset_col;
         let mut r = jr + self.offset_col;
 
-        let mut prod_l = self.op.identity();
-        let mut prod_r = self.op.identity();
+        let mut prod_l = self.op.id();
+        let mut prod_r = self.op.id();
 
         while l < r {
             if l % 2 == 1 {
@@ -185,8 +185,8 @@ impl<O: Monoid> SegmentTree2d<O> {
     }
 }
 
-impl<O: Monoid> From<(Vec<Vec<O::Value>>, O)> for SegmentTree2d<O> {
-    fn from((v, op): (Vec<Vec<O::Value>>, O)) -> Self {
+impl<O: Monoid> From<(Vec<Vec<O::Element>>, O)> for SegmentTree2d<O> {
+    fn from((v, op): (Vec<Vec<O::Element>>, O)) -> Self {
         assert!(!v.is_empty());
         assert!(!v[0].is_empty());
         debug_assert!(v.iter().all(|vi| vi.len() == v[0].len()));
@@ -225,36 +225,36 @@ impl<O: Monoid> From<(Vec<Vec<O::Value>>, O)> for SegmentTree2d<O> {
     }
 }
 
-impl<O: Monoid, const N: usize, const M: usize> From<([[O::Value; M]; N], O)> for SegmentTree2d<O> {
-    fn from((v, op): ([[O::Value; M]; N], O)) -> Self {
+impl<O: Monoid, const N: usize, const M: usize> From<([[O::Element; M]; N], O)> for SegmentTree2d<O> {
+    fn from((v, op): ([[O::Element; M]; N], O)) -> Self {
         let v: Vec<Vec<_>> = v.into_iter().map(|vi| vi.into_iter().collect()).collect();
         Self::from((v, op))
     }
 }
 
-impl<O: Monoid + Default> From<Vec<Vec<O::Value>>> for SegmentTree2d<O> {
-    fn from(v: Vec<Vec<O::Value>>) -> Self {
+impl<O: Monoid + Default> From<Vec<Vec<O::Element>>> for SegmentTree2d<O> {
+    fn from(v: Vec<Vec<O::Element>>) -> Self {
         Self::from((v, O::default()))
     }
 }
 
-impl<O: Monoid + Default, const N: usize, const M: usize> From<[[O::Value; M]; N]>
+impl<O: Monoid + Default, const N: usize, const M: usize> From<[[O::Element; M]; N]>
     for SegmentTree2d<O>
 {
-    fn from(v: [[O::Value; M]; N]) -> Self {
+    fn from(v: [[O::Element; M]; N]) -> Self {
         Self::from((v, O::default()))
     }
 }
 
 impl<O: Monoid> Index<(usize, usize)> for SegmentTree2d<O> {
-    type Output = O::Value;
+    type Output = O::Element;
     fn index(&self, index: (usize, usize)) -> &Self::Output {
         self.get(index.0, index.1)
     }
 }
 
 impl<O: Monoid> Index<[usize; 2]> for SegmentTree2d<O> {
-    type Output = O::Value;
+    type Output = O::Element;
     fn index(&self, index: [usize; 2]) -> &Self::Output {
         self.get(index[0], index[1])
     }
@@ -268,7 +268,7 @@ pub struct EntryMut<'a, O: Monoid> {
 }
 
 impl<'a, O: Monoid> Deref for EntryMut<'a, O> {
-    type Target = O::Value;
+    type Target = O::Element;
     fn deref(&self) -> &Self::Target {
         self.seg.get(self.index_row, self.index_col)
     }
@@ -410,13 +410,13 @@ mod tests {
         }
 
         impl Monoid for OpModAdd {
-            type Value = i64;
+            type Element = i64;
 
-            fn identity(&self) -> Self::Value {
+            fn id(&self) -> Self::Element {
                 0
             }
 
-            fn op(&self, lhs: &Self::Value, rhs: &Self::Value) -> Self::Value {
+            fn op(&self, lhs: &Self::Element, rhs: &Self::Element) -> Self::Element {
                 (lhs + rhs) % self.m
             }
         }

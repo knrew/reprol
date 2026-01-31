@@ -8,15 +8,15 @@ pub struct OpMin<T> {
 }
 
 impl<T: Copy + PartialOrd + OpMinUtils> Monoid for OpMin<T> {
-    type Value = T;
+    type Element = T;
 
     #[inline]
-    fn identity(&self) -> Self::Value {
+    fn id(&self) -> Self::Element {
         T::MAX
     }
 
     #[inline]
-    fn op(&self, &x: &Self::Value, &y: &Self::Value) -> Self::Value {
+    fn op(&self, &x: &Self::Element, &y: &Self::Element) -> Self::Element {
         if x < y { x } else { y }
     }
 }
@@ -59,7 +59,7 @@ mod tests {
         assert_eq!(op.op(&2, &28), 2);
         assert_eq!(op.op(&38, &69), 38);
         assert_eq!(op.op(&13, &48), 13);
-        assert_eq!(op.op(&op.identity(), &5), 5);
-        assert_eq!(op.op(&op.identity(), &3332), 3332);
+        assert_eq!(op.op(&op.id(), &5), 5);
+        assert_eq!(op.op(&op.id(), &3332), 3332);
     }
 }

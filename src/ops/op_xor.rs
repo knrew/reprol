@@ -11,15 +11,15 @@ impl<T> Monoid for OpXor<T>
 where
     T: Copy + BitXor<Output = T> + OpXorUtils,
 {
-    type Value = T;
+    type Element = T;
 
     #[inline]
-    fn identity(&self) -> Self::Value {
+    fn id(&self) -> Self::Element {
         T::ZERO
     }
 
     #[inline]
-    fn op(&self, &lhs: &Self::Value, &rhs: &Self::Value) -> Self::Value {
+    fn op(&self, &lhs: &Self::Element, &rhs: &Self::Element) -> Self::Element {
         lhs ^ rhs
     }
 }
@@ -29,7 +29,7 @@ where
     T: Copy + BitXor<Output = T> + OpXorUtils,
 {
     #[inline]
-    fn inv(&self, &x: &Self::Value) -> Self::Value {
+    fn inv(&self, &x: &Self::Element) -> Self::Element {
         x
     }
 }

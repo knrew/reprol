@@ -11,15 +11,15 @@ pub struct OpAdd<T> {
 }
 
 impl<T: Copy + OpAddUtils> Monoid for OpAdd<T> {
-    type Value = T;
+    type Element = T;
 
     #[inline]
-    fn identity(&self) -> Self::Value {
+    fn id(&self) -> Self::Element {
         T::ZERO
     }
 
     #[inline]
-    fn op(&self, &lhs: &Self::Value, &rhs: &Self::Value) -> Self::Value {
+    fn op(&self, &lhs: &Self::Element, &rhs: &Self::Element) -> Self::Element {
         lhs.add_(rhs)
     }
 }
@@ -29,7 +29,7 @@ where
     T: Copy + OpAddUtils,
 {
     #[inline]
-    fn inv(&self, &x: &Self::Value) -> Self::Value {
+    fn inv(&self, &x: &Self::Element) -> Self::Element {
         x.neg_()
     }
 }
@@ -117,8 +117,8 @@ mod tests {
         assert_eq!(op.op(&-7, &10), 3);
         assert_eq!(op.op(&-8, &12), 4);
         assert_eq!(op.op(&-8, &-55), -63);
-        assert_eq!(op.op(&op.identity(), &5), 5);
-        assert_eq!(op.op(&3332, &op.identity()), 3332);
+        assert_eq!(op.op(&op.id(), &5), 5);
+        assert_eq!(op.op(&3332, &op.id()), 3332);
         assert_eq!(op.inv(&111), -111);
         assert_eq!(op.op(&81, &op.inv(&6)), 75);
         assert_eq!(op.op(&51, &op.inv(&33)), 18);
@@ -131,7 +131,7 @@ mod tests {
         assert_eq!(op.op(&66, &17), 83);
         assert_eq!(op.op(&24, &3), 27);
         assert_eq!(op.op(&88, &87), 175);
-        assert_eq!(op.op(&op.identity(), &5), 5);
-        assert_eq!(op.op(&op.identity(), &3332), 3332);
+        assert_eq!(op.op(&op.id(), &5), 5);
+        assert_eq!(op.op(&op.id(), &3332), 3332);
     }
 }

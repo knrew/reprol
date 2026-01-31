@@ -11,15 +11,15 @@ pub struct OpGcd<T> {
 }
 
 impl<T: Copy + Gcd + OpGcdUtils> Monoid for OpGcd<T> {
-    type Value = T;
+    type Element = T;
 
     #[inline]
-    fn identity(&self) -> Self::Value {
+    fn id(&self) -> Self::Element {
         T::ZERO
     }
 
     #[inline]
-    fn op(&self, lhs: &Self::Value, rhs: &Self::Value) -> Self::Value {
+    fn op(&self, lhs: &Self::Element, rhs: &Self::Element) -> Self::Element {
         lhs.gcd(*rhs)
     }
 }

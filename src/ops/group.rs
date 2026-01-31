@@ -9,5 +9,5 @@ use crate::ops::monoid::Monoid;
 /// `x * y =y * x　= e`を満たす．
 pub trait Group: Monoid {
     /// `x`の逆元を返す．
-    fn inv(&self, x: &<Self as Monoid>::Value) -> Self::Value;
+    fn inv(&self, x: &<Self as Monoid>::Element) -> Self::Element;
 }

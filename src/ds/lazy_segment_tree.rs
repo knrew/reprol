@@ -18,13 +18,13 @@
 //! struct Op;
 //!
 //! impl Monoid for Op {
-//!     type Value = i64;
+//!     type Element = i64;
 //!
-//!     fn identity(&self) -> Self::Value {
+//!     fn id(&self) -> Self::Element {
 //!         0
 //!     }
 //!
-//!     fn op(&self, lhs: &Self::Value, rhs: &Self::Value) -> Self::Value {
+//!     fn op(&self, lhs: &Self::Element, rhs: &Self::Element) -> Self::Element {
 //!         *lhs.max(rhs)
 //!     }
 //! }
@@ -33,19 +33,19 @@
 //! struct Act;
 //!
 //! impl Monoid for Act {
-//!     type Value = i64;
+//!     type Element = i64;
 //!
-//!     fn identity(&self) -> Self::Value {
+//!     fn id(&self) -> Self::Element {
 //!         0
 //!     }
 //!
-//!     fn op(&self, g: &Self::Value, f: &Self::Value) -> Self::Value {
+//!     fn op(&self, g: &Self::Element, f: &Self::Element) -> Self::Element {
 //!         f + g
 //!     }
 //! }
 //!
 //! impl Action<Op> for Act {
-//!     fn act(&self, f: &Self::Value, x: &<Op as Monoid>::Value) -> <Op as Monoid>::Value {
+//!     fn act(&self, f: &Self::Element, x: &<Op as Monoid>::Element) -> <Op as Monoid>::Element {
 //!         x + f
 //!     }
 //! }
@@ -89,10 +89,10 @@ pub struct LazySegmentTree<O: Monoid, A: Action<O>> {
     len: usize,
 
     /// セグ木を構成するノード
-    nodes: Vec<O::Value>,
+    nodes: Vec<O::Element>,
 
     /// 作用の遅延配列
-    lazies: Vec<A::Value>,
+    lazies: Vec<A::Element>,
 
     log: u32,
 
@@ -118,8 +118,8 @@ impl<O: Monoid, A: Action<O>> LazySegmentTree<O, A> {
         let offset = len.next_power_of_two();
         Self {
             len,
-            nodes: (0..2 * offset).map(|_| op.identity()).collect(),
-            lazies: (0..offset).map(|_| action.identity()).collect(),
+            nodes: (0..2 * offset).map(|_| op.id()).collect(),
+            lazies: (0..offset).map(|_| action.id()).collect(),
             log: offset.trailing_zeros(),
             op,
             action,
@@ -127,9 +127,9 @@ impl<O: Monoid, A: Action<O>> LazySegmentTree<O, A> {
     }
 
     /// `index`番目の要素を返す．
-    pub fn get(&mut self, index: usize) -> &O::Value
+    pub fn get(&mut self, index: usize) -> &O::Element
     where
-        A::Value: PartialEq,
+        A::Element: PartialEq,
     {
         assert!(index < self.len);
         let index = index + self.nodes.len() / 2;
@@ -140,16 +140,16 @@ impl<O: Monoid, A: Action<O>> LazySegmentTree<O, A> {
     }
 
     /// `index`番目の要素を`value`に更新する．
-    pub fn set(&mut self, index: usize, value: O::Value)
+    pub fn set(&mut self, index: usize, value: O::Element)
     where
-        A::Value: PartialEq,
+        A::Element: PartialEq,
     {
         *self.entry_mut(index) = value;
     }
 
     pub fn entry_mut(&mut self, index: usize) -> EntryMut<'_, O, A>
     where
-        A::Value: PartialEq,
+        A::Element: PartialEq,
     {
         assert!(index < self.len);
         let leaf = index + self.nodes.len() / 2;
@@ -159,15 +159,15 @@ impl<O: Monoid, A: Action<O>> LazySegmentTree<O, A> {
         }
 
         EntryMut {
-            segment_tree: self,
-            leaf,
+            seg: self,
+            node_index: leaf,
         }
     }
 
     /// 区間`range`の要素に作用`f`を適用する．
-    pub fn act(&mut self, range: impl RangeBounds<usize>, f: &A::Value)
+    pub fn act(&mut self, range: impl RangeBounds<usize>, f: &A::Element)
     where
-        A::Value: PartialEq,
+        A::Element: PartialEq,
     {
         let Range { start: l, end: r } = to_half_open_index_range(range, self.len);
         assert!(r <= self.len);
@@ -219,9 +219,9 @@ impl<O: Monoid, A: Action<O>> LazySegmentTree<O, A> {
     }
 
     /// 区間`range`の要素の総積を返す．
-    pub fn fold(&mut self, range: impl RangeBounds<usize>) -> O::Value
+    pub fn fold(&mut self, range: impl RangeBounds<usize>) -> O::Element
     where
-        A::Value: PartialEq,
+        A::Element: PartialEq,
     {
         let Range { start: l, end: r } = to_half_open_index_range(range, self.len);
         assert!(l <= r);
@@ -240,8 +240,8 @@ impl<O: Monoid, A: Action<O>> LazySegmentTree<O, A> {
             }
         }
 
-        let mut res_l = self.op.identity();
-        let mut res_r = self.op.identity();
+        let mut res_l = self.op.id();
+        let mut res_r = self.op.id();
 
         while l < r {
             if l % 2 == 1 {
@@ -270,12 +270,12 @@ impl<O: Monoid, A: Action<O>> LazySegmentTree<O, A> {
     /// # 制約
     /// - `0 <= l <= len`
     /// - `f(identity()) = true`
-    pub fn bisect_right(&mut self, l: usize, mut f: impl FnMut(&O::Value) -> bool) -> usize
+    pub fn bisect_right(&mut self, l: usize, mut f: impl FnMut(&O::Element) -> bool) -> usize
     where
-        A::Value: PartialEq,
+        A::Element: PartialEq,
     {
         assert!(l <= self.len);
-        debug_assert!(f(&self.op.identity()));
+        debug_assert!(f(&self.op.id()));
 
         if l == self.len {
             return self.len;
@@ -288,7 +288,7 @@ impl<O: Monoid, A: Action<O>> LazySegmentTree<O, A> {
             self.propagate(l >> i);
         }
 
-        let mut prod = self.op.identity();
+        let mut prod = self.op.id();
 
         loop {
             while l.is_multiple_of(2) {
@@ -332,12 +332,12 @@ impl<O: Monoid, A: Action<O>> LazySegmentTree<O, A> {
     /// # 制約
     /// - `0 <= r <= len`
     /// - `f(identity()) = true`
-    pub fn bisect_left(&mut self, r: usize, mut f: impl FnMut(&O::Value) -> bool) -> usize
+    pub fn bisect_left(&mut self, r: usize, mut f: impl FnMut(&O::Element) -> bool) -> usize
     where
-        A::Value: PartialEq,
+        A::Element: PartialEq,
     {
         assert!(r <= self.len);
-        debug_assert!(f(&self.op.identity()));
+        debug_assert!(f(&self.op.id()));
 
         if r == 0 {
             return 0;
@@ -349,7 +349,7 @@ impl<O: Monoid, A: Action<O>> LazySegmentTree<O, A> {
             self.propagate((r - 1) >> i);
         }
 
-        let mut prod = self.op.identity();
+        let mut prod = self.op.id();
 
         loop {
             r -= 1;
@@ -383,18 +383,18 @@ impl<O: Monoid, A: Action<O>> LazySegmentTree<O, A> {
 
     fn propagate(&mut self, k: usize)
     where
-        A::Value: PartialEq,
+        A::Element: PartialEq,
     {
-        if self.lazies[k] == self.action.identity() {
+        if self.lazies[k] == self.action.id() {
             return;
         }
-        let lz = replace(&mut self.lazies[k], self.action.identity());
+        let lz = replace(&mut self.lazies[k], self.action.id());
         self.apply(2 * k, &lz);
         self.apply(2 * k + 1, &lz);
     }
 
     /// ノードkにfを作用させる
-    fn apply(&mut self, k: usize, f: &A::Value) {
+    fn apply(&mut self, k: usize, f: &A::Element) {
         self.nodes[k] = self.action.act(f, &self.nodes[k]);
         if k < self.nodes.len() / 2 {
             self.lazies[k] = self.action.op(f, &self.lazies[k]);
@@ -402,12 +402,12 @@ impl<O: Monoid, A: Action<O>> LazySegmentTree<O, A> {
     }
 }
 
-impl<O: Monoid, A: Action<O>> From<(Vec<O::Value>, O, A)> for LazySegmentTree<O, A> {
-    fn from((v, op, action): (Vec<O::Value>, O, A)) -> Self {
+impl<O: Monoid, A: Action<O>> From<(Vec<O::Element>, O, A)> for LazySegmentTree<O, A> {
+    fn from((v, op, action): (Vec<O::Element>, O, A)) -> Self {
         let len = v.len();
         let offset = len.next_power_of_two();
 
-        let mut nodes = (0..2 * offset).map(|_| op.identity()).collect::<Vec<_>>();
+        let mut nodes = (0..2 * offset).map(|_| op.id()).collect::<Vec<_>>();
 
         for (node_i, vi) in nodes[offset..offset + len].iter_mut().zip(v) {
             *node_i = vi;
@@ -420,7 +420,7 @@ impl<O: Monoid, A: Action<O>> From<(Vec<O::Value>, O, A)> for LazySegmentTree<O,
         Self {
             len,
             nodes,
-            lazies: (0..offset).map(|_| action.identity()).collect(),
+            lazies: (0..offset).map(|_| action.id()).collect(),
             log: offset.trailing_zeros(),
             op,
             action,
@@ -428,72 +428,74 @@ impl<O: Monoid, A: Action<O>> From<(Vec<O::Value>, O, A)> for LazySegmentTree<O,
     }
 }
 
-impl<O: Monoid, A: Action<O>, const N: usize> From<([O::Value; N], O, A)>
+impl<O: Monoid, A: Action<O>, const N: usize> From<([O::Element; N], O, A)>
     for LazySegmentTree<O, A>
 {
-    fn from((v, op, action): ([O::Value; N], O, A)) -> Self {
+    fn from((v, op, action): ([O::Element; N], O, A)) -> Self {
         Self::from((v.into_iter().collect::<Vec<_>>(), op, action))
     }
 }
 
-impl<O: Monoid + Default, A: Action<O> + Default> From<Vec<O::Value>> for LazySegmentTree<O, A> {
-    fn from(v: Vec<O::Value>) -> Self {
+impl<O: Monoid + Default, A: Action<O> + Default> From<Vec<O::Element>> for LazySegmentTree<O, A> {
+    fn from(v: Vec<O::Element>) -> Self {
         Self::from((v, O::default(), A::default()))
     }
 }
 
-impl<O: Monoid + Default, A: Action<O> + Default, const N: usize> From<[O::Value; N]>
+impl<O: Monoid + Default, A: Action<O> + Default, const N: usize> From<[O::Element; N]>
     for LazySegmentTree<O, A>
 {
-    fn from(v: [O::Value; N]) -> Self {
+    fn from(v: [O::Element; N]) -> Self {
         Self::from((v, O::default(), A::default()))
     }
 }
 
-impl<O: Monoid + Default, A: Action<O> + Default> FromIterator<O::Value> for LazySegmentTree<O, A> {
-    fn from_iter<I: IntoIterator<Item = O::Value>>(iter: I) -> Self {
+impl<O: Monoid + Default, A: Action<O> + Default> FromIterator<O::Element>
+    for LazySegmentTree<O, A>
+{
+    fn from_iter<I: IntoIterator<Item = O::Element>>(iter: I) -> Self {
         Self::from(iter.into_iter().collect::<Vec<_>>())
     }
 }
 
 pub struct EntryMut<'a, O: Monoid, A: Action<O>>
 where
-    A::Value: PartialEq,
+    A::Element: PartialEq,
 {
-    segment_tree: &'a mut LazySegmentTree<O, A>,
-    leaf: usize,
+    seg: &'a mut LazySegmentTree<O, A>,
+    node_index: usize,
 }
 
 impl<'a, O: Monoid, A: Action<O>> Deref for EntryMut<'a, O, A>
 where
-    A::Value: PartialEq,
+    A::Element: PartialEq,
 {
-    type Target = O::Value;
+    type Target = O::Element;
     fn deref(&self) -> &Self::Target {
-        &self.segment_tree.nodes[self.leaf]
+        &self.seg.nodes[self.node_index]
     }
 }
 
 impl<'a, O: Monoid, A: Action<O>> DerefMut for EntryMut<'a, O, A>
 where
-    A::Value: PartialEq,
+    A::Element: PartialEq,
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.segment_tree.nodes[self.leaf]
+        &mut self.seg.nodes[self.node_index]
     }
 }
 
 impl<'a, O: Monoid, A: Action<O>> Drop for EntryMut<'a, O, A>
 where
-    A::Value: PartialEq,
+    A::Element: PartialEq,
 {
     fn drop(&mut self) {
-        for i in 1..=self.segment_tree.log {
-            let k = self.leaf >> i;
-            self.segment_tree.nodes[k] = self.segment_tree.op.op(
-                &self.segment_tree.nodes[2 * k],
-                &self.segment_tree.nodes[2 * k + 1],
-            );
+        for i in 1..=self.seg.log {
+            let k = self.node_index >> i;
+            self.seg.nodes[k] = self
+                .seg
+                .op
+                .op(&self.seg.nodes[2 * k], &self.seg.nodes[2 * k + 1]);
         }
     }
 }

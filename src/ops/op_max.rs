@@ -11,15 +11,15 @@ impl<T> Monoid for OpMax<T>
 where
     T: Copy + PartialOrd + OpMaxUtils,
 {
-    type Value = T;
+    type Element = T;
 
     #[inline]
-    fn identity(&self) -> Self::Value {
+    fn id(&self) -> Self::Element {
         T::MIN
     }
 
     #[inline]
-    fn op(&self, &x: &Self::Value, &y: &Self::Value) -> Self::Value {
+    fn op(&self, &x: &Self::Element, &y: &Self::Element) -> Self::Element {
         if x > y { x } else { y }
     }
 }
@@ -62,7 +62,7 @@ mod tests {
         assert_eq!(op.op(&59, &65), 65);
         assert_eq!(op.op(&68, &26), 68);
         assert_eq!(op.op(&18, &48), 48);
-        assert_eq!(op.op(&op.identity(), &5), 5);
-        assert_eq!(op.op(&op.identity(), &3332), 3332);
+        assert_eq!(op.op(&op.id(), &5), 5);
+        assert_eq!(op.op(&op.id(), &3332), 3332);
     }
 }
