@@ -1,158 +1,309 @@
+//! 2次元Sparse Table
+//!
+//! 静的な冪等モノイド列の2次元配列の長方形区間積を計算するデータ構造．
+//!
+//! # 計算量
+//! - 構築(前計算): `O(H log H × W log W)` ただし H, W は配列の高さ・幅
+//! - 区間積の取得: `O(1)`
+//!
+//! # 使用例
+//! ```
+//! use reprol::ds::sparse_table_2d::SparseTable2d;
+//! use reprol::ops::op_min::OpMin;
+//! let v = vec![
+//!     vec![2, 10, 1, 100],
+//!     vec![5, 3, 8, 4],
+//!     vec![7, 6, 9, 2],
+//! ];
+//! let st = SparseTable2d::<OpMin<i64>>::new(v);
+//! assert_eq!(st.fold(0..3, 0..4), 1);
+//! assert_eq!(st.fold(1..3, 1..4), 2);
+//! ```
+
 use std::ops::{Range, RangeBounds};
 
 use crate::{
-    ds::sparse_table::SparseTable, ops::monoid::Monoid, utils::range::to_half_open_index_range,
+    ds::sparse_table::SparseTable, ops::monoid::IdempotentMonoid,
+    utils::range::to_half_open_index_range,
 };
 
-pub struct SparseTable2d<M: Monoid> {
-    h: usize,
-    w: usize,
-    nodes: Vec<Vec<SparseTable<M>>>,
-    monoid: M,
+/// 2次元Sparse Table
+pub struct SparseTable2d<O: IdempotentMonoid> {
+    len_rows: usize,
+    len_cols: usize,
+    nodes: Vec<Vec<SparseTable<O>>>,
+    op: O,
 }
 
-impl<M> SparseTable2d<M>
-where
-    M: Monoid,
-    M::Element: Clone,
-{
-    pub fn new(v: Vec<Vec<M::Element>>) -> Self
+impl<O: IdempotentMonoid> SparseTable2d<O> {
+    /// 2次元配列`v`からSparse Tableを構築する．
+    pub fn new(v: Vec<Vec<O::Element>>) -> Self
     where
-        M: Default,
+        O: Clone + Default,
     {
-        // TODO:with_opと統合する
+        Self::with_op(v, O::default())
+    }
 
+    /// 演算`op`を指定して，2次元配列`v`からSparse Tableを構築する．
+    pub fn with_op(v: Vec<Vec<O::Element>>, op: O) -> Self
+    where
+        O: Clone,
+    {
         assert!(!v.is_empty());
         assert!(!v[0].is_empty());
         debug_assert!(v.iter().all(|vi| vi.len() == v[0].len()));
 
-        let monoid = M::default();
-        let h = v.len();
-        let w = v[0].len();
-        let len = v.len().next_power_of_two().trailing_zeros() as usize + 1;
-        let mut nodes = Vec::with_capacity(len);
+        let len_rows = v.len();
+        let len_cols = v[0].len();
+
+        let len_nodes = v.len().next_power_of_two().trailing_zeros() as usize + 1;
+
+        let mut nodes: Vec<Vec<SparseTable<O>>> = Vec::with_capacity(len_nodes);
+
         {
             let node = v
                 .into_iter()
-                .map(|vi| SparseTable::new(vi))
-                .collect::<Vec<_>>();
+                .map(|vi| SparseTable::with_op(vi, op.clone()))
+                .collect();
             nodes.push(node);
         }
-        for i in 1..len {
+
+        for i in 1..len_nodes {
             let node = (0..)
-                .take_while(|j| j + (1 << i) <= h)
+                .take_while(|j| j + (1 << i) <= len_rows)
                 .map(|j| {
-                    let v = (0..w)
+                    let v = (0..len_cols)
                         .map(|k| {
-                            monoid.op(
-                                &nodes[i - 1][j].raw()[0][k],
-                                &nodes[i - 1][j + (1 << (i - 1))].raw()[0][k],
+                            op.op(
+                                nodes[i - 1][j].inner(0, k),
+                                nodes[i - 1][j + (1 << (i - 1))].inner(0, k),
                             )
                         })
                         .collect();
-                    SparseTable::new(v)
+                    SparseTable::with_op(v, op.clone())
                 })
                 .collect();
             nodes.push(node);
         }
 
         Self {
-            h,
-            w,
+            len_rows,
+            len_cols,
             nodes,
-            monoid,
+            op,
         }
     }
 
-    pub fn with_op(v: Vec<Vec<M::Element>>, monoid: M) -> Self
-    where
-        M: Clone,
-    {
-        assert!(!v.is_empty());
-        assert!(!v[0].is_empty());
-        debug_assert!(v.iter().all(|vi| vi.len() == v[0].len()));
-
-        let h = v.len();
-        let w = v[0].len();
-        let len = v.len().next_power_of_two().trailing_zeros() as usize + 1;
-        let mut nodes = Vec::with_capacity(len);
-        {
-            let node = v
-                .into_iter()
-                .map(|vi| SparseTable::with_op(vi, monoid.clone()))
-                .collect::<Vec<_>>();
-            nodes.push(node);
-        }
-        for i in 1..len {
-            let node = (0..)
-                .take_while(|j| j + (1 << i) <= h)
-                .map(|j| {
-                    let v = (0..w)
-                        .map(|k| {
-                            monoid.op(
-                                &nodes[i - 1][j].raw()[0][k],
-                                &nodes[i - 1][j + (1 << (i - 1))].raw()[0][k],
-                            )
-                        })
-                        .collect();
-                    SparseTable::with_op(v, monoid.clone())
-                })
-                .collect();
-            nodes.push(node);
-        }
-
-        Self {
-            h,
-            w,
-            nodes,
-            monoid,
-        }
+    /// (`i`, `j`)番目の要素を返す．
+    pub fn get(&self, i: usize, j: usize) -> O::Element {
+        self.fold(i..=i, j..=j)
     }
 
+    /// 区間`[row_range] × [col_range]`の区間積を返す．
     pub fn fold(
         &self,
         row_range: impl RangeBounds<usize>,
         col_range: impl RangeBounds<usize>,
-    ) -> M::Element {
-        let Range { start: il, end: ir } = to_half_open_index_range(row_range, self.h);
-        let Range { start: jl, end: jr } = to_half_open_index_range(col_range, self.w);
-        if il >= ir {
-            return self.monoid.id();
-        }
+    ) -> O::Element {
+        let Range { start: il, end: ir } = to_half_open_index_range(row_range, self.len_rows);
+        let Range { start: jl, end: jr } = to_half_open_index_range(col_range, self.len_cols);
+        assert!(il < ir && ir <= self.len_rows);
+        assert!(jl < jr && jr <= self.len_cols);
+
         let k = (ir - il + 1).next_power_of_two().trailing_zeros() as usize - 1;
-        self.monoid.op(
+        self.op.op(
             &self.nodes[k][il].fold(jl..jr),
             &self.nodes[k][ir - (1 << k)].fold(jl..jr),
         )
     }
 }
 
-impl<M> From<Vec<Vec<M::Element>>> for SparseTable2d<M>
-where
-    M: Monoid + Default,
-    M::Element: Clone,
-{
-    fn from(v: Vec<Vec<M::Element>>) -> Self {
-        Self::new(v)
+impl<O: IdempotentMonoid + Clone> From<(Vec<Vec<O::Element>>, O)> for SparseTable2d<O> {
+    fn from((v, op): (Vec<Vec<O::Element>>, O)) -> Self {
+        Self::with_op(v, op)
     }
 }
 
-impl<M> From<&Vec<Vec<M::Element>>> for SparseTable2d<M>
-where
-    M: Monoid + Default,
-    M::Element: Clone,
+impl<O: IdempotentMonoid + Clone, const N: usize, const M: usize> From<([[O::Element; M]; N], O)>
+    for SparseTable2d<O>
 {
-    fn from(v: &Vec<Vec<M::Element>>) -> Self {
-        Self::new(v.clone())
+    fn from((v, op): ([[O::Element; M]; N], O)) -> Self {
+        let v: Vec<Vec<_>> = v.into_iter().map(|vi| vi.into_iter().collect()).collect();
+        Self::with_op(v, op)
     }
 }
 
-impl<M> From<&[Vec<M::Element>]> for SparseTable2d<M>
-where
-    M: Monoid + Default,
-    M::Element: Clone,
-{
-    fn from(v: &[Vec<M::Element>]) -> Self {
-        Self::new(v.to_vec())
+impl<O: IdempotentMonoid + Clone + Default> From<Vec<Vec<O::Element>>> for SparseTable2d<O> {
+    fn from(v: Vec<Vec<O::Element>>) -> Self {
+        Self::from((v, O::default()))
     }
+}
+
+impl<O: IdempotentMonoid + Clone + Default, const N: usize, const M: usize>
+    From<[[O::Element; M]; N]> for SparseTable2d<O>
+{
+    fn from(v: [[O::Element; M]; N]) -> Self {
+        Self::from((v, O::default()))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use rand::Rng;
+
+    use super::*;
+    use crate::{
+        math::gcd::Gcd,
+        ops::{op_gcd::OpGcd, op_max::OpMax, op_min::OpMin},
+        utils::test_utils::initialize_rng,
+    };
+
+    #[test]
+    fn test_min() {
+        let a = vec![vec![2, 10, 1, 100], vec![5, 3, 8, 4], vec![7, 6, 9, 2]];
+        let st = SparseTable2d::<OpMin<i64>>::new(a.clone());
+
+        assert_eq!(st.get(0, 0), 2);
+        assert_eq!(st.get(0, 2), 1);
+        assert_eq!(st.get(1, 1), 3);
+
+        assert_eq!(st.fold(0..1, 0..1), 2);
+        assert_eq!(st.fold(..2, 0..2), 2);
+        assert_eq!(st.fold(0..=2, 0..4), 1);
+        assert_eq!(st.fold(1..3, 1..4), 2);
+        assert_eq!(st.fold(.., ..), 1);
+    }
+
+    #[test]
+    fn test_max() {
+        let a = vec![vec![2, 10, 1, 100], vec![5, 3, 8, 4], vec![7, 6, 9, 2]];
+        let st = SparseTable2d::<OpMax<i64>>::new(a.clone());
+
+        assert_eq!(st.get(0, 0), 2);
+        assert_eq!(st.get(0, 3), 100);
+        assert_eq!(st.get(1, 0), 5);
+
+        assert_eq!(st.fold(0..1, 0..1), 2);
+        assert_eq!(st.fold(0..2, 0..2), 10);
+        assert_eq!(st.fold(0..3, 0..4), 100);
+        assert_eq!(st.fold(1..3, 1..4), 9);
+        assert_eq!(st.fold(.., ..), 100);
+    }
+
+    macro_rules! random_test {
+        ($test_name:ident, $ty:ty, $op:ty, $fold_init:expr, $fold_op:expr, $val_range:expr) => {
+            #[test]
+            fn $test_name() {
+                let mut rng = initialize_rng();
+
+                const T: usize = 50;
+                const H_MAX: usize = 15;
+                const W_MAX: usize = 15;
+
+                for _ in 0..T {
+                    let h = rng.random_range(1..=H_MAX);
+                    let w = rng.random_range(1..=W_MAX);
+                    let a = (0..h)
+                        .map(|_| {
+                            (0..w)
+                                .map(|_| rng.random_range($val_range))
+                                .collect::<Vec<_>>()
+                        })
+                        .collect::<Vec<_>>();
+
+                    let st = SparseTable2d::<$op>::from(a.clone());
+
+                    for il in 0..h {
+                        for ir in il + 1..=h {
+                            for jl in 0..w {
+                                for jr in jl + 1..=w {
+                                    let naive = a[il..ir]
+                                        .iter()
+                                        .flat_map(|row| row[jl..jr].iter())
+                                        .copied()
+                                        .fold($fold_init, $fold_op);
+                                    assert_eq!(st.fold(il..ir, jl..jr), naive);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        };
+    }
+
+    random_test!(
+        test_random_min_i32,
+        i32,
+        OpMin<i32>,
+        i32::MAX,
+        |a, b| a.min(b),
+        -100..=100
+    );
+    random_test!(
+        test_random_min_i64,
+        i64,
+        OpMin<i64>,
+        i64::MAX,
+        |a, b| a.min(b),
+        -100..=100
+    );
+    random_test!(
+        test_random_min_u32,
+        u32,
+        OpMin<u32>,
+        u32::MAX,
+        |a, b| a.min(b),
+        0..=100
+    );
+    random_test!(
+        test_random_min_u64,
+        u64,
+        OpMin<u64>,
+        u64::MAX,
+        |a, b| a.min(b),
+        0..=100
+    );
+
+    random_test!(
+        test_random_max_i32,
+        i32,
+        OpMax<i32>,
+        i32::MIN,
+        |a, b| a.max(b),
+        -100..=100
+    );
+    random_test!(
+        test_random_max_i64,
+        i64,
+        OpMax<i64>,
+        i64::MIN,
+        |a, b| a.max(b),
+        -100..=100
+    );
+    random_test!(
+        test_random_max_u32,
+        u32,
+        OpMax<u32>,
+        u32::MIN,
+        |a, b| a.max(b),
+        0..=100
+    );
+    random_test!(
+        test_random_max_u64,
+        u64,
+        OpMax<u64>,
+        u64::MIN,
+        |a, b| a.max(b),
+        0..=100
+    );
+
+    random_test!(
+        test_random_gcd_u64,
+        u64,
+        OpGcd<u64>,
+        0u64,
+        |a, b| a.gcd(b),
+        1..=1000000
+    );
 }
