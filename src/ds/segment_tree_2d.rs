@@ -225,7 +225,9 @@ impl<O: Monoid> From<(Vec<Vec<O::Element>>, O)> for SegmentTree2d<O> {
     }
 }
 
-impl<O: Monoid, const N: usize, const M: usize> From<([[O::Element; M]; N], O)> for SegmentTree2d<O> {
+impl<O: Monoid, const N: usize, const M: usize> From<([[O::Element; M]; N], O)>
+    for SegmentTree2d<O>
+{
     fn from((v, op): ([[O::Element; M]; N], O)) -> Self {
         let v: Vec<Vec<_>> = v.into_iter().map(|vi| vi.into_iter().collect()).collect();
         Self::from((v, op))
