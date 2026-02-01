@@ -448,7 +448,7 @@
 <a href=#448 id=448 data-nosnippet>448</a>        (<span class="macro-nonterminal">$test_name</span>:ident, <span class="macro-nonterminal">$ty</span>:ty, <span class="macro-nonterminal">$op</span>:ty, <span class="macro-nonterminal">$fold_init</span>:expr, <span class="macro-nonterminal">$fold_op</span>:expr, <span class="macro-nonterminal">$val_range</span>:expr) =&gt; {
 <a href=#449 id=449 data-nosnippet>449</a>            <span class="attr">#[test]
 <a href=#450 id=450 data-nosnippet>450</a>            </span><span class="kw">fn </span><span class="macro-nonterminal">$test_name</span>() {
-<a href=#451 id=451 data-nosnippet>451</a>                <span class="kw">let </span><span class="kw-2">mut </span>rng = initialize_rng();
+<a href=#451 id=451 data-nosnippet>451</a>                <span class="kw">let </span><span class="kw-2">mut </span>rng = get_test_rng();
 <a href=#452 id=452 data-nosnippet>452</a>
 <a href=#453 id=453 data-nosnippet>453</a>                <span class="kw">const </span>T: usize = <span class="number">50</span>;
 <a href=#454 id=454 data-nosnippet>454</a>                <span class="kw">const </span>Q: usize = <span class="number">2000</span>;

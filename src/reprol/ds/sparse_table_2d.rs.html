@@ -194,7 +194,7 @@
 <a href=#194 id=194 data-nosnippet>194</a>        (<span class="macro-nonterminal">$test_name</span>:ident, <span class="macro-nonterminal">$ty</span>:ty, <span class="macro-nonterminal">$op</span>:ty, <span class="macro-nonterminal">$fold_init</span>:expr, <span class="macro-nonterminal">$fold_op</span>:expr, <span class="macro-nonterminal">$val_range</span>:expr) =&gt; {
 <a href=#195 id=195 data-nosnippet>195</a>            <span class="attr">#[test]
 <a href=#196 id=196 data-nosnippet>196</a>            </span><span class="kw">fn </span><span class="macro-nonterminal">$test_name</span>() {
-<a href=#197 id=197 data-nosnippet>197</a>                <span class="kw">let </span><span class="kw-2">mut </span>rng = initialize_rng();
+<a href=#197 id=197 data-nosnippet>197</a>                <span class="kw">let </span><span class="kw-2">mut </span>rng = get_test_rng();
 <a href=#198 id=198 data-nosnippet>198</a>
 <a href=#199 id=199 data-nosnippet>199</a>                <span class="kw">const </span>T: usize = <span class="number">50</span>;
 <a href=#200 id=200 data-nosnippet>200</a>                <span class="kw">const </span>H_MAX: usize = <span class="number">15</span>;
