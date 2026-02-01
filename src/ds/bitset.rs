@@ -125,10 +125,12 @@ macro_rules! bitset {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::utils::test_utils::initialize_rng;
-    use rand::Rng;
     use std::cmp::Ordering;
+
+    use rand::Rng;
+
+    use super::*;
+    use crate::utils::test_utils::random::get_test_rng;
 
     #[test]
     fn test_new_default_zero() {
@@ -324,7 +326,7 @@ mod tests {
             }
         }
 
-        let mut rng = initialize_rng();
+        let mut rng = get_test_rng();
         test::<1>(&mut rng);
         test::<2>(&mut rng);
         test::<10>(&mut rng);

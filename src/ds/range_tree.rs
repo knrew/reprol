@@ -223,7 +223,7 @@ mod tests {
     use super::*;
     use crate::{
         ops::{op_add::OpAdd, op_max::OpMax, op_min::OpMin},
-        utils::test_utils::initialize_rng,
+        utils::test_utils::random::get_test_rng,
     };
 
     #[test]
@@ -311,7 +311,7 @@ mod tests {
             fn $test_name() {
                 use std::collections::HashMap;
 
-                let mut rng = initialize_rng();
+                let mut rng = get_test_rng();
 
                 const T: usize = 50;
                 const Q: usize = 2000;

@@ -4,7 +4,7 @@ use std::ops::{Range, RangeBounds};
 
 use crate::{
     ops::{group::Group, monoid::Monoid, op_add::OpAdd},
-    utils::range::to_half_open_index_range,
+    utils::range_utils::to_half_open_index_range,
 };
 
 /// 3次元累積積を管理するデータ構造
@@ -193,7 +193,7 @@ mod tests {
     use rand::Rng;
 
     use super::*;
-    use crate::utils::test_utils::initialize_rng;
+    use crate::utils::test_utils::random::get_test_rng;
 
     #[test]
     fn test() {
@@ -278,7 +278,7 @@ mod tests {
         define_test_function!(test_i64, i64);
         define_test_function!(test_u64, u64);
 
-        let mut rng = initialize_rng();
+        let mut rng = get_test_rng();
         test_i64(&mut rng, -1000000000..1000000000);
         test_u64(&mut rng, 0..1000000000);
     }

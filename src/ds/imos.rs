@@ -17,7 +17,7 @@
 
 use std::ops::{Index, Range, RangeBounds};
 
-use crate::utils::range::to_half_open_index_range;
+use crate::utils::range_utils::to_half_open_index_range;
 
 /// 1次元配列上の区間加算を管理するいもす法
 pub struct Imos {
@@ -43,6 +43,8 @@ impl Imos {
         assert!(!self.has_built);
 
         let Range { start: l, end: r } = to_half_open_index_range(range, self.n + 1);
+
+        assert!(l <= r && r <= self.n);
 
         self.imos[l] += value;
         self.imos[r] -= value;
@@ -78,9 +80,8 @@ impl Index<usize> for Imos {
 mod tests {
     use rand::Rng;
 
-    use crate::utils::test_utils::initialize_rng;
-
     use super::*;
+    use crate::utils::test_utils::random::get_test_rng;
 
     #[test]
     fn test_basic() {
@@ -94,11 +95,14 @@ mod tests {
         assert_eq!(imos.get(2), 2);
         assert_eq!(imos.get(3), 0);
         assert_eq!(imos.get(4), 0);
+        for i in 0..imos.n {
+            assert_eq!(imos[i], imos.get(i));
+        }
     }
 
     #[test]
     fn test_random() {
-        let mut rng = initialize_rng();
+        let mut rng = get_test_rng();
 
         const T: usize = 100;
         const N_MAX: usize = 100;

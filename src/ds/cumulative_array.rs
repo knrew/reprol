@@ -63,7 +63,7 @@ use std::{
 
 use crate::{
     ops::{group::Group, monoid::Monoid, op_add::OpAdd},
-    utils::range::to_half_open_index_range,
+    utils::range_utils::to_half_open_index_range,
 };
 
 /// 累積積を管理するデータ構造
@@ -190,7 +190,7 @@ mod tests {
     use super::*;
     use crate::{
         ops::{op_max::OpMax, op_min::OpMin},
-        utils::test_utils::initialize_rng,
+        utils::test_utils::random::get_test_rng,
     };
 
     #[test]
@@ -272,7 +272,7 @@ mod tests {
         define_test_function!(test_u128, u128);
         define_test_function!(test_usize, usize);
 
-        let mut rng = initialize_rng();
+        let mut rng = get_test_rng();
 
         test_i8(&mut rng, -1..2);
         test_u8(&mut rng, 0..2);
@@ -319,7 +319,7 @@ mod tests {
         define_test_function!(test_i128, i128);
         define_test_function!(test_u128, u128);
 
-        let mut rng = initialize_rng();
+        let mut rng = get_test_rng();
 
         test_i8(&mut rng);
         test_u8(&mut rng);
@@ -364,7 +364,7 @@ mod tests {
         define_test_function!(test_i128, i128);
         define_test_function!(test_u128, u128);
 
-        let mut rng = initialize_rng();
+        let mut rng = get_test_rng();
 
         test_i8(&mut rng);
         test_u8(&mut rng);

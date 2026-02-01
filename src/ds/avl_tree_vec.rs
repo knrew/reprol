@@ -674,7 +674,7 @@ mod tests {
     use rand::Rng;
 
     use super::*;
-    use crate::utils::test_utils::initialize_rng;
+    use crate::utils::test_utils::random::get_test_rng;
 
     /// AVL木が正しく平衡であるかを確認する
     fn is_balanced<T>(tree: &AvlTreeVec<T>) -> bool {
@@ -935,7 +935,7 @@ mod tests {
 
     #[test]
     fn test_insert_and_remove_random_small() {
-        let mut rng = initialize_rng();
+        let mut rng = get_test_rng();
 
         for _ in 0..5 {
             let mut avl: AvlTreeVec<i32> = AvlTreeVec::new();
@@ -970,7 +970,7 @@ mod tests {
 
     #[test]
     fn test_insert_and_remove_random_large() {
-        let mut rng = initialize_rng();
+        let mut rng = get_test_rng();
 
         for _ in 0..10 {
             let mut avl: AvlTreeVec<i32> = AvlTreeVec::new();

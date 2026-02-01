@@ -20,7 +20,7 @@ use std::{
     ops::{Range, RangeBounds},
 };
 
-use crate::{ops::group::Group, utils::range::to_half_open_index_range};
+use crate::{ops::group::Group, utils::range_utils::to_half_open_index_range};
 
 /// Fenwick Tree
 pub struct FenwickTree<O: Group> {
@@ -128,7 +128,7 @@ mod tests {
     use rand::Rng;
 
     use super::*;
-    use crate::{ops::op_add::OpAdd, utils::test_utils::initialize_rng};
+    use crate::{ops::op_add::OpAdd, utils::test_utils::random::get_test_rng};
 
     #[test]
     fn test_sum() {
@@ -186,7 +186,7 @@ mod tests {
         define_test_function!(test_i64, i64);
         define_test_function!(test_u64, u64);
 
-        let mut rng = initialize_rng();
+        let mut rng = get_test_rng();
 
         test_i64(&mut rng, -1000000000, 1000000000);
         test_u64(&mut rng, 0, 1000000000);

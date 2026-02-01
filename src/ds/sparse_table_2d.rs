@@ -24,7 +24,7 @@ use std::ops::{Range, RangeBounds};
 
 use crate::{
     ds::sparse_table::SparseTable, ops::monoid::IdempotentMonoid,
-    utils::range::to_half_open_index_range,
+    utils::range_utils::to_half_open_index_range,
 };
 
 /// 2次元Sparse Table
@@ -155,7 +155,7 @@ mod tests {
     use crate::{
         math::gcd::Gcd,
         ops::{op_gcd::OpGcd, op_max::OpMax, op_min::OpMin},
-        utils::test_utils::initialize_rng,
+        utils::test_utils::random::get_test_rng,
     };
 
     #[test]
@@ -194,7 +194,7 @@ mod tests {
         ($test_name:ident, $ty:ty, $op:ty, $fold_init:expr, $fold_op:expr, $val_range:expr) => {
             #[test]
             fn $test_name() {
-                let mut rng = initialize_rng();
+                let mut rng = get_test_rng();
 
                 const T: usize = 50;
                 const H_MAX: usize = 15;
