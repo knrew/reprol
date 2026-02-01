@@ -26,5 +26,3 @@ jobs:
 
   deploy-docs:
     uses: ./.github/workflows/deploy_docs.yaml
-    with:
-      rust_toolchain: "stable"
