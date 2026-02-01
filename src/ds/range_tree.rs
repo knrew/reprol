@@ -311,7 +311,7 @@ mod tests {
             fn $test_name() {
                 use std::collections::HashMap;
 
-                let mut rng = initialize_rng();
+                let mut rng = get_test_rng();
 
                 const T: usize = 50;
                 const Q: usize = 2000;

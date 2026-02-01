@@ -448,7 +448,7 @@ mod tests {
         ($test_name:ident, $ty:ty, $op:ty, $fold_init:expr, $fold_op:expr, $val_range:expr) => {
             #[test]
             fn $test_name() {
-                let mut rng = initialize_rng();
+                let mut rng = get_test_rng();
 
                 const T: usize = 50;
                 const Q: usize = 2000;
