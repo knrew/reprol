@@ -40,7 +40,7 @@ use std::{
     ops::{Deref, DerefMut, Index, Range, RangeBounds},
 };
 
-use crate::{ops::monoid::Monoid, utils::range::to_half_open_index_range};
+use crate::{ops::monoid::Monoid, utils::range_utils::to_half_open_index_range};
 
 /// セグメント木
 pub struct SegmentTree<O: Monoid> {
@@ -324,7 +324,7 @@ mod tests {
     use super::*;
     use crate::{
         ops::{op_add::OpAdd, op_max::OpMax, op_min::OpMin},
-        utils::test_utils::initialize_rng,
+        utils::test_utils::random::get_test_rng,
     };
 
     #[test]
@@ -560,7 +560,7 @@ mod tests {
             l
         }
 
-        let mut rng = initialize_rng();
+        let mut rng = get_test_rng();
 
         const T: usize = 10;
         const Q: usize = 100000;
@@ -662,7 +662,7 @@ mod tests {
             l
         }
 
-        let mut rng = initialize_rng();
+        let mut rng = get_test_rng();
 
         const T: usize = 10;
         const Q: usize = 100000;

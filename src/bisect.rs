@@ -26,7 +26,7 @@ use std::{
     ops::{Range, RangeBounds},
 };
 
-use crate::utils::range::RangeUtil;
+use crate::utils::range_utils::RangeUtils;
 
 /// 二分探索を行うためのトレイト．
 pub trait Bisect<T> {
@@ -45,7 +45,7 @@ where
         let Range {
             start: mut ok,
             end: mut ng,
-        } = T::to_half_open_range(self, T::MIN, T::INFINITY);
+        } = T::to_half_open_range(self);
 
         assert!(!T::is_empty_range(&ok, &ng));
 
@@ -171,10 +171,7 @@ impl<T: Ord> Bounds for [T] {
     }
 }
 
-trait BisectInteger: RangeUtil {
-    const MIN: Self;
-    const INFINITY: Self;
-
+trait BisectInteger: RangeUtils {
     /// [start, end)に1個以上要素が存在するかどうか．
     fn is_empty_range(start: &Self, end: &Self) -> bool;
 
@@ -184,9 +181,6 @@ trait BisectInteger: RangeUtil {
 macro_rules! impl_bisect_integer {
     ($ty: ty) => {
         impl BisectInteger for $ty {
-            const MIN: Self = Self::MIN;
-            const INFINITY: Self = Self::MAX;
-
             fn is_empty_range(start: &Self, end: &Self) -> bool {
                 start >= end
             }
@@ -216,7 +210,7 @@ mod tests {
     use rand::Rng;
 
     use super::*;
-    use crate::utils::test_utils::initialize_rng;
+    use crate::utils::test_utils::random::get_test_rng;
 
     #[test]
     fn test_lower_bound() {
@@ -386,7 +380,7 @@ mod tests {
         define_test_function!(test_i64, i64);
         define_test_function!(test_u64, u64);
 
-        let mut rng = initialize_rng();
+        let mut rng = get_test_rng();
 
         test_i64(&mut rng, -1000, 1000);
         test_u64(&mut rng, 0, 1000);

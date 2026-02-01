@@ -223,7 +223,7 @@ mod tests {
     use super::*;
     use crate::{
         ops::{op_add::OpAdd, op_max::OpMax, op_min::OpMin},
-        utils::test_utils::initialize_rng,
+        utils::test_utils::random::get_test_rng,
     };
 
     #[test]

@@ -28,7 +28,7 @@ use std::{
     ops::{Bound, Range, RangeBounds, Sub},
 };
 
-use crate::utils::range::RangeUtil;
+use crate::utils::range_utils::RangeUtils;
 
 /// `IntervalMap`内部で扱う半開区間を表す構造体．
 #[repr(transparent)]
@@ -38,7 +38,7 @@ pub struct Interval<T> {
 }
 
 #[allow(private_bounds)]
-impl<T: IntervalElement> Interval<T> {
+impl<T: Clone + Ord + RangeUtils> Interval<T> {
     /// 半開区間`[range.start, range.end)`をそのまま保持する`Interval`を生成する．
     pub fn new(range: Range<T>) -> Self {
         Self { range }
@@ -47,7 +47,7 @@ impl<T: IntervalElement> Interval<T> {
     /// 任意の`RangeBounds`を半開区間に正規化して`Interval`を生成する．
     pub fn from_range_bounds(range_bounds: impl RangeBounds<T>) -> Self {
         Self {
-            range: T::to_half_open_range(range_bounds, T::NEGATIVE_INFINITY, T::POSITIVE_INFINITY),
+            range: T::to_half_open_range(range_bounds),
         }
     }
 
@@ -62,7 +62,7 @@ impl<T: IntervalElement> Interval<T> {
         T: Sub<Output = T>,
     {
         assert!(!self.is_empty());
-        self.end() - self.start()
+        self.end().clone() - self.start().clone()
     }
 
     /// 長さが0の区間かどうかを返す．
@@ -72,12 +72,12 @@ impl<T: IntervalElement> Interval<T> {
 
     /// 区間の左端を返す．
     pub fn start(&self) -> T {
-        self.range.start
+        self.range.start.clone()
     }
 
     /// 区間の右端を返す．
     pub fn end(&self) -> T {
-        self.range.end
+        self.range.end.clone()
     }
 
     /// 左端の可変参照を返す．
@@ -122,13 +122,13 @@ impl<T> RangeBounds<T> for Interval<T> {
     }
 }
 
-impl<T: Ord> PartialOrd for Interval<T> {
+impl<T: Clone + Ord> PartialOrd for Interval<T> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl<T: Ord> Ord for Interval<T> {
+impl<T: Clone + Ord> Ord for Interval<T> {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.range
             .start
@@ -154,7 +154,7 @@ pub struct IntervalMap<K, V> {
 }
 
 #[allow(private_bounds)]
-impl<K: IntervalElement, V: Clone + PartialEq> IntervalMap<K, V> {
+impl<K: Clone + Ord + RangeUtils, V: Clone + PartialEq> IntervalMap<K, V> {
     /// 空の`IntervalMap`を生成する．
     pub fn new() -> Self {
         Self {
@@ -337,7 +337,7 @@ impl<K: Debug, V: Debug> Debug for IntervalMap<K, V> {
 pub struct IntervalSet<K>(IntervalMap<K, ()>);
 
 #[allow(private_bounds)]
-impl<K: IntervalElement> IntervalSet<K> {
+impl<K: Clone + Ord + RangeUtils> IntervalSet<K> {
     /// 空の集合を生成する．
     pub fn new() -> Self {
         Self(IntervalMap::new())
@@ -472,37 +472,12 @@ impl<K: Debug> Debug for IntervalSet<K> {
     }
 }
 
-trait IntervalElement: Ord + Copy + RangeUtil {
-    const NEGATIVE_INFINITY: Self;
-    const POSITIVE_INFINITY: Self;
-}
-
-macro_rules! impl_interval_element {
-    ($ty: ty) => {
-        impl IntervalElement for $ty {
-            const NEGATIVE_INFINITY: $ty = <$ty>::MIN;
-            const POSITIVE_INFINITY: $ty = <$ty>::MAX;
-        }
-    };
-}
-
-macro_rules! impl_interval_element_for {
-    ($($ty: ty),* $(,)?) => {
-        $( impl_interval_element!($ty); )*
-    };
-}
-
-impl_interval_element_for! {
-    i8, i16, i32, i64, i128, isize,
-    u8, u16, u32, u64, u128, usize,
-}
-
 #[cfg(test)]
 mod tests {
-    use super::{Interval, IntervalMap, IntervalSet};
+    use super::*;
 
     mod map {
-        use super::{Interval, IntervalMap};
+        use super::*;
 
         #[test]
         fn insert_merges_adjacent_with_same_value() {
@@ -560,7 +535,7 @@ mod tests {
     }
 
     mod set {
-        use super::{Interval, IntervalSet};
+        use super::*;
 
         #[test]
         fn insert_merges_adjacent_intervals() {

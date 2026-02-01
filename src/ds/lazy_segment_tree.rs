@@ -80,7 +80,7 @@ use std::{
 
 use crate::{
     ops::{action::Action, monoid::Monoid},
-    utils::range::to_half_open_index_range,
+    utils::range_utils::to_half_open_index_range,
 };
 
 /// 遅延評価付きセグメント木

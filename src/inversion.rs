@@ -40,7 +40,7 @@ mod tests {
     use rand::Rng;
 
     use super::*;
-    use crate::utils::test_utils::initialize_rng;
+    use crate::utils::test_utils::random::get_test_rng;
 
     #[test]
     fn test_inversion() {
@@ -114,7 +114,7 @@ mod tests {
         define_test_function!(test_i64, i64);
         define_test_function!(test_u64, u64);
 
-        let mut rng = initialize_rng();
+        let mut rng = get_test_rng();
         test_i64(&mut rng);
         test_u64(&mut rng);
     }

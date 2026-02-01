@@ -12,7 +12,7 @@
 
 use std::ops::{Range, RangeBounds};
 
-use crate::{math::modint::ModInt, utils::range::to_half_open_index_range};
+use crate::{math::modint::ModInt, utils::range_utils::to_half_open_index_range};
 
 pub struct RollingHash<const P: u64> {
     hash: Vec<ModInt<P>>,
@@ -48,7 +48,7 @@ mod tests {
     use rand::Rng;
 
     use super::*;
-    use crate::utils::test_utils::initialize_rng;
+    use crate::utils::test_utils::random::get_test_rng;
 
     #[test]
     fn test_rolling_hash() {
@@ -72,7 +72,7 @@ mod tests {
         const MOD1: u64 = 1000000007;
         const MOD2: u64 = 2147483647;
 
-        let mut rng = initialize_rng();
+        let mut rng = get_test_rng();
 
         for s in testcases {
             let rh1 = RollingHash::<MOD1>::new(s.as_bytes(), rng.random_range(1..MOD1));

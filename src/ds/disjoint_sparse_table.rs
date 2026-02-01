@@ -23,7 +23,7 @@ use std::{
     ops::{Range, RangeBounds},
 };
 
-use crate::{ops::monoid::Monoid, utils::range::to_half_open_index_range};
+use crate::{ops::monoid::Monoid, utils::range_utils::to_half_open_index_range};
 
 pub struct DisjointSparseTable<O: Monoid> {
     len: usize,
@@ -143,7 +143,7 @@ mod tests {
 
     use crate::{
         ops::{op_add::OpAdd, op_max::OpMax, op_min::OpMin},
-        utils::test_utils::initialize_rng,
+        utils::test_utils::random::get_test_rng,
     };
 
     use super::*;
@@ -196,7 +196,7 @@ mod tests {
         define_test_function!(test_i64, i64);
         define_test_function!(test_u64, u64);
 
-        let mut rng = initialize_rng();
+        let mut rng = get_test_rng();
         test_i64(&mut rng, -1000000000, 1000000000);
         test_u64(&mut rng, 0, 1000000000);
     }
@@ -226,7 +226,7 @@ mod tests {
         define_test_function!(test_i64, i64);
         define_test_function!(test_u64, u64);
 
-        let mut rng = initialize_rng();
+        let mut rng = get_test_rng();
         test_i64(&mut rng);
         test_u64(&mut rng);
     }
@@ -256,7 +256,7 @@ mod tests {
         define_test_function!(test_i64, i64);
         define_test_function!(test_u64, u64);
 
-        let mut rng = initialize_rng();
+        let mut rng = get_test_rng();
         test_i64(&mut rng);
         test_u64(&mut rng);
     }

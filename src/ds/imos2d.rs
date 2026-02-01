@@ -16,9 +16,9 @@
 //! assert_eq!(imos.get(2, 3), -1);
 //! ```
 
-use std::ops::{Range, RangeBounds};
+use std::ops::{Index, Range, RangeBounds};
 
-use crate::utils::range::to_half_open_index_range;
+use crate::utils::range_utils::to_half_open_index_range;
 
 /// 2次元グリッド上の矩形範囲加算を管理するいもす法
 pub struct Imos2d {
@@ -53,6 +53,9 @@ impl Imos2d {
         let Range { start: il, end: ir } = to_half_open_index_range(row_range, self.h + 1);
         let Range { start: jl, end: jr } = to_half_open_index_range(col_range, self.w + 1);
 
+        assert!(il <= ir && ir <= self.h);
+        assert!(jl <= jr && jr <= self.w);
+
         self.imos[il][jl] += value;
         self.imos[il][jr] -= value;
         self.imos[ir][jl] -= value;
@@ -85,13 +88,28 @@ impl Imos2d {
     }
 }
 
+impl Index<(usize, usize)> for Imos2d {
+    type Output = i64;
+    fn index(&self, index: (usize, usize)) -> &Self::Output {
+        assert!(self.has_built);
+        &self.imos[index.0][index.1]
+    }
+}
+
+impl Index<[usize; 2]> for Imos2d {
+    type Output = i64;
+    fn index(&self, index: [usize; 2]) -> &Self::Output {
+        assert!(self.has_built);
+        &self.imos[index[0]][index[1]]
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use rand::Rng;
 
-    use crate::utils::test_utils::initialize_rng;
-
-    use super::Imos2d;
+    use super::*;
+    use crate::utils::test_utils::random::get_test_rng;
 
     #[test]
     fn test_basic() {
@@ -103,13 +121,15 @@ mod tests {
         for i in 0..3 {
             for j in 0..4 {
                 assert_eq!(imos.get(i, j), expected[i][j]);
+                assert_eq!(imos[(i, j)], expected[i][j]);
+                assert_eq!(imos[[i, j]], expected[i][j]);
             }
         }
     }
 
     #[test]
     fn test_random() {
-        let mut rng = initialize_rng();
+        let mut rng = get_test_rng();
 
         const T: usize = 100;
         const H_MAX: usize = 100;

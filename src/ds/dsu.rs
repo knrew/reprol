@@ -97,7 +97,7 @@ mod tests {
     use rand::Rng;
 
     use super::*;
-    use crate::utils::test_utils::initialize_rng;
+    use crate::utils::test_utils::random::get_test_rng;
 
     #[test]
     fn test() {
@@ -142,7 +142,7 @@ mod tests {
 
     #[test]
     fn test_merge_and_connected_random() {
-        let mut rng = initialize_rng();
+        let mut rng = get_test_rng();
 
         const T: usize = 10;
         const N: usize = 100;

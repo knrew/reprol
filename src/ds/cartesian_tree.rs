@@ -27,7 +27,6 @@ use std::cmp::Ordering;
 
 /// Cartesian Treeの内部ノード．
 /// 配列の値と親子関係を保持する．
-#[derive(Debug, Clone)]
 struct Node<T> {
     value: T,
     parent: Option<usize>,
@@ -48,7 +47,6 @@ impl<T> Node<T> {
 
 /// 数列から構築したCartesian Tree．
 /// 各ノードは元配列のインデックスと値を表す．
-#[derive(Debug, Clone)]
 pub struct CartesianTree<T> {
     nodes: Vec<Node<T>>,
     root: usize,
@@ -178,7 +176,7 @@ mod tests {
     use rand::Rng;
 
     use super::*;
-    use crate::utils::test_utils::initialize_rng;
+    use crate::utils::test_utils::random::get_test_rng;
 
     #[test]
     fn test() {
@@ -340,9 +338,7 @@ mod tests {
 
                     for _ in 0..T {
                         let n = rng.random_range(1..=N_MAX);
-                        let v = (0..n)
-                            .map(|_| rng.random_range(<$ty>::MIN..=<$ty>::MAX))
-                            .collect::<Vec<_>>();
+                        let v = (0..n).map(|_| rng.random()).collect::<Vec<$ty>>();
                         let tree = CartesianTree::new(v.clone());
 
                         let (root_index, root_value) = tree.root();
@@ -370,7 +366,7 @@ mod tests {
         define_test_function!(test_i64, i64);
         define_test_function!(test_u64, u64);
 
-        let mut rng = initialize_rng();
+        let mut rng = get_test_rng();
         test_i64(&mut rng);
         test_u64(&mut rng);
     }
