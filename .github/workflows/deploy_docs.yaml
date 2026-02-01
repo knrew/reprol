@@ -16,7 +16,7 @@ jobs:
         with:
           toolchain: 1.93.0
       - name: Build docs
-        run: cargo +${{ inputs.rust_toolchain }} doc --release --workspace --all-features --no-deps --verbose
+        run: cargo doc --release --workspace --all-features --no-deps --verbose
       - name: Add redirect index.html
         run: echo '<meta http-equiv="refresh" content="0; url=reprol/">' > target/doc/index.html
       - name: Deploy to GitHub Pages
