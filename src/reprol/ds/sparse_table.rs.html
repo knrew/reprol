@@ -20,7 +20,7 @@
 <a href=#20 id=20 data-nosnippet>20</a>    ops::{Range, RangeBounds},
 <a href=#21 id=21 data-nosnippet>21</a>};
 <a href=#22 id=22 data-nosnippet>22</a>
-<a href=#23 id=23 data-nosnippet>23</a><span class="kw">use crate</span>::{ops::monoid::IdempotentMonoid, utils::range::to_half_open_index_range};
+<a href=#23 id=23 data-nosnippet>23</a><span class="kw">use crate</span>::{ops::monoid::IdempotentMonoid, utils::range_utils::to_half_open_index_range};
 <a href=#24 id=24 data-nosnippet>24</a>
 <a href=#25 id=25 data-nosnippet>25</a><span class="kw">pub struct </span>SparseTable&lt;O: IdempotentMonoid&gt; {
 <a href=#26 id=26 data-nosnippet>26</a>    len: usize,
@@ -113,7 +113,7 @@
 <a href=#113 id=113 data-nosnippet>113</a>    <span class="kw">use crate</span>::{
 <a href=#114 id=114 data-nosnippet>114</a>        math::gcd::Gcd,
 <a href=#115 id=115 data-nosnippet>115</a>        ops::{op_gcd::OpGcd, op_max::OpMax, op_min::OpMin},
-<a href=#116 id=116 data-nosnippet>116</a>        utils::test_utils::initialize_rng,
+<a href=#116 id=116 data-nosnippet>116</a>        utils::test_utils::random::get_test_rng,
 <a href=#117 id=117 data-nosnippet>117</a>    };
 <a href=#118 id=118 data-nosnippet>118</a>
 <a href=#119 id=119 data-nosnippet>119</a>    <span class="kw">use super</span>::<span class="kw-2">*</span>;
@@ -165,7 +165,7 @@
 <a href=#165 id=165 data-nosnippet>165</a>        <span class="macro">define_test_function!</span>(test_i64, i64);
 <a href=#166 id=166 data-nosnippet>166</a>        <span class="macro">define_test_function!</span>(test_u64, u64);
 <a href=#167 id=167 data-nosnippet>167</a>
-<a href=#168 id=168 data-nosnippet>168</a>        <span class="kw">let </span><span class="kw-2">mut </span>rng = initialize_rng();
+<a href=#168 id=168 data-nosnippet>168</a>        <span class="kw">let </span><span class="kw-2">mut </span>rng = get_test_rng();
 <a href=#169 id=169 data-nosnippet>169</a>        test_i64(<span class="kw-2">&amp;mut </span>rng);
 <a href=#170 id=170 data-nosnippet>170</a>        test_u64(<span class="kw-2">&amp;mut </span>rng);
 <a href=#171 id=171 data-nosnippet>171</a>    }
@@ -195,7 +195,7 @@
 <a href=#195 id=195 data-nosnippet>195</a>        <span class="macro">define_test_function!</span>(test_i64, i64);
 <a href=#196 id=196 data-nosnippet>196</a>        <span class="macro">define_test_function!</span>(test_u64, u64);
 <a href=#197 id=197 data-nosnippet>197</a>
-<a href=#198 id=198 data-nosnippet>198</a>        <span class="kw">let </span><span class="kw-2">mut </span>rng = initialize_rng();
+<a href=#198 id=198 data-nosnippet>198</a>        <span class="kw">let </span><span class="kw-2">mut </span>rng = get_test_rng();
 <a href=#199 id=199 data-nosnippet>199</a>        test_i64(<span class="kw-2">&amp;mut </span>rng);
 <a href=#200 id=200 data-nosnippet>200</a>        test_u64(<span class="kw-2">&amp;mut </span>rng);
 <a href=#201 id=201 data-nosnippet>201</a>    }
@@ -227,7 +227,7 @@
 <a href=#227 id=227 data-nosnippet>227</a>
 <a href=#228 id=228 data-nosnippet>228</a>        <span class="macro">define_test_function!</span>(test_u64, u64);
 <a href=#229 id=229 data-nosnippet>229</a>
-<a href=#230 id=230 data-nosnippet>230</a>        <span class="kw">let </span><span class="kw-2">mut </span>rng = initialize_rng();
+<a href=#230 id=230 data-nosnippet>230</a>        <span class="kw">let </span><span class="kw-2">mut </span>rng = get_test_rng();
 <a href=#231 id=231 data-nosnippet>231</a>        test_u64(<span class="kw-2">&amp;mut </span>rng, <span class="number">1</span>, <span class="number">1000000000</span>);
 <a href=#232 id=232 data-nosnippet>232</a>    }
 <a href=#233 id=233 data-nosnippet>233</a>}</code></pre></div></section></main></body></html>

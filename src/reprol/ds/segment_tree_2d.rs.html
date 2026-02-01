@@ -23,7 +23,7 @@
 <a href=#23 id=23 data-nosnippet>23</a>
 <a href=#24 id=24 data-nosnippet>24</a></span><span class="kw">use </span>std::ops::{Deref, DerefMut, Index, Range, RangeBounds};
 <a href=#25 id=25 data-nosnippet>25</a>
-<a href=#26 id=26 data-nosnippet>26</a><span class="kw">use crate</span>::{ops::monoid::Monoid, utils::range::to_half_open_index_range};
+<a href=#26 id=26 data-nosnippet>26</a><span class="kw">use crate</span>::{ops::monoid::Monoid, utils::range_utils::to_half_open_index_range};
 <a href=#27 id=27 data-nosnippet>27</a>
 <a href=#28 id=28 data-nosnippet>28</a><span class="doccomment">/// 2次元セグメント木
 <a href=#29 id=29 data-nosnippet>29</a></span><span class="kw">pub struct </span>SegmentTree2d&lt;O: Monoid&gt; {
@@ -316,7 +316,7 @@
 <a href=#316 id=316 data-nosnippet>316</a>    <span class="kw">use super</span>::<span class="kw-2">*</span>;
 <a href=#317 id=317 data-nosnippet>317</a>    <span class="kw">use crate</span>::{
 <a href=#318 id=318 data-nosnippet>318</a>        ops::{op_add::OpAdd, op_max::OpMax, op_min::OpMin},
-<a href=#319 id=319 data-nosnippet>319</a>        utils::test_utils::initialize_rng,
+<a href=#319 id=319 data-nosnippet>319</a>        utils::test_utils::random::get_test_rng,
 <a href=#320 id=320 data-nosnippet>320</a>    };
 <a href=#321 id=321 data-nosnippet>321</a>
 <a href=#322 id=322 data-nosnippet>322</a>    <span class="attr">#[test]

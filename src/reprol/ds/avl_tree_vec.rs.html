@@ -674,7 +674,7 @@
 <a href=#674 id=674 data-nosnippet>674</a>    <span class="kw">use </span>rand::Rng;
 <a href=#675 id=675 data-nosnippet>675</a>
 <a href=#676 id=676 data-nosnippet>676</a>    <span class="kw">use super</span>::<span class="kw-2">*</span>;
-<a href=#677 id=677 data-nosnippet>677</a>    <span class="kw">use </span><span class="kw">crate</span>::utils::test_utils::initialize_rng;
+<a href=#677 id=677 data-nosnippet>677</a>    <span class="kw">use </span><span class="kw">crate</span>::utils::test_utils::random::get_test_rng;
 <a href=#678 id=678 data-nosnippet>678</a>
 <a href=#679 id=679 data-nosnippet>679</a>    <span class="doccomment">/// AVL木が正しく平衡であるかを確認する
 <a href=#680 id=680 data-nosnippet>680</a>    </span><span class="kw">fn </span>is_balanced&lt;T&gt;(tree: <span class="kw-2">&amp;</span>AvlTreeVec&lt;T&gt;) -&gt; bool {
@@ -935,7 +935,7 @@
 <a href=#935 id=935 data-nosnippet>935</a>
 <a href=#936 id=936 data-nosnippet>936</a>    <span class="attr">#[test]
 <a href=#937 id=937 data-nosnippet>937</a>    </span><span class="kw">fn </span>test_insert_and_remove_random_small() {
-<a href=#938 id=938 data-nosnippet>938</a>        <span class="kw">let </span><span class="kw-2">mut </span>rng = initialize_rng();
+<a href=#938 id=938 data-nosnippet>938</a>        <span class="kw">let </span><span class="kw-2">mut </span>rng = get_test_rng();
 <a href=#939 id=939 data-nosnippet>939</a>
 <a href=#940 id=940 data-nosnippet>940</a>        <span class="kw">for _ in </span><span class="number">0</span>..<span class="number">5 </span>{
 <a href=#941 id=941 data-nosnippet>941</a>            <span class="kw">let </span><span class="kw-2">mut </span>avl: AvlTreeVec&lt;i32&gt; = AvlTreeVec::new();
@@ -970,7 +970,7 @@
 <a href=#970 id=970 data-nosnippet>970</a>
 <a href=#971 id=971 data-nosnippet>971</a>    <span class="attr">#[test]
 <a href=#972 id=972 data-nosnippet>972</a>    </span><span class="kw">fn </span>test_insert_and_remove_random_large() {
-<a href=#973 id=973 data-nosnippet>973</a>        <span class="kw">let </span><span class="kw-2">mut </span>rng = initialize_rng();
+<a href=#973 id=973 data-nosnippet>973</a>        <span class="kw">let </span><span class="kw-2">mut </span>rng = get_test_rng();
 <a href=#974 id=974 data-nosnippet>974</a>
 <a href=#975 id=975 data-nosnippet>975</a>        <span class="kw">for _ in </span><span class="number">0</span>..<span class="number">10 </span>{
 <a href=#976 id=976 data-nosnippet>976</a>            <span class="kw">let </span><span class="kw-2">mut </span>avl: AvlTreeVec&lt;i32&gt; = AvlTreeVec::new();

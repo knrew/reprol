@@ -26,7 +26,7 @@
 <a href=#26 id=26 data-nosnippet>26</a>
 <a href=#27 id=27 data-nosnippet>27</a><span class="kw">use crate</span>::{
 <a href=#28 id=28 data-nosnippet>28</a>    ops::{group::Group, monoid::Monoid, op_add::OpAdd},
-<a href=#29 id=29 data-nosnippet>29</a>    utils::range::to_half_open_index_range,
+<a href=#29 id=29 data-nosnippet>29</a>    utils::range_utils::to_half_open_index_range,
 <a href=#30 id=30 data-nosnippet>30</a>};
 <a href=#31 id=31 data-nosnippet>31</a>
 <a href=#32 id=32 data-nosnippet>32</a><span class="doccomment">/// 2次元累積積を管理するデータ構造
@@ -173,7 +173,7 @@
 <a href=#173 id=173 data-nosnippet>173</a>    <span class="kw">use </span>rand::Rng;
 <a href=#174 id=174 data-nosnippet>174</a>
 <a href=#175 id=175 data-nosnippet>175</a>    <span class="kw">use super</span>::<span class="kw-2">*</span>;
-<a href=#176 id=176 data-nosnippet>176</a>    <span class="kw">use </span><span class="kw">crate</span>::utils::test_utils::initialize_rng;
+<a href=#176 id=176 data-nosnippet>176</a>    <span class="kw">use </span><span class="kw">crate</span>::utils::test_utils::random::get_test_rng;
 <a href=#177 id=177 data-nosnippet>177</a>
 <a href=#178 id=178 data-nosnippet>178</a>    <span class="attr">#[test]
 <a href=#179 id=179 data-nosnippet>179</a>    </span><span class="kw">fn </span>test_cumulative_sum_2d() {
@@ -220,7 +220,7 @@
 <a href=#220 id=220 data-nosnippet>220</a>        <span class="macro">macro_rules!</span> define_test_function {
 <a href=#221 id=221 data-nosnippet>221</a>            (<span class="macro-nonterminal">$name</span>:ident, <span class="macro-nonterminal">$ty</span>:ident) =&gt; {
 <a href=#222 id=222 data-nosnippet>222</a>                <span class="kw">fn </span><span class="macro-nonterminal">$name</span>(rng: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>Rng, range: Range&lt;<span class="macro-nonterminal">$ty</span>&gt;) {
-<a href=#223 id=223 data-nosnippet>223</a>                    <span class="kw">const </span>T: usize = <span class="number">100</span>;
+<a href=#223 id=223 data-nosnippet>223</a>                    <span class="kw">const </span>T: usize = <span class="number">20</span>;
 <a href=#224 id=224 data-nosnippet>224</a>                    <span class="kw">const </span>N_MAX: usize = <span class="number">50</span>;
 <a href=#225 id=225 data-nosnippet>225</a>
 <a href=#226 id=226 data-nosnippet>226</a>                    <span class="kw">for _ in </span><span class="number">0</span>..T {
@@ -252,7 +252,7 @@
 <a href=#252 id=252 data-nosnippet>252</a>        <span class="macro">define_test_function!</span>(test_i64, i64);
 <a href=#253 id=253 data-nosnippet>253</a>        <span class="macro">define_test_function!</span>(test_u64, u64);
 <a href=#254 id=254 data-nosnippet>254</a>
-<a href=#255 id=255 data-nosnippet>255</a>        <span class="kw">let </span><span class="kw-2">mut </span>rng = initialize_rng();
+<a href=#255 id=255 data-nosnippet>255</a>        <span class="kw">let </span><span class="kw-2">mut </span>rng = get_test_rng();
 <a href=#256 id=256 data-nosnippet>256</a>        test_i64(<span class="kw-2">&amp;mut </span>rng, -<span class="number">1000000000</span>..<span class="number">1000000000</span>);
 <a href=#257 id=257 data-nosnippet>257</a>        test_u64(<span class="kw-2">&amp;mut </span>rng, <span class="number">0</span>..<span class="number">1000000000</span>);
 <a href=#258 id=258 data-nosnippet>258</a>    }

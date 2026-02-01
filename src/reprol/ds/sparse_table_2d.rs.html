@@ -24,7 +24,7 @@
 <a href=#24 id=24 data-nosnippet>24</a>
 <a href=#25 id=25 data-nosnippet>25</a><span class="kw">use crate</span>::{
 <a href=#26 id=26 data-nosnippet>26</a>    ds::sparse_table::SparseTable, ops::monoid::IdempotentMonoid,
-<a href=#27 id=27 data-nosnippet>27</a>    utils::range::to_half_open_index_range,
+<a href=#27 id=27 data-nosnippet>27</a>    utils::range_utils::to_half_open_index_range,
 <a href=#28 id=28 data-nosnippet>28</a>};
 <a href=#29 id=29 data-nosnippet>29</a>
 <a href=#30 id=30 data-nosnippet>30</a><span class="doccomment">/// 2次元Sparse Table
@@ -155,7 +155,7 @@
 <a href=#155 id=155 data-nosnippet>155</a>    <span class="kw">use crate</span>::{
 <a href=#156 id=156 data-nosnippet>156</a>        math::gcd::Gcd,
 <a href=#157 id=157 data-nosnippet>157</a>        ops::{op_gcd::OpGcd, op_max::OpMax, op_min::OpMin},
-<a href=#158 id=158 data-nosnippet>158</a>        utils::test_utils::initialize_rng,
+<a href=#158 id=158 data-nosnippet>158</a>        utils::test_utils::random::get_test_rng,
 <a href=#159 id=159 data-nosnippet>159</a>    };
 <a href=#160 id=160 data-nosnippet>160</a>
 <a href=#161 id=161 data-nosnippet>161</a>    <span class="attr">#[test]

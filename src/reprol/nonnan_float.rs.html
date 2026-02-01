@@ -304,7 +304,7 @@
 <a href=#304 id=304 data-nosnippet>304</a><span class="attr">#[cfg(test)]
 <a href=#305 id=305 data-nosnippet>305</a></span><span class="kw">mod </span>tests {
 <a href=#306 id=306 data-nosnippet>306</a>    <span class="kw">use </span><span class="kw">super</span>::NonNanFloat;
-<a href=#307 id=307 data-nosnippet>307</a>    <span class="kw">use </span><span class="kw">crate</span>::utils::test_utils::initialize_rng;
+<a href=#307 id=307 data-nosnippet>307</a>    <span class="kw">use </span><span class="kw">crate</span>::utils::test_utils::random::get_test_rng;
 <a href=#308 id=308 data-nosnippet>308</a>    <span class="kw">use </span>rand::Rng;
 <a href=#309 id=309 data-nosnippet>309</a>    <span class="kw">use </span>std::{
 <a href=#310 id=310 data-nosnippet>310</a>        cmp::Ordering,
@@ -512,7 +512,7 @@
 <a href=#512 id=512 data-nosnippet>512</a>    </span><span class="kw">fn </span>test_random_op() {
 <a href=#513 id=513 data-nosnippet>513</a>        <span class="kw">const </span>T: usize = <span class="number">1000000</span>;
 <a href=#514 id=514 data-nosnippet>514</a>
-<a href=#515 id=515 data-nosnippet>515</a>        <span class="kw">let </span><span class="kw-2">mut </span>rng = initialize_rng();
+<a href=#515 id=515 data-nosnippet>515</a>        <span class="kw">let </span><span class="kw-2">mut </span>rng = get_test_rng();
 <a href=#516 id=516 data-nosnippet>516</a>
 <a href=#517 id=517 data-nosnippet>517</a>        <span class="kw">for _ in </span><span class="number">0</span>..T {
 <a href=#518 id=518 data-nosnippet>518</a>            <span class="kw">let </span>lhs_raw: f64 = rng.random();
@@ -575,7 +575,7 @@
 <a href=#575 id=575 data-nosnippet>575</a>        <span class="kw">const </span>T: usize = <span class="number">100</span>;
 <a href=#576 id=576 data-nosnippet>576</a>        <span class="kw">const </span>N: usize = <span class="number">100000</span>;
 <a href=#577 id=577 data-nosnippet>577</a>
-<a href=#578 id=578 data-nosnippet>578</a>        <span class="kw">let </span><span class="kw-2">mut </span>rng = initialize_rng();
+<a href=#578 id=578 data-nosnippet>578</a>        <span class="kw">let </span><span class="kw-2">mut </span>rng = get_test_rng();
 <a href=#579 id=579 data-nosnippet>579</a>
 <a href=#580 id=580 data-nosnippet>580</a>        <span class="kw">for _ in </span><span class="number">0</span>..T {
 <a href=#581 id=581 data-nosnippet>581</a>            <span class="kw">let </span><span class="kw-2">mut </span>v_raw = (<span class="number">0</span>..N).map(|<span class="kw">_</span>| rng.random()).collect::&lt;Vec&lt;f64&gt;&gt;();

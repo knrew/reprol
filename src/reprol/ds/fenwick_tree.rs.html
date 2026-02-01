@@ -20,7 +20,7 @@
 <a href=#20 id=20 data-nosnippet>20</a>    ops::{Range, RangeBounds},
 <a href=#21 id=21 data-nosnippet>21</a>};
 <a href=#22 id=22 data-nosnippet>22</a>
-<a href=#23 id=23 data-nosnippet>23</a><span class="kw">use crate</span>::{ops::group::Group, utils::range::to_half_open_index_range};
+<a href=#23 id=23 data-nosnippet>23</a><span class="kw">use crate</span>::{ops::group::Group, utils::range_utils::to_half_open_index_range};
 <a href=#24 id=24 data-nosnippet>24</a>
 <a href=#25 id=25 data-nosnippet>25</a><span class="doccomment">/// Fenwick Tree
 <a href=#26 id=26 data-nosnippet>26</a></span><span class="kw">pub struct </span>FenwickTree&lt;O: Group&gt; {
@@ -128,7 +128,7 @@
 <a href=#128 id=128 data-nosnippet>128</a>    <span class="kw">use </span>rand::Rng;
 <a href=#129 id=129 data-nosnippet>129</a>
 <a href=#130 id=130 data-nosnippet>130</a>    <span class="kw">use super</span>::<span class="kw-2">*</span>;
-<a href=#131 id=131 data-nosnippet>131</a>    <span class="kw">use crate</span>::{ops::op_add::OpAdd, utils::test_utils::initialize_rng};
+<a href=#131 id=131 data-nosnippet>131</a>    <span class="kw">use crate</span>::{ops::op_add::OpAdd, utils::test_utils::random::get_test_rng};
 <a href=#132 id=132 data-nosnippet>132</a>
 <a href=#133 id=133 data-nosnippet>133</a>    <span class="attr">#[test]
 <a href=#134 id=134 data-nosnippet>134</a>    </span><span class="kw">fn </span>test_sum() {
@@ -186,7 +186,7 @@
 <a href=#186 id=186 data-nosnippet>186</a>        <span class="macro">define_test_function!</span>(test_i64, i64);
 <a href=#187 id=187 data-nosnippet>187</a>        <span class="macro">define_test_function!</span>(test_u64, u64);
 <a href=#188 id=188 data-nosnippet>188</a>
-<a href=#189 id=189 data-nosnippet>189</a>        <span class="kw">let </span><span class="kw-2">mut </span>rng = initialize_rng();
+<a href=#189 id=189 data-nosnippet>189</a>        <span class="kw">let </span><span class="kw-2">mut </span>rng = get_test_rng();
 <a href=#190 id=190 data-nosnippet>190</a>
 <a href=#191 id=191 data-nosnippet>191</a>        test_i64(<span class="kw-2">&amp;mut </span>rng, -<span class="number">1000000000</span>, <span class="number">1000000000</span>);
 <a href=#192 id=192 data-nosnippet>192</a>        test_u64(<span class="kw-2">&amp;mut </span>rng, <span class="number">0</span>, <span class="number">1000000000</span>);
