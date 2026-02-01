@@ -1,5 +1,5 @@
 (function() {
-    var implementors = Object.fromEntries([["reprol",[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.93.0/core/ops/arith/trait.Rem.html\" title=\"trait core::ops::arith::Rem\">Rem</a> for <a class=\"struct\" href=\"reprol/nonnan_float/struct.NonNanFloat.html\" title=\"struct reprol::nonnan_float::NonNanFloat\">NonNanFloat</a>"]]]]);
+    var implementors = Object.fromEntries([["reprol",[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.89.0/core/ops/arith/trait.Rem.html\" title=\"trait core::ops::arith::Rem\">Rem</a> for <a class=\"struct\" href=\"reprol/nonnan_float/struct.NonNanFloat.html\" title=\"struct reprol::nonnan_float::NonNanFloat\">NonNanFloat</a>"]]]]);
     if (window.register_implementors) {
         window.register_implementors(implementors);
     } else {
