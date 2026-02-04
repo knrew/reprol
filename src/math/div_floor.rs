@@ -13,6 +13,9 @@
 
 pub trait DivFloor {
     fn div_floor_(self, rhs: Self) -> Self;
+    fn checked_div_floor(self, rhs: Self) -> Option<Self>
+    where
+        Self: Sized;
 }
 
 macro_rules! impl_div_unsigned {
@@ -21,6 +24,10 @@ macro_rules! impl_div_unsigned {
             fn div_floor_(self, rhs: Self) -> Self {
                 assert!(rhs != 0);
                 self / rhs
+            }
+
+            fn checked_div_floor(self, rhs: Self) -> Option<Self> {
+                self.checked_div(rhs)
             }
         }
     };
@@ -37,6 +44,16 @@ macro_rules! impl_div_signed {
                     q - 1
                 } else {
                     q
+                }
+            }
+
+            fn checked_div_floor(self, rhs: Self) -> Option<Self> {
+                let q = self.checked_div(rhs)?;
+                let r = self.checked_rem(rhs)?;
+                if r != 0 && (self < 0) != (rhs < 0) {
+                    q.checked_sub(1)
+                } else {
+                    Some(q)
                 }
             }
         }
