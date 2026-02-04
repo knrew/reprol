@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["digit","div_ceil","div_floor","divisors","factors","gcd","iroot","is_prime","lcm","linear_sieve","mod_factorial","modint","pow","radix","ratio"]};
+window.SIDEBAR_ITEMS = {"mod":["digit","div_ceil","div_floor","divisors","factors","floor_sum","gcd","iroot","is_prime","lcm","linear_sieve","mod_factorial","modint","pow","radix","ratio"]};
