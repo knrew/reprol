@@ -3,6 +3,7 @@ pub mod div_ceil;
 pub mod div_floor;
 pub mod divisors;
 pub mod factors;
+pub mod floor_sum;
 pub mod gcd;
 pub mod iroot;
 pub mod is_prime;
