@@ -155,7 +155,7 @@
 <a href=#155 id=155 data-nosnippet>155</a>    <span class="kw">use crate</span>::{
 <a href=#156 id=156 data-nosnippet>156</a>        math::gcd::Gcd,
 <a href=#157 id=157 data-nosnippet>157</a>        ops::{op_gcd::OpGcd, op_max::OpMax, op_min::OpMin},
-<a href=#158 id=158 data-nosnippet>158</a>        utils::test_utils::random::get_test_rng,
+<a href=#158 id=158 data-nosnippet>158</a>        utils::test_utils::{random::get_test_rng, static_range_query_2d::<span class="kw-2">*</span>},
 <a href=#159 id=159 data-nosnippet>159</a>    };
 <a href=#160 id=160 data-nosnippet>160</a>
 <a href=#161 id=161 data-nosnippet>161</a>    <span class="attr">#[test]
@@ -190,120 +190,65 @@
 <a href=#190 id=190 data-nosnippet>190</a>        <span class="macro">assert_eq!</span>(st.fold(.., ..), <span class="number">100</span>);
 <a href=#191 id=191 data-nosnippet>191</a>    }
 <a href=#192 id=192 data-nosnippet>192</a>
-<a href=#193 id=193 data-nosnippet>193</a>    <span class="macro">macro_rules!</span> random_test {
-<a href=#194 id=194 data-nosnippet>194</a>        (<span class="macro-nonterminal">$test_name</span>:ident, <span class="macro-nonterminal">$ty</span>:ty, <span class="macro-nonterminal">$op</span>:ty, <span class="macro-nonterminal">$fold_init</span>:expr, <span class="macro-nonterminal">$fold_op</span>:expr, <span class="macro-nonterminal">$val_range</span>:expr) =&gt; {
-<a href=#195 id=195 data-nosnippet>195</a>            <span class="attr">#[test]
-<a href=#196 id=196 data-nosnippet>196</a>            </span><span class="kw">fn </span><span class="macro-nonterminal">$test_name</span>() {
-<a href=#197 id=197 data-nosnippet>197</a>                <span class="kw">let </span><span class="kw-2">mut </span>rng = get_test_rng();
-<a href=#198 id=198 data-nosnippet>198</a>
-<a href=#199 id=199 data-nosnippet>199</a>                <span class="kw">const </span>T: usize = <span class="number">50</span>;
-<a href=#200 id=200 data-nosnippet>200</a>                <span class="kw">const </span>H_MAX: usize = <span class="number">15</span>;
-<a href=#201 id=201 data-nosnippet>201</a>                <span class="kw">const </span>W_MAX: usize = <span class="number">15</span>;
-<a href=#202 id=202 data-nosnippet>202</a>
-<a href=#203 id=203 data-nosnippet>203</a>                <span class="kw">for _ in </span><span class="number">0</span>..T {
-<a href=#204 id=204 data-nosnippet>204</a>                    <span class="kw">let </span>h = rng.random_range(<span class="number">1</span>..=H_MAX);
-<a href=#205 id=205 data-nosnippet>205</a>                    <span class="kw">let </span>w = rng.random_range(<span class="number">1</span>..=W_MAX);
-<a href=#206 id=206 data-nosnippet>206</a>                    <span class="kw">let </span>a = (<span class="number">0</span>..h)
-<a href=#207 id=207 data-nosnippet>207</a>                        .map(|<span class="kw">_</span>| {
-<a href=#208 id=208 data-nosnippet>208</a>                            (<span class="number">0</span>..w)
-<a href=#209 id=209 data-nosnippet>209</a>                                .map(|<span class="kw">_</span>| rng.random_range(<span class="macro-nonterminal">$val_range</span>))
-<a href=#210 id=210 data-nosnippet>210</a>                                .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;()
-<a href=#211 id=211 data-nosnippet>211</a>                        })
-<a href=#212 id=212 data-nosnippet>212</a>                        .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
-<a href=#213 id=213 data-nosnippet>213</a>
-<a href=#214 id=214 data-nosnippet>214</a>                    <span class="kw">let </span>st = SparseTable2d::&lt;<span class="macro-nonterminal">$op</span>&gt;::from(a.clone());
-<a href=#215 id=215 data-nosnippet>215</a>
-<a href=#216 id=216 data-nosnippet>216</a>                    <span class="kw">for </span>il <span class="kw">in </span><span class="number">0</span>..h {
-<a href=#217 id=217 data-nosnippet>217</a>                        <span class="kw">for </span>ir <span class="kw">in </span>il + <span class="number">1</span>..=h {
-<a href=#218 id=218 data-nosnippet>218</a>                            <span class="kw">for </span>jl <span class="kw">in </span><span class="number">0</span>..w {
-<a href=#219 id=219 data-nosnippet>219</a>                                <span class="kw">for </span>jr <span class="kw">in </span>jl + <span class="number">1</span>..=w {
-<a href=#220 id=220 data-nosnippet>220</a>                                    <span class="kw">let </span>naive = a[il..ir]
-<a href=#221 id=221 data-nosnippet>221</a>                                        .iter()
-<a href=#222 id=222 data-nosnippet>222</a>                                        .flat_map(|row| row[jl..jr].iter())
-<a href=#223 id=223 data-nosnippet>223</a>                                        .copied()
-<a href=#224 id=224 data-nosnippet>224</a>                                        .fold(<span class="macro-nonterminal">$fold_init</span>, <span class="macro-nonterminal">$fold_op</span>);
-<a href=#225 id=225 data-nosnippet>225</a>                                    <span class="macro">assert_eq!</span>(st.fold(il..ir, jl..jr), naive);
-<a href=#226 id=226 data-nosnippet>226</a>                                }
-<a href=#227 id=227 data-nosnippet>227</a>                            }
-<a href=#228 id=228 data-nosnippet>228</a>                        }
-<a href=#229 id=229 data-nosnippet>229</a>                    }
-<a href=#230 id=230 data-nosnippet>230</a>                }
-<a href=#231 id=231 data-nosnippet>231</a>            }
-<a href=#232 id=232 data-nosnippet>232</a>        };
-<a href=#233 id=233 data-nosnippet>233</a>    }
-<a href=#234 id=234 data-nosnippet>234</a>
-<a href=#235 id=235 data-nosnippet>235</a>    <span class="macro">random_test!</span>(
-<a href=#236 id=236 data-nosnippet>236</a>        test_random_min_i32,
-<a href=#237 id=237 data-nosnippet>237</a>        i32,
-<a href=#238 id=238 data-nosnippet>238</a>        OpMin&lt;i32&gt;,
-<a href=#239 id=239 data-nosnippet>239</a>        i32::MAX,
-<a href=#240 id=240 data-nosnippet>240</a>        |a, b| a.min(b),
-<a href=#241 id=241 data-nosnippet>241</a>        -<span class="number">100</span>..=<span class="number">100
-<a href=#242 id=242 data-nosnippet>242</a>    </span>);
-<a href=#243 id=243 data-nosnippet>243</a>    <span class="macro">random_test!</span>(
-<a href=#244 id=244 data-nosnippet>244</a>        test_random_min_i64,
-<a href=#245 id=245 data-nosnippet>245</a>        i64,
-<a href=#246 id=246 data-nosnippet>246</a>        OpMin&lt;i64&gt;,
-<a href=#247 id=247 data-nosnippet>247</a>        i64::MAX,
-<a href=#248 id=248 data-nosnippet>248</a>        |a, b| a.min(b),
-<a href=#249 id=249 data-nosnippet>249</a>        -<span class="number">100</span>..=<span class="number">100
-<a href=#250 id=250 data-nosnippet>250</a>    </span>);
-<a href=#251 id=251 data-nosnippet>251</a>    <span class="macro">random_test!</span>(
-<a href=#252 id=252 data-nosnippet>252</a>        test_random_min_u32,
-<a href=#253 id=253 data-nosnippet>253</a>        u32,
-<a href=#254 id=254 data-nosnippet>254</a>        OpMin&lt;u32&gt;,
-<a href=#255 id=255 data-nosnippet>255</a>        u32::MAX,
-<a href=#256 id=256 data-nosnippet>256</a>        |a, b| a.min(b),
-<a href=#257 id=257 data-nosnippet>257</a>        <span class="number">0</span>..=<span class="number">100
-<a href=#258 id=258 data-nosnippet>258</a>    </span>);
-<a href=#259 id=259 data-nosnippet>259</a>    <span class="macro">random_test!</span>(
-<a href=#260 id=260 data-nosnippet>260</a>        test_random_min_u64,
-<a href=#261 id=261 data-nosnippet>261</a>        u64,
-<a href=#262 id=262 data-nosnippet>262</a>        OpMin&lt;u64&gt;,
-<a href=#263 id=263 data-nosnippet>263</a>        u64::MAX,
-<a href=#264 id=264 data-nosnippet>264</a>        |a, b| a.min(b),
-<a href=#265 id=265 data-nosnippet>265</a>        <span class="number">0</span>..=<span class="number">100
-<a href=#266 id=266 data-nosnippet>266</a>    </span>);
-<a href=#267 id=267 data-nosnippet>267</a>
-<a href=#268 id=268 data-nosnippet>268</a>    <span class="macro">random_test!</span>(
-<a href=#269 id=269 data-nosnippet>269</a>        test_random_max_i32,
-<a href=#270 id=270 data-nosnippet>270</a>        i32,
-<a href=#271 id=271 data-nosnippet>271</a>        OpMax&lt;i32&gt;,
-<a href=#272 id=272 data-nosnippet>272</a>        i32::MIN,
-<a href=#273 id=273 data-nosnippet>273</a>        |a, b| a.max(b),
-<a href=#274 id=274 data-nosnippet>274</a>        -<span class="number">100</span>..=<span class="number">100
-<a href=#275 id=275 data-nosnippet>275</a>    </span>);
-<a href=#276 id=276 data-nosnippet>276</a>    <span class="macro">random_test!</span>(
-<a href=#277 id=277 data-nosnippet>277</a>        test_random_max_i64,
-<a href=#278 id=278 data-nosnippet>278</a>        i64,
-<a href=#279 id=279 data-nosnippet>279</a>        OpMax&lt;i64&gt;,
-<a href=#280 id=280 data-nosnippet>280</a>        i64::MIN,
-<a href=#281 id=281 data-nosnippet>281</a>        |a, b| a.max(b),
-<a href=#282 id=282 data-nosnippet>282</a>        -<span class="number">100</span>..=<span class="number">100
-<a href=#283 id=283 data-nosnippet>283</a>    </span>);
-<a href=#284 id=284 data-nosnippet>284</a>    <span class="macro">random_test!</span>(
-<a href=#285 id=285 data-nosnippet>285</a>        test_random_max_u32,
-<a href=#286 id=286 data-nosnippet>286</a>        u32,
-<a href=#287 id=287 data-nosnippet>287</a>        OpMax&lt;u32&gt;,
-<a href=#288 id=288 data-nosnippet>288</a>        u32::MIN,
-<a href=#289 id=289 data-nosnippet>289</a>        |a, b| a.max(b),
-<a href=#290 id=290 data-nosnippet>290</a>        <span class="number">0</span>..=<span class="number">100
-<a href=#291 id=291 data-nosnippet>291</a>    </span>);
-<a href=#292 id=292 data-nosnippet>292</a>    <span class="macro">random_test!</span>(
-<a href=#293 id=293 data-nosnippet>293</a>        test_random_max_u64,
-<a href=#294 id=294 data-nosnippet>294</a>        u64,
-<a href=#295 id=295 data-nosnippet>295</a>        OpMax&lt;u64&gt;,
-<a href=#296 id=296 data-nosnippet>296</a>        u64::MIN,
-<a href=#297 id=297 data-nosnippet>297</a>        |a, b| a.max(b),
-<a href=#298 id=298 data-nosnippet>298</a>        <span class="number">0</span>..=<span class="number">100
-<a href=#299 id=299 data-nosnippet>299</a>    </span>);
-<a href=#300 id=300 data-nosnippet>300</a>
-<a href=#301 id=301 data-nosnippet>301</a>    <span class="macro">random_test!</span>(
-<a href=#302 id=302 data-nosnippet>302</a>        test_random_gcd_u64,
-<a href=#303 id=303 data-nosnippet>303</a>        u64,
-<a href=#304 id=304 data-nosnippet>304</a>        OpGcd&lt;u64&gt;,
-<a href=#305 id=305 data-nosnippet>305</a>        <span class="number">0u64</span>,
-<a href=#306 id=306 data-nosnippet>306</a>        |a, b| a.gcd(b),
-<a href=#307 id=307 data-nosnippet>307</a>        <span class="number">1</span>..=<span class="number">1000000
-<a href=#308 id=308 data-nosnippet>308</a>    </span>);
-<a href=#309 id=309 data-nosnippet>309</a>}</code></pre></div></section></main></body></html>
+<a href=#193 id=193 data-nosnippet>193</a>    <span class="macro">macro_rules!</span> random_min_max_gcd_xor_test {
+<a href=#194 id=194 data-nosnippet>194</a>        (<span class="macro-nonterminal">$min_test_name</span>: ident, <span class="macro-nonterminal">$max_test_name</span>: ident, <span class="macro-nonterminal">$gcd_test_name</span>: ident, <span class="macro-nonterminal">$ty</span>: ty) =&gt; {
+<a href=#195 id=195 data-nosnippet>195</a>            <span class="macro">randomized_static_range_min_2d_exhaustive_test!</span>(
+<a href=#196 id=196 data-nosnippet>196</a>                <span class="macro-nonterminal">$min_test_name</span>,
+<a href=#197 id=197 data-nosnippet>197</a>                <span class="macro-nonterminal">$ty</span>,
+<a href=#198 id=198 data-nosnippet>198</a>                |v| SparseTable2d::&lt;OpMin&lt;<span class="macro-nonterminal">$ty</span>&gt;&gt;::from(v),
+<a href=#199 id=199 data-nosnippet>199</a>                |ds: <span class="kw-2">&amp;</span>SparseTable2d&lt;<span class="kw">_</span>&gt;, r, c| ds.fold(r, c),
+<a href=#200 id=200 data-nosnippet>200</a>                <span class="number">20</span>,
+<a href=#201 id=201 data-nosnippet>201</a>                <span class="number">20
+<a href=#202 id=202 data-nosnippet>202</a>            </span>);
+<a href=#203 id=203 data-nosnippet>203</a>
+<a href=#204 id=204 data-nosnippet>204</a>            <span class="macro">randomized_static_range_max_2d_exhaustive_test!</span>(
+<a href=#205 id=205 data-nosnippet>205</a>                <span class="macro-nonterminal">$max_test_name</span>,
+<a href=#206 id=206 data-nosnippet>206</a>                <span class="macro-nonterminal">$ty</span>,
+<a href=#207 id=207 data-nosnippet>207</a>                |v| SparseTable2d::&lt;OpMax&lt;<span class="macro-nonterminal">$ty</span>&gt;&gt;::from(v),
+<a href=#208 id=208 data-nosnippet>208</a>                |ds: <span class="kw-2">&amp;</span>SparseTable2d&lt;<span class="kw">_</span>&gt;, r, c| ds.fold(r, c),
+<a href=#209 id=209 data-nosnippet>209</a>                <span class="number">20</span>,
+<a href=#210 id=210 data-nosnippet>210</a>                <span class="number">20
+<a href=#211 id=211 data-nosnippet>211</a>            </span>);
+<a href=#212 id=212 data-nosnippet>212</a>
+<a href=#213 id=213 data-nosnippet>213</a>            <span class="macro">randomized_static_range_gcd_2d_exhaustive_test!</span>(
+<a href=#214 id=214 data-nosnippet>214</a>                <span class="macro-nonterminal">$gcd_test_name</span>,
+<a href=#215 id=215 data-nosnippet>215</a>                <span class="macro-nonterminal">$ty</span>,
+<a href=#216 id=216 data-nosnippet>216</a>                |v| SparseTable2d::&lt;OpGcd&lt;<span class="macro-nonterminal">$ty</span>&gt;&gt;::from(v),
+<a href=#217 id=217 data-nosnippet>217</a>                |ds: <span class="kw-2">&amp;</span>SparseTable2d&lt;<span class="kw">_</span>&gt;, r, c| ds.fold(r, c),
+<a href=#218 id=218 data-nosnippet>218</a>                <span class="number">10</span>,
+<a href=#219 id=219 data-nosnippet>219</a>                <span class="number">20
+<a href=#220 id=220 data-nosnippet>220</a>            </span>);
+<a href=#221 id=221 data-nosnippet>221</a>        };
+<a href=#222 id=222 data-nosnippet>222</a>    }
+<a href=#223 id=223 data-nosnippet>223</a>
+<a href=#224 id=224 data-nosnippet>224</a>    <span class="macro">random_min_max_gcd_xor_test!</span>(
+<a href=#225 id=225 data-nosnippet>225</a>        test_random_min_i32,
+<a href=#226 id=226 data-nosnippet>226</a>        test_random_max_i32,
+<a href=#227 id=227 data-nosnippet>227</a>        test_random_gcd_i32,
+<a href=#228 id=228 data-nosnippet>228</a>        i32
+<a href=#229 id=229 data-nosnippet>229</a>    );
+<a href=#230 id=230 data-nosnippet>230</a>    <span class="macro">random_min_max_gcd_xor_test!</span>(
+<a href=#231 id=231 data-nosnippet>231</a>        test_random_min_u32,
+<a href=#232 id=232 data-nosnippet>232</a>        test_random_max_u32,
+<a href=#233 id=233 data-nosnippet>233</a>        test_random_gcd_u32,
+<a href=#234 id=234 data-nosnippet>234</a>        u32
+<a href=#235 id=235 data-nosnippet>235</a>    );
+<a href=#236 id=236 data-nosnippet>236</a>    <span class="macro">random_min_max_gcd_xor_test!</span>(
+<a href=#237 id=237 data-nosnippet>237</a>        test_random_min_i64,
+<a href=#238 id=238 data-nosnippet>238</a>        test_random_max_i64,
+<a href=#239 id=239 data-nosnippet>239</a>        test_random_gcd_i64,
+<a href=#240 id=240 data-nosnippet>240</a>        i64
+<a href=#241 id=241 data-nosnippet>241</a>    );
+<a href=#242 id=242 data-nosnippet>242</a>    <span class="macro">random_min_max_gcd_xor_test!</span>(
+<a href=#243 id=243 data-nosnippet>243</a>        test_random_min_u64,
+<a href=#244 id=244 data-nosnippet>244</a>        test_random_max_u64,
+<a href=#245 id=245 data-nosnippet>245</a>        test_random_gcd_u64,
+<a href=#246 id=246 data-nosnippet>246</a>        u64
+<a href=#247 id=247 data-nosnippet>247</a>    );
+<a href=#248 id=248 data-nosnippet>248</a>    <span class="macro">random_min_max_gcd_xor_test!</span>(
+<a href=#249 id=249 data-nosnippet>249</a>        test_random_min_usize,
+<a href=#250 id=250 data-nosnippet>250</a>        test_random_max_usize,
+<a href=#251 id=251 data-nosnippet>251</a>        test_random_gcd_usize,
+<a href=#252 id=252 data-nosnippet>252</a>        usize
+<a href=#253 id=253 data-nosnippet>253</a>    );
+<a href=#254 id=254 data-nosnippet>254</a>}</code></pre></div></section></main></body></html>
