@@ -315,8 +315,11 @@ mod tests {
 
     use super::*;
     use crate::{
-        ops::{op_add::OpAdd, op_max::OpMax, op_min::OpMin},
-        utils::test_utils::random::get_test_rng,
+        math::gcd::Gcd,
+        ops::{op_add::OpAdd, op_gcd::OpGcd, op_max::OpMax, op_min::OpMin, op_xor::OpXor},
+        utils::test_utils::{
+            dynamic_range_query_2d::*, random::get_test_rng, static_range_query_2d::*,
+        },
     };
 
     #[test]
@@ -444,117 +447,245 @@ mod tests {
         }
     }
 
-    macro_rules! random_test {
-        ($test_name:ident, $ty:ty, $op:ty, $fold_init:expr, $fold_op:expr, $val_range:expr) => {
-            #[test]
-            fn $test_name() {
-                let mut rng = get_test_rng();
-
-                const T: usize = 50;
-                const Q: usize = 2000;
-                const H_MAX: usize = 20;
-                const W_MAX: usize = 20;
-
-                for _ in 0..T {
-                    let h = rng.random_range(1..=H_MAX);
-                    let w = rng.random_range(1..=W_MAX);
-                    let mut a = vec![vec![0 as $ty; w]; h];
-                    for i in 0..h {
-                        for j in 0..w {
-                            a[i][j] = rng.random_range($val_range);
-                        }
-                    }
-                    let mut seg = SegmentTree2d::<$op>::from(a.clone());
-
-                    for _ in 0..Q {
-                        match rng.random_range(0..=2) {
-                            0 => {
-                                let i = rng.random_range(0..h);
-                                let j = rng.random_range(0..w);
-                                let v = rng.random_range($val_range);
-                                a[i][j] = v;
-                                seg.set(i, j, v);
-                                assert_eq!(seg[(i, j)], v);
-                            }
-                            1 => {
-                                let i = rng.random_range(0..h);
-                                let j = rng.random_range(0..w);
-                                let d = rng.random_range($val_range);
-                                a[i][j] += d;
-                                *seg.entry_mut(i, j) += d;
-                                assert_eq!(seg[(i, j)], a[i][j]);
-                            }
-                            2 => {
-                                let il = rng.random_range(0..=h);
-                                let ir = rng.random_range(il..=h);
-                                let jl = rng.random_range(0..=w);
-                                let jr = rng.random_range(jl..=w);
-
-                                let mut naive = $fold_init;
-                                for i in il..ir {
-                                    for j in jl..jr {
-                                        naive = $fold_op(naive, a[i][j]);
-                                    }
-                                }
-                                assert_eq!(seg.fold(il..ir, jl..jr), naive);
-                            }
-                            _ => unreachable!(),
-                        }
-                    }
-                }
-            }
+    macro_rules! seg2d_randomized_static_range_sum_exhaustive_test {
+        ($test_name: ident, $ty: ty, $range: expr) => {
+            randomized_static_range_sum_2d_exhaustive_test!(
+                $test_name,
+                $ty,
+                |v| SegmentTree2d::<OpAdd<$ty>>::from(v),
+                |ds: &SegmentTree2d<_>, r, c| ds.fold(r, c),
+                50,
+                20,
+                $range
+            );
         };
     }
 
-    random_test!(
-        test_ramdom_add_i64,
+    macro_rules! seg2d_randomized_static_range_min_max_gcd_xor_exhaustive_test {
+        ($min_test_name: ident, $max_test_name: ident, $gcd_test_name: ident, $xor_test_name: ident, $ty: ty) => {
+            randomized_static_range_min_2d_exhaustive_test!(
+                $min_test_name,
+                $ty,
+                |v| SegmentTree2d::<OpMin<$ty>>::from(v),
+                |ds: &SegmentTree2d<_>, r, c| ds.fold(r, c),
+                50,
+                20
+            );
+
+            randomized_static_range_max_2d_exhaustive_test!(
+                $max_test_name,
+                $ty,
+                |v| SegmentTree2d::<OpMax<$ty>>::from(v),
+                |ds: &SegmentTree2d<_>, r, c| ds.fold(r, c),
+                50,
+                20
+            );
+
+            randomized_static_range_gcd_2d_exhaustive_test!(
+                $gcd_test_name,
+                $ty,
+                |v| SegmentTree2d::<OpGcd<$ty>>::from(v),
+                |ds: &SegmentTree2d<_>, r, c| ds.fold(r, c),
+                10,
+                20
+            );
+
+            randomized_static_range_xor_2d_exhaustive_test!(
+                $xor_test_name,
+                $ty,
+                |v| SegmentTree2d::<OpXor<$ty>>::from(v),
+                |ds: &SegmentTree2d<_>, r, c| ds.fold(r, c),
+                10,
+                20
+            );
+        };
+    }
+
+    seg2d_randomized_static_range_sum_exhaustive_test!(
+        test_randomized_static_range_sum_exhaustive_i32,
+        i32,
+        -100000..=100000
+    );
+    seg2d_randomized_static_range_sum_exhaustive_test!(
+        test_randomized_static_range_sum_exhaustive_u32,
+        u32,
+        0..=100000
+    );
+    seg2d_randomized_static_range_sum_exhaustive_test!(
+        test_randomized_static_range_sum_exhaustive_i64,
         i64,
-        OpAdd<i64>,
-        0i64,
-        |a, b| a + b,
-        -50..=50
+        -1000000000..=1000000000
     );
-    random_test!(
-        test_ramdom_add_u64,
+    seg2d_randomized_static_range_sum_exhaustive_test!(
+        test_randomized_static_range_sum_exhaustive_u64,
         u64,
-        OpAdd<u64>,
-        0,
-        |a, b| a + b,
-        0..=50
+        0..=1000000000
+    );
+    seg2d_randomized_static_range_sum_exhaustive_test!(
+        test_randomized_static_range_sum_exhaustive_usize,
+        usize,
+        0..=1000000000
     );
 
-    random_test!(
-        test_ramdom_min_i32,
+    seg2d_randomized_static_range_min_max_gcd_xor_exhaustive_test!(
+        test_randomized_static_range_min_exhaustive_i32,
+        test_randomized_static_range_max_exhaustive_i32,
+        test_randomized_static_range_gcd_exhaustive_i32,
+        test_randomized_static_range_xor_exhaustive_i32,
+        i32
+    );
+    seg2d_randomized_static_range_min_max_gcd_xor_exhaustive_test!(
+        test_randomized_static_range_min_exhaustive_u32,
+        test_randomized_static_range_max_exhaustive_u32,
+        test_randomized_static_range_gcd_exhaustive_u32,
+        test_randomized_static_range_xor_exhaustive_u32,
+        u32
+    );
+    seg2d_randomized_static_range_min_max_gcd_xor_exhaustive_test!(
+        test_randomized_static_range_min_exhaustive_i64,
+        test_randomized_static_range_max_exhaustive_i64,
+        test_randomized_static_range_gcd_exhaustive_i64,
+        test_randomized_static_range_xor_exhaustive_i64,
+        i64
+    );
+    seg2d_randomized_static_range_min_max_gcd_xor_exhaustive_test!(
+        test_randomized_static_range_min_exhaustive_u64,
+        test_randomized_static_range_max_exhaustive_u64,
+        test_randomized_static_range_gcd_exhaustive_u64,
+        test_randomized_static_range_xor_exhaustive_u64,
+        u64
+    );
+    seg2d_randomized_static_range_min_max_gcd_xor_exhaustive_test!(
+        test_randomized_static_range_min_exhaustive_usize,
+        test_randomized_static_range_max_exhaustive_usize,
+        test_randomized_static_range_gcd_exhaustive_usize,
+        test_randomized_static_range_xor_exhaustive_usize,
+        usize
+    );
+
+    macro_rules! seg2d_randomized_point_set_range_sum_test {
+        ($test_name: ident, $ty: ty, $range: expr) => {
+            randomized_point_set_range_sum_2d_test!(
+                $test_name,
+                $ty,
+                |v| SegmentTree2d::<OpAdd<$ty>>::from(v),
+                |ds: &SegmentTree2d<_>, r, c| ds.fold(r, c),
+                |ds: &mut SegmentTree2d<_>, i, j, val| ds.set(i, j, val),
+                50,
+                1000,
+                20,
+                $range
+            );
+        };
+    }
+
+    macro_rules! seg2d_randomized_point_set_range_min_max_gcd_xor_test {
+        ($min_test_name: ident, $max_test_name: ident, $gcd_test_name: ident, $xor_test_name: ident, $ty: ty) => {
+            randomized_point_set_range_min_2d_test!(
+                $min_test_name,
+                $ty,
+                |v| SegmentTree2d::<OpMin<$ty>>::from(v),
+                |ds: &SegmentTree2d<_>, r, c| ds.fold(r, c),
+                |ds: &mut SegmentTree2d<_>, i, j, val| ds.set(i, j, val),
+                50,
+                1000,
+                20
+            );
+
+            randomized_point_set_range_max_2d_test!(
+                $max_test_name,
+                $ty,
+                |v| SegmentTree2d::<OpMax<$ty>>::from(v),
+                |ds: &SegmentTree2d<_>, r, c| ds.fold(r, c),
+                |ds: &mut SegmentTree2d<_>, i, j, val| ds.set(i, j, val),
+                50,
+                1000,
+                20
+            );
+
+            randomized_point_set_range_gcd_2d_test!(
+                $gcd_test_name,
+                $ty,
+                |v| SegmentTree2d::<OpGcd<$ty>>::from(v),
+                |ds: &SegmentTree2d<_>, r, c| ds.fold(r, c),
+                |ds: &mut SegmentTree2d<_>, i, j, val| ds.set(i, j, val),
+                10,
+                1000,
+                20
+            );
+
+            randomized_point_set_range_xor_2d_test!(
+                $xor_test_name,
+                $ty,
+                |v| SegmentTree2d::<OpXor<$ty>>::from(v),
+                |ds: &SegmentTree2d<_>, r, c| ds.fold(r, c),
+                |ds: &mut SegmentTree2d<_>, i, j, val| ds.set(i, j, val),
+                10,
+                1000,
+                20
+            );
+        };
+    }
+
+    seg2d_randomized_point_set_range_sum_test!(
+        test_randomized_point_set_range_sum_i32,
         i32,
-        OpMin<i32>,
-        i32::MAX,
-        |a: i32, b| a.min(b),
-        -100..=100
+        -100000..=100000
     );
-    random_test!(
-        test_ramdom_min_u32,
+    seg2d_randomized_point_set_range_sum_test!(
+        test_randomized_point_set_range_sum_u32,
         u32,
-        OpMin<_>,
-        u32::MAX,
-        |a: u32, b| a.min(b),
-        0..=100
+        0..=100000
+    );
+    seg2d_randomized_point_set_range_sum_test!(
+        test_randomized_point_set_range_sum_i64,
+        i64,
+        -1000000000..=1000000000
+    );
+    seg2d_randomized_point_set_range_sum_test!(
+        test_randomized_point_set_range_sum_u64,
+        u64,
+        0..=1000000000
+    );
+    seg2d_randomized_point_set_range_sum_test!(
+        test_randomized_point_set_range_sum_usize,
+        usize,
+        0..=1000000000
     );
 
-    random_test!(
-        test_random_max_i32,
-        i32,
-        OpMax<i32>,
-        i32::MIN,
-        |a: i32, b| a.max(b),
-        -100..=100
+    seg2d_randomized_point_set_range_min_max_gcd_xor_test!(
+        test_randomized_point_set_range_min_i32,
+        test_randomized_point_set_range_max_i32,
+        test_randomized_point_set_range_gcd_i32,
+        test_randomized_point_set_range_xor_i32,
+        i32
     );
-
-    random_test!(
-        test_random_max_u32,
-        u32,
-        OpMax<_>,
-        u32::MIN,
-        |a: u32, b| a.max(b),
-        0..=100
+    seg2d_randomized_point_set_range_min_max_gcd_xor_test!(
+        test_randomized_point_set_range_min_u32,
+        test_randomized_point_set_range_max_u32,
+        test_randomized_point_set_range_gcd_u32,
+        test_randomized_point_set_range_xor_u32,
+        u32
+    );
+    seg2d_randomized_point_set_range_min_max_gcd_xor_test!(
+        test_randomized_point_set_range_min_i64,
+        test_randomized_point_set_range_max_i64,
+        test_randomized_point_set_range_gcd_i64,
+        test_randomized_point_set_range_xor_i64,
+        i64
+    );
+    seg2d_randomized_point_set_range_min_max_gcd_xor_test!(
+        test_randomized_point_set_range_min_u64,
+        test_randomized_point_set_range_max_u64,
+        test_randomized_point_set_range_gcd_u64,
+        test_randomized_point_set_range_xor_u64,
+        u64
+    );
+    seg2d_randomized_point_set_range_min_max_gcd_xor_test!(
+        test_randomized_point_set_range_min_usize,
+        test_randomized_point_set_range_max_usize,
+        test_randomized_point_set_range_gcd_usize,
+        test_randomized_point_set_range_xor_usize,
+        usize
     );
 }

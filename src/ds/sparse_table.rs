@@ -113,7 +113,7 @@ mod tests {
     use crate::{
         math::gcd::Gcd,
         ops::{op_gcd::OpGcd, op_max::OpMax, op_min::OpMin},
-        utils::test_utils::random::get_test_rng,
+        utils::test_utils::{random::get_test_rng, static_range_query::*},
     };
 
     use super::*;
@@ -140,94 +140,65 @@ mod tests {
         }
     }
 
-    #[test]
-    fn test_min_random() {
-        macro_rules! define_test_function {
-            ($name:ident, $ty:ident) => {
-                fn $name(rng: &mut impl Rng) {
-                    const T: usize = 100;
-                    const N: usize = 100;
+    macro_rules! random_min_max_gcd_test {
+        ($min_test_name: ident, $max_test_name: ident, $gcd_test_name: ident, $ty: ty) => {
+            randomized_static_range_min_exhaustive_test!(
+                $min_test_name,
+                $ty,
+                |v| SparseTable::<OpMin<$ty>>::from(v),
+                |ds: &SparseTable<_>, range| ds.fold(range),
+                100,
+                100
+            );
 
-                    for _ in 0..T {
-                        let v = (0..N).map(|_| rng.random()).collect::<Vec<_>>();
-                        let st = SparseTable::<OpMin<_>>::from(v.clone());
-                        for l in 0..v.len() {
-                            for r in l + 1..=v.len() {
-                                let naive = *v[l..r].iter().min().unwrap_or(&$ty::MAX);
-                                assert_eq!(st.fold(l..r), naive);
-                            }
-                        }
-                    }
-                }
-            };
-        }
+            randomized_static_range_max_exhaustive_test!(
+                $max_test_name,
+                $ty,
+                |v| SparseTable::<OpMax<$ty>>::from(v),
+                |ds: &SparseTable<_>, range| ds.fold(range),
+                100,
+                100
+            );
 
-        define_test_function!(test_i64, i64);
-        define_test_function!(test_u64, u64);
-
-        let mut rng = get_test_rng();
-        test_i64(&mut rng);
-        test_u64(&mut rng);
+            randomized_static_range_gcd_exhaustive_test!(
+                $gcd_test_name,
+                $ty,
+                |v| SparseTable::<OpGcd<$ty>>::from(v),
+                |ds: &SparseTable<_>, range| ds.fold(range),
+                100,
+                100
+            );
+        };
     }
 
-    #[test]
-    fn test_max_random() {
-        macro_rules! define_test_function {
-            ($name:ident, $ty:ident) => {
-                fn $name(rng: &mut impl Rng) {
-                    const T: usize = 100;
-                    const N: usize = 100;
-
-                    for _ in 0..T {
-                        let v = (0..N).map(|_| rng.random()).collect::<Vec<_>>();
-                        let st = SparseTable::<OpMax<_>>::from(v.clone());
-                        for l in 0..v.len() {
-                            for r in l + 1..=v.len() {
-                                let naive = *v[l..r].iter().max().unwrap_or(&$ty::MIN);
-                                assert_eq!(st.fold(l..r), naive);
-                            }
-                        }
-                    }
-                }
-            };
-        }
-
-        define_test_function!(test_i64, i64);
-        define_test_function!(test_u64, u64);
-
-        let mut rng = get_test_rng();
-        test_i64(&mut rng);
-        test_u64(&mut rng);
-    }
-
-    #[test]
-    fn test_gcd_random() {
-        macro_rules! define_test_function {
-            ($name:ident, $ty:ident) => {
-                fn $name(rng: &mut impl Rng, mn: $ty, mx: $ty) {
-                    const T: usize = 100;
-                    const N: usize = 100;
-
-                    for _ in 0..T {
-                        let v = (0..N)
-                            .map(|_| rng.random_range(mn..=mx))
-                            .collect::<Vec<_>>();
-                        let st = SparseTable::<OpGcd<_>>::from(v.clone());
-                        for l in 0..v.len() {
-                            for r in l + 1..=v.len() {
-                                let naive =
-                                    v[l..r].iter().copied().fold(0 as $ty, |acc, x| acc.gcd(x));
-                                assert_eq!(st.fold(l..r), naive);
-                            }
-                        }
-                    }
-                }
-            };
-        }
-
-        define_test_function!(test_u64, u64);
-
-        let mut rng = get_test_rng();
-        test_u64(&mut rng, 1, 1000000000);
-    }
+    random_min_max_gcd_test!(
+        test_random_min_i32,
+        test_random_max_i32,
+        test_random_gcd_i32,
+        i32
+    );
+    random_min_max_gcd_test!(
+        test_random_min_u32,
+        test_random_max_u32,
+        test_random_gcd_u32,
+        u32
+    );
+    random_min_max_gcd_test!(
+        test_random_min_i64,
+        test_random_max_i64,
+        test_random_gcd_i64,
+        i64
+    );
+    random_min_max_gcd_test!(
+        test_random_min_u64,
+        test_random_max_u64,
+        test_random_gcd_u64,
+        u64
+    );
+    random_min_max_gcd_test!(
+        test_random_min_usize,
+        test_random_max_usize,
+        test_random_gcd_usize,
+        usize
+    );
 }

@@ -155,7 +155,7 @@ mod tests {
     use crate::{
         math::gcd::Gcd,
         ops::{op_gcd::OpGcd, op_max::OpMax, op_min::OpMin},
-        utils::test_utils::random::get_test_rng,
+        utils::test_utils::{random::get_test_rng, static_range_query_2d::*},
     };
 
     #[test]
@@ -190,120 +190,65 @@ mod tests {
         assert_eq!(st.fold(.., ..), 100);
     }
 
-    macro_rules! random_test {
-        ($test_name:ident, $ty:ty, $op:ty, $fold_init:expr, $fold_op:expr, $val_range:expr) => {
-            #[test]
-            fn $test_name() {
-                let mut rng = get_test_rng();
+    macro_rules! random_min_max_gcd_xor_test {
+        ($min_test_name: ident, $max_test_name: ident, $gcd_test_name: ident, $ty: ty) => {
+            randomized_static_range_min_2d_exhaustive_test!(
+                $min_test_name,
+                $ty,
+                |v| SparseTable2d::<OpMin<$ty>>::from(v),
+                |ds: &SparseTable2d<_>, r, c| ds.fold(r, c),
+                20,
+                20
+            );
 
-                const T: usize = 50;
-                const H_MAX: usize = 15;
-                const W_MAX: usize = 15;
+            randomized_static_range_max_2d_exhaustive_test!(
+                $max_test_name,
+                $ty,
+                |v| SparseTable2d::<OpMax<$ty>>::from(v),
+                |ds: &SparseTable2d<_>, r, c| ds.fold(r, c),
+                20,
+                20
+            );
 
-                for _ in 0..T {
-                    let h = rng.random_range(1..=H_MAX);
-                    let w = rng.random_range(1..=W_MAX);
-                    let a = (0..h)
-                        .map(|_| {
-                            (0..w)
-                                .map(|_| rng.random_range($val_range))
-                                .collect::<Vec<_>>()
-                        })
-                        .collect::<Vec<_>>();
-
-                    let st = SparseTable2d::<$op>::from(a.clone());
-
-                    for il in 0..h {
-                        for ir in il + 1..=h {
-                            for jl in 0..w {
-                                for jr in jl + 1..=w {
-                                    let naive = a[il..ir]
-                                        .iter()
-                                        .flat_map(|row| row[jl..jr].iter())
-                                        .copied()
-                                        .fold($fold_init, $fold_op);
-                                    assert_eq!(st.fold(il..ir, jl..jr), naive);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            randomized_static_range_gcd_2d_exhaustive_test!(
+                $gcd_test_name,
+                $ty,
+                |v| SparseTable2d::<OpGcd<$ty>>::from(v),
+                |ds: &SparseTable2d<_>, r, c| ds.fold(r, c),
+                10,
+                20
+            );
         };
     }
 
-    random_test!(
+    random_min_max_gcd_xor_test!(
         test_random_min_i32,
-        i32,
-        OpMin<i32>,
-        i32::MAX,
-        |a, b| a.min(b),
-        -100..=100
-    );
-    random_test!(
-        test_random_min_i64,
-        i64,
-        OpMin<i64>,
-        i64::MAX,
-        |a, b| a.min(b),
-        -100..=100
-    );
-    random_test!(
-        test_random_min_u32,
-        u32,
-        OpMin<u32>,
-        u32::MAX,
-        |a, b| a.min(b),
-        0..=100
-    );
-    random_test!(
-        test_random_min_u64,
-        u64,
-        OpMin<u64>,
-        u64::MAX,
-        |a, b| a.min(b),
-        0..=100
-    );
-
-    random_test!(
         test_random_max_i32,
-        i32,
-        OpMax<i32>,
-        i32::MIN,
-        |a, b| a.max(b),
-        -100..=100
+        test_random_gcd_i32,
+        i32
     );
-    random_test!(
-        test_random_max_i64,
-        i64,
-        OpMax<i64>,
-        i64::MIN,
-        |a, b| a.max(b),
-        -100..=100
-    );
-    random_test!(
+    random_min_max_gcd_xor_test!(
+        test_random_min_u32,
         test_random_max_u32,
-        u32,
-        OpMax<u32>,
-        u32::MIN,
-        |a, b| a.max(b),
-        0..=100
+        test_random_gcd_u32,
+        u32
     );
-    random_test!(
+    random_min_max_gcd_xor_test!(
+        test_random_min_i64,
+        test_random_max_i64,
+        test_random_gcd_i64,
+        i64
+    );
+    random_min_max_gcd_xor_test!(
+        test_random_min_u64,
         test_random_max_u64,
-        u64,
-        OpMax<u64>,
-        u64::MIN,
-        |a, b| a.max(b),
-        0..=100
-    );
-
-    random_test!(
         test_random_gcd_u64,
-        u64,
-        OpGcd<u64>,
-        0u64,
-        |a, b| a.gcd(b),
-        1..=1000000
+        u64
+    );
+    random_min_max_gcd_xor_test!(
+        test_random_min_usize,
+        test_random_max_usize,
+        test_random_gcd_usize,
+        usize
     );
 }

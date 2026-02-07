@@ -92,46 +92,31 @@ impl<O: Monoid> DisjointSparseTable<O> {
     }
 }
 
-impl<O> From<(Vec<O::Element>, O)> for DisjointSparseTable<O>
-where
-    O: Monoid,
-{
+impl<O: Monoid> From<(Vec<O::Element>, O)> for DisjointSparseTable<O> {
     fn from((v, op): (Vec<O::Element>, O)) -> Self {
         Self::with_op(v, op)
     }
 }
 
-impl<O, const N: usize> From<([O::Element; N], O)> for DisjointSparseTable<O>
-where
-    O: Monoid,
-{
+impl<O: Monoid, const N: usize> From<([O::Element; N], O)> for DisjointSparseTable<O> {
     fn from((v, op): ([O::Element; N], O)) -> Self {
         Self::with_op(v.into_iter().collect(), op)
     }
 }
 
-impl<O> From<Vec<O::Element>> for DisjointSparseTable<O>
-where
-    O: Monoid + Default,
-{
+impl<O: Monoid + Default> From<Vec<O::Element>> for DisjointSparseTable<O> {
     fn from(v: Vec<O::Element>) -> Self {
         Self::new(v)
     }
 }
 
-impl<O, const N: usize> From<[O::Element; N]> for DisjointSparseTable<O>
-where
-    O: Monoid + Default,
-{
+impl<O: Monoid + Default, const N: usize> From<[O::Element; N]> for DisjointSparseTable<O> {
     fn from(v: [O::Element; N]) -> Self {
         Self::new(v.into_iter().collect())
     }
 }
 
-impl<O> FromIterator<O::Element> for DisjointSparseTable<O>
-where
-    O: Monoid + Default,
-{
+impl<O: Monoid + Default> FromIterator<O::Element> for DisjointSparseTable<O> {
     fn from_iter<I: IntoIterator<Item = O::Element>>(iter: I) -> Self {
         Self::new(iter.into_iter().collect())
     }
@@ -141,12 +126,11 @@ where
 mod tests {
     use rand::Rng;
 
+    use super::*;
     use crate::{
         ops::{op_add::OpAdd, op_max::OpMax, op_min::OpMin},
-        utils::test_utils::random::get_test_rng,
+        utils::test_utils::{random::get_test_rng, static_range_query::*},
     };
-
-    use super::*;
 
     #[test]
     fn test_min() {
@@ -170,94 +154,50 @@ mod tests {
         }
     }
 
-    #[test]
-    fn test_sum_random() {
-        macro_rules! define_test_function {
-            ($name:ident, $ty:ident) => {
-                fn $name(rng: &mut impl Rng, mn: $ty, mx: $ty) {
-                    const T: usize = 100;
-                    const N: usize = 100;
-
-                    for _ in 0..T {
-                        let v = (0..N)
-                            .map(|_| rng.random_range(mn..=mx))
-                            .collect::<Vec<_>>();
-                        let dst = DisjointSparseTable::<OpAdd<_>>::from(v.clone());
-                        for l in 0..v.len() {
-                            for r in l..=v.len() {
-                                assert_eq!(dst.fold(l..r), v[l..r].iter().sum());
-                            }
-                        }
-                    }
-                }
-            };
-        }
-
-        define_test_function!(test_i64, i64);
-        define_test_function!(test_u64, u64);
-
-        let mut rng = get_test_rng();
-        test_i64(&mut rng, -1000000000, 1000000000);
-        test_u64(&mut rng, 0, 1000000000);
+    macro_rules! random_sum_test {
+        ($test_name: ident, $ty: ty, $range: expr) => {
+            randomized_static_range_sum_exhaustive_test!(
+                $test_name,
+                $ty,
+                |v| DisjointSparseTable::<OpAdd<$ty>>::from(v),
+                |ds: &DisjointSparseTable<_>, range| ds.fold(range),
+                100,
+                100,
+                $range
+            );
+        };
     }
 
-    #[test]
-    fn test_min_random() {
-        macro_rules! define_test_function {
-            ($name:ident, $ty:ident) => {
-                fn $name(rng: &mut impl Rng) {
-                    const T: usize = 100;
-                    const N: usize = 100;
+    macro_rules! random_min_max_test {
+        ($min_test_name: ident, $max_test_name: ident, $ty: ty) => {
+            randomized_static_range_min_exhaustive_test!(
+                $min_test_name,
+                $ty,
+                |v| DisjointSparseTable::<OpMin<$ty>>::from(v),
+                |ds: &DisjointSparseTable<_>, range| ds.fold(range),
+                100,
+                100
+            );
 
-                    for _ in 0..T {
-                        let v = (0..N).map(|_| rng.random()).collect::<Vec<_>>();
-                        let dst = DisjointSparseTable::<OpMin<_>>::from(v.clone());
-                        for l in 0..v.len() {
-                            for r in l..=v.len() {
-                                let naive = *v[l..r].iter().min().unwrap_or(&$ty::MAX);
-                                assert_eq!(dst.fold(l..r), naive);
-                            }
-                        }
-                    }
-                }
-            };
-        }
-
-        define_test_function!(test_i64, i64);
-        define_test_function!(test_u64, u64);
-
-        let mut rng = get_test_rng();
-        test_i64(&mut rng);
-        test_u64(&mut rng);
+            randomized_static_range_max_exhaustive_test!(
+                $max_test_name,
+                $ty,
+                |v| DisjointSparseTable::<OpMax<$ty>>::from(v),
+                |ds: &DisjointSparseTable<_>, range| ds.fold(range),
+                100,
+                100
+            );
+        };
     }
 
-    #[test]
-    fn test_max_random() {
-        macro_rules! define_test_function {
-            ($name:ident, $ty:ident) => {
-                fn $name(rng: &mut impl Rng) {
-                    const T: usize = 100;
-                    const N: usize = 100;
+    random_sum_test!(test_random_sum_i32, i32, -100000..=100000);
+    random_sum_test!(test_random_sum_u32, u32, 0..=100000);
+    random_sum_test!(test_random_sum_i64, i64, -1000000000..=1000000000);
+    random_sum_test!(test_random_sum_u64, u64, 0..=1000000000);
+    random_sum_test!(test_random_sum_usize, usize, 0..=1000000000);
 
-                    for _ in 0..T {
-                        let v = (0..N).map(|_| rng.random()).collect::<Vec<_>>();
-                        let dst = DisjointSparseTable::<OpMax<_>>::from(v.clone());
-                        for l in 0..v.len() {
-                            for r in l..=v.len() {
-                                let naive = *v[l..r].iter().max().unwrap_or(&$ty::MIN);
-                                assert_eq!(dst.fold(l..r), naive);
-                            }
-                        }
-                    }
-                }
-            };
-        }
-
-        define_test_function!(test_i64, i64);
-        define_test_function!(test_u64, u64);
-
-        let mut rng = get_test_rng();
-        test_i64(&mut rng);
-        test_u64(&mut rng);
-    }
+    random_min_max_test!(test_random_min_i32, test_random_max_i32, i32);
+    random_min_max_test!(test_random_min_u32, test_random_max_u32, u32);
+    random_min_max_test!(test_random_min_i64, test_random_max_i64, i64);
+    random_min_max_test!(test_random_min_u64, test_random_max_u64, u64);
 }

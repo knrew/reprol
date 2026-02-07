@@ -128,7 +128,11 @@ mod tests {
     use rand::Rng;
 
     use super::*;
-    use crate::{ops::op_add::OpAdd, utils::test_utils::random::get_test_rng};
+    use crate::{
+        ops::op_add::OpAdd,
+        ops::op_xor::OpXor,
+        utils::test_utils::{dynamic_range_query::*, random::get_test_rng, static_range_query::*},
+    };
 
     #[test]
     fn test_sum() {
@@ -144,51 +148,202 @@ mod tests {
         assert_eq!(ft.fold(3..=6), 20);
         ft.op(9, &10);
         assert_eq!(ft.fold(0..10), 45);
+        ft.set(0, 100);
+        assert_eq!(ft.get(0), 100);
+        assert_eq!(ft.fold(0..1), 100);
+        ft.set(3, 50);
+        assert_eq!(ft.get(3), 50);
+        assert_eq!(ft.fold(3..4), 50);
     }
 
-    #[test]
-    fn test_sum_random() {
-        macro_rules! define_test_function {
-            ($name:ident, $ty:ident) => {
-                fn $name(rng: &mut impl Rng, mn: $ty, mx: $ty) {
-                    const T: usize = 100;
-                    const N: usize = 100;
-                    const Q: usize = 1000;
-
-                    for _ in 0..T {
-                        let mut ft = FenwickTree::<OpAdd<_>>::new(N);
-                        let mut naive = vec![0; N];
-
-                        for _ in 0..Q {
-                            // add
-                            // v[index] += d
-                            let index = rng.random_range(0..N);
-                            let d = rng.random_range(mn..=mx);
-                            ft.op(index, &d);
-                            naive[index] += d;
-
-                            // [l, r)の区間和を求める
-                            let l = rng.random_range(0..N);
-                            let r = rng.random_range(l..=N);
-                            assert_eq!(ft.fold(l..r), naive[l..r].iter().sum());
-                        }
-
-                        for l in 0..N {
-                            for r in l..=N {
-                                assert_eq!(ft.fold(l..r), naive[l..r].iter().sum());
-                            }
-                        }
-                    }
-                }
-            };
-        }
-
-        define_test_function!(test_i64, i64);
-        define_test_function!(test_u64, u64);
-
-        let mut rng = get_test_rng();
-
-        test_i64(&mut rng, -1000000000, 1000000000);
-        test_u64(&mut rng, 0, 1000000000);
+    macro_rules! ft_randomized_static_range_sum_exhaustive_test {
+        ($test_name: ident, $ty: ty, $range: expr) => {
+            randomized_static_range_sum_exhaustive_test!(
+                $test_name,
+                $ty,
+                |v| FenwickTree::<OpAdd<$ty>>::from(v),
+                |ds: &FenwickTree<_>, range| ds.fold(range),
+                200,
+                100,
+                $range
+            );
+        };
     }
+
+    macro_rules! ft_randomized_static_range_xor_exhaustive_test {
+        ($test_name: ident, $ty: ty) => {
+            randomized_static_range_xor_exhaustive_test!(
+                $test_name,
+                $ty,
+                |v| FenwickTree::<OpXor<$ty>>::from(v),
+                |ds: &FenwickTree<_>, range| ds.fold(range),
+                200,
+                100
+            );
+        };
+    }
+
+    ft_randomized_static_range_sum_exhaustive_test!(
+        test_randomize_static_range_sum_exhaustive_i8,
+        i8,
+        -1..=1
+    );
+    ft_randomized_static_range_sum_exhaustive_test!(
+        test_randomize_static_range_sum_exhaustive_u8,
+        u8,
+        0..=1
+    );
+    ft_randomized_static_range_sum_exhaustive_test!(
+        test_randomize_static_range_sum_exhaustive_i16,
+        i16,
+        -300..=300
+    );
+    ft_randomized_static_range_sum_exhaustive_test!(
+        test_randomize_static_range_sum_exhaustive_u16,
+        u16,
+        0..=300
+    );
+    ft_randomized_static_range_sum_exhaustive_test!(
+        test_randomize_static_range_sum_exhaustive_i32,
+        i32,
+        -100000..=100000
+    );
+    ft_randomized_static_range_sum_exhaustive_test!(
+        test_randomize_static_range_sum_exhaustive_u32,
+        u32,
+        0..=100000
+    );
+    ft_randomized_static_range_sum_exhaustive_test!(
+        test_randomize_static_range_sum_exhaustive_i64,
+        i64,
+        -1000000000..=1000000000
+    );
+    ft_randomized_static_range_sum_exhaustive_test!(
+        test_randomize_static_range_sum_exhaustive_u64,
+        u64,
+        0..=1000000000
+    );
+    ft_randomized_static_range_sum_exhaustive_test!(
+        test_randomize_static_range_sum_exhaustive_i128,
+        i128,
+        -1000000000000000000..=1000000000000000000
+    );
+    ft_randomized_static_range_sum_exhaustive_test!(
+        test_randomize_static_range_sum_exhaustive_u128,
+        u128,
+        0..=1000000000000000000
+    );
+    ft_randomized_static_range_sum_exhaustive_test!(
+        test_randomize_static_range_sum_exhaustive_usize,
+        usize,
+        0..=1000000000
+    );
+
+    ft_randomized_static_range_xor_exhaustive_test!(test_randomized_range_xor_exhaustive_i8, i8);
+    ft_randomized_static_range_xor_exhaustive_test!(test_randomized_range_xor_exhaustive_u8, u8);
+    ft_randomized_static_range_xor_exhaustive_test!(test_randomized_range_xor_exhaustive_i16, i16);
+    ft_randomized_static_range_xor_exhaustive_test!(test_randomized_range_xor_exhaustive_u16, u16);
+    ft_randomized_static_range_xor_exhaustive_test!(test_randomized_range_xor_exhaustive_i32, i32);
+    ft_randomized_static_range_xor_exhaustive_test!(test_randomized_range_xor_exhaustive_u32, u32);
+    ft_randomized_static_range_xor_exhaustive_test!(test_randomized_range_xor_exhaustive_i64, i64);
+    ft_randomized_static_range_xor_exhaustive_test!(test_randomized_range_xor_exhaustive_u64, u64);
+    ft_randomized_static_range_xor_exhaustive_test!(
+        test_randomized_range_xor_exhaustive_i128,
+        i128
+    );
+    ft_randomized_static_range_xor_exhaustive_test!(
+        test_randomized_range_xor_exhaustive_u128,
+        u128
+    );
+    ft_randomized_static_range_xor_exhaustive_test!(
+        test_randomized_range_xor_exhaustive_usize,
+        usize
+    );
+
+    macro_rules! ft_randomized_point_set_range_sum_test {
+        ($test_name: ident, $ty: ty, $range: expr) => {
+            randomized_point_set_range_sum_test!(
+                $test_name,
+                $ty,
+                |v| FenwickTree::<OpAdd<$ty>>::from(v),
+                |ds: &FenwickTree<_>, range| ds.fold(range),
+                |ds: &mut FenwickTree<_>, index, value| ds.set(index, value),
+                20,     // T
+                100000, //Q
+                100,    // N_MAX
+                $range
+            );
+        };
+    }
+
+    macro_rules! ft_randomized_point_set_range_xor_test {
+        ($test_name: ident, $ty: ty) => {
+            randomized_point_set_range_xor_test!(
+                $test_name,
+                $ty,
+                |v| FenwickTree::<OpXor<$ty>>::from(v),
+                |ds: &FenwickTree<_>, range| ds.fold(range),
+                |ds: &mut FenwickTree<_>, index, value| ds.set(index, value),
+                10,     // T
+                100000, //Q
+                100     // N_MAX
+            );
+        };
+    }
+
+    ft_randomized_point_set_range_sum_test!(test_randomized_point_set_range_sum_i8, i8, -1..=1);
+    ft_randomized_point_set_range_sum_test!(test_randomized_point_set_range_sum_u8, u8, 0..=1);
+    ft_randomized_point_set_range_sum_test!(
+        test_randomized_point_set_range_sum_i16,
+        i16,
+        -300..=300
+    );
+    ft_randomized_point_set_range_sum_test!(test_randomized_point_set_range_sum_u16, u16, 0..=300);
+    ft_randomized_point_set_range_sum_test!(
+        test_randomized_point_set_range_sum_i32,
+        i32,
+        -100000..=100000
+    );
+    ft_randomized_point_set_range_sum_test!(
+        test_randomized_point_set_range_sum_u32,
+        u32,
+        0..=100000
+    );
+    ft_randomized_point_set_range_sum_test!(
+        test_randomized_point_set_range_sum_i64,
+        i64,
+        -1000000000..=1000000000
+    );
+    ft_randomized_point_set_range_sum_test!(
+        test_randomized_point_set_range_sum_u64,
+        u64,
+        0..=1000000000
+    );
+    ft_randomized_point_set_range_sum_test!(
+        test_randomized_point_set_range_sum_i128,
+        i128,
+        -1000000000000000000..=1000000000000000000
+    );
+    ft_randomized_point_set_range_sum_test!(
+        test_randomized_point_set_range_sum_u128,
+        u128,
+        0..=1000000000000000000
+    );
+    ft_randomized_point_set_range_sum_test!(
+        test_randomized_point_set_range_sum_usize,
+        usize,
+        0..=1000000000
+    );
+
+    ft_randomized_point_set_range_xor_test!(test_randomized_point_set_range_xor_i8, i8);
+    ft_randomized_point_set_range_xor_test!(test_randomized_point_set_range_xor_u8, u8);
+    ft_randomized_point_set_range_xor_test!(test_randomized_point_set_range_xor_i16, i16);
+    ft_randomized_point_set_range_xor_test!(test_randomized_point_set_range_xor_u16, u16);
+    ft_randomized_point_set_range_xor_test!(test_randomized_point_set_range_xor_i32, i32);
+    ft_randomized_point_set_range_xor_test!(test_randomized_point_set_range_xor_u32, u32);
+    ft_randomized_point_set_range_xor_test!(test_randomized_point_set_range_xor_i64, i64);
+    ft_randomized_point_set_range_xor_test!(test_randomized_point_set_range_xor_u64, u64);
+    ft_randomized_point_set_range_xor_test!(test_randomized_point_set_range_xor_i128, i128);
+    ft_randomized_point_set_range_xor_test!(test_randomized_point_set_range_xor_u128, u128);
+    ft_randomized_point_set_range_xor_test!(test_randomized_point_set_range_xor_usize, usize);
 }
