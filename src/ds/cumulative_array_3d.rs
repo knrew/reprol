@@ -168,23 +168,6 @@ impl<O: Group + Default, const N: usize, const M: usize, const L: usize>
     }
 }
 
-impl<O: Monoid + Clone> Clone for CumulativeArray3d<O>
-where
-    O::Element: Clone,
-{
-    fn clone(&self) -> Self {
-        Self {
-            len_i: self.len_i,
-            len_j: self.len_j,
-            len_k: self.len_k,
-            stride_i: self.stride_i,
-            stride_j: self.stride_j,
-            inner: self.inner.clone(),
-            op: self.op.clone(),
-        }
-    }
-}
-
 /// 3次元累積和
 pub type CumulativeSum3d<T> = CumulativeArray3d<OpAdd<T>>;
 
@@ -220,51 +203,39 @@ mod tests {
         }
     }
 
-    #[test]
-    fn test_sum_random() {
-        macro_rules! define_test_function {
-            ($name:ident, $ty:ident) => {
-                fn $name(rng: &mut impl Rng, range: Range<$ty>) {
-                    const T: usize = 100;
-                    const N_MAX: usize = 10;
-
-                    for _ in 0..T {
-                        let n = rng.random_range(1..=N_MAX);
-                        let m = rng.random_range(1..=N_MAX);
-                        let l = rng.random_range(1..=N_MAX);
-
-                        let v: Vec<Vec<Vec<$ty>>> = (0..n)
-                            .map(|_| {
-                                (0..m)
-                                    .map(|_| {
-                                        (0..l).map(|_| rng.random_range(range.clone())).collect()
-                                    })
-                                    .collect()
-                            })
-                            .collect();
-                        let cum = CumulativeSum3d::new(v.clone());
-                        for il in 0..v.len() {
-                            for ir in il..=v.len() {
-                                for jl in 0..v[0].len() {
-                                    for jr in jl..=v[0].len() {
-                                        for kl in 0..v[0][0].len() {
-                                            for kr in kl..=v[0][0].len() {
-                                                let expected = v[il..ir]
-                                                    .iter()
-                                                    .map(|vi| {
-                                                        vi[jl..jr]
-                                                            .iter()
-                                                            .map(|vij| {
-                                                                vij[kl..kr].iter().sum::<$ty>()
-                                                            })
-                                                            .sum::<$ty>()
-                                                    })
-                                                    .sum::<$ty>();
-                                                assert_eq!(
-                                                    cum.fold(il..ir, jl..jr, kl..kr),
-                                                    expected
-                                                );
-                                            }
+    macro_rules! random_sum_test {
+        ($test_name: ident, $ty: ty, $num_testcases: expr, $num_elements_max: expr, $range: expr) => {
+            #[test]
+            fn $test_name() {
+                let mut rng = get_test_rng();
+                for _ in 0..$num_testcases {
+                    let len_i = rng.random_range(1..=$num_elements_max);
+                    let len_j = rng.random_range(1..=$num_elements_max);
+                    let len_k = rng.random_range(1..=$num_elements_max);
+                    let v: Vec<Vec<Vec<$ty>>> = (0..len_i)
+                        .map(|_| {
+                            (0..len_j)
+                                .map(|_| (0..len_k).map(|_| rng.random_range($range)).collect())
+                                .collect()
+                        })
+                        .collect();
+                    let cum = CumulativeSum3d::<$ty>::new(v.clone());
+                    for il in 0..len_i {
+                        for ir in il + 1..=len_i {
+                            for jl in 0..len_j {
+                                for jr in jl + 1..=len_j {
+                                    for kl in 0..len_k {
+                                        for kr in kl + 1..=len_k {
+                                            let naive = v[il..ir]
+                                                .iter()
+                                                .map(|vi| {
+                                                    vi[jl..jr]
+                                                        .iter()
+                                                        .map(|vij| vij[kl..kr].iter().sum::<$ty>())
+                                                        .sum::<$ty>()
+                                                })
+                                                .sum::<$ty>();
+                                            assert_eq!(cum.fold(il..ir, jl..jr, kl..kr), naive);
                                         }
                                     }
                                 }
@@ -272,14 +243,13 @@ mod tests {
                         }
                     }
                 }
-            };
-        }
-
-        define_test_function!(test_i64, i64);
-        define_test_function!(test_u64, u64);
-
-        let mut rng = get_test_rng();
-        test_i64(&mut rng, -1000000000..1000000000);
-        test_u64(&mut rng, 0..1000000000);
+            }
+        };
     }
+
+    random_sum_test!(test_random_sum_i32, i32, 10, 10, -100000..=100000);
+    random_sum_test!(test_random_sum_u32, u32, 10, 10, 0..=100000);
+    random_sum_test!(test_random_sum_i64, i64, 10, 10, -1000000000..=1000000000);
+    random_sum_test!(test_random_sum_u64, u64, 10, 10, 0..=1000000000);
+    random_sum_test!(test_random_sum_usize, usize, 10, 10, 0..=1000000000);
 }

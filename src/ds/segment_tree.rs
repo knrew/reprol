@@ -323,8 +323,9 @@ mod tests {
 
     use super::*;
     use crate::{
-        ops::{op_add::OpAdd, op_max::OpMax, op_min::OpMin},
-        utils::test_utils::random::get_test_rng,
+        math::gcd::Gcd,
+        ops::{op_add::OpAdd, op_gcd::OpGcd, op_max::OpMax, op_min::OpMin, op_xor::OpXor},
+        utils::test_utils::{dynamic_range_query::*, random::get_test_rng, static_range_query::*},
     };
 
     #[test]
@@ -527,207 +528,377 @@ mod tests {
         assert_eq!(seg.bisect_left(4, |m| *m > 5), 4);
     }
 
-    #[test]
-    fn test_add_random() {
-        fn naive_bisect_right(v: &[i64], l: usize, mut f: impl FnMut(i64) -> bool) -> usize {
-            let mut sum = 0;
-            let mut r = l;
-            while r < v.len() {
-                let ns = sum + v[r];
-                if f(ns) {
-                    sum = ns;
-                    r += 1;
-                } else {
-                    break;
-                }
-            }
-            r
-        }
-
-        fn naive_bisect_left(v: &[i64], r: usize, mut f: impl FnMut(i64) -> bool) -> usize {
-            let mut sum = 0;
-            let mut l = r;
-            while l > 0 {
-                let nl = l - 1;
-                let ns = v[nl] + sum;
-                if f(ns) {
-                    sum = ns;
-                    l = nl;
-                } else {
-                    break;
-                }
-            }
-            l
-        }
-
-        let mut rng = get_test_rng();
-
-        const T: usize = 10;
-        const Q: usize = 100000;
-        const N_MAX: usize = 1000;
-        const MIN: i64 = 0;
-        const MAX: i64 = 1000000000;
-
-        for _ in 0..T {
-            let n = rng.random_range(10..=N_MAX);
-
-            let mut v = (0..n)
-                .map(|_| rng.random_range(MIN..=MAX))
-                .collect::<Vec<_>>();
-
-            let mut seg = SegmentTree::<OpAdd<_>>::from(v.clone());
-
-            for _ in 0..Q {
-                match rng.random_range(0..=4) {
-                    0 => {
-                        // set
-                        let i = rng.random_range(0..n);
-                        let vi = rng.random_range(MIN..=MAX);
-                        v[i] = vi;
-                        seg.set(i, vi);
-                        assert_eq!(seg[i], v[i]);
-                    }
-                    1 => {
-                        // entry_mut
-                        let i = rng.random_range(0..n);
-                        let d = rng.random_range(MIN..=MAX);
-                        v[i] += d;
-                        *seg.entry_mut(i) += d;
-                        assert_eq!(seg[i], v[i]);
-                    }
-                    2 => {
-                        // fold
-                        let l = rng.random_range(0..n);
-                        let r = rng.random_range(l + 1..=n);
-                        assert_eq!(seg.fold(l..r), v[l..r].iter().sum::<i64>());
-                    }
-                    3 => {
-                        // bisect_right
-                        let l = rng.random_range(0..=n);
-                        let t = rng.random_range(5 * MIN..=5 * MAX);
-                        assert_eq!(
-                            seg.bisect_right(l, |s| *s <= t),
-                            naive_bisect_right(&v, l, |s| s <= t)
-                        );
-                    }
-                    4 => {
-                        // bisect_left
-                        let r = rng.random_range(0..=n);
-                        let t = rng.random_range(5 * MIN..=5 * MAX);
-                        assert_eq!(
-                            seg.bisect_left(r, |s| *s <= t),
-                            naive_bisect_left(&v, r, |s| s <= t)
-                        );
-                    }
-                    _ => unreachable!(),
-                }
-
-                if rng.random_bool(0.05) {
-                    assert_eq!(seg.fold(..), v.iter().sum());
-                }
-            }
-        }
+    macro_rules! seg_randomized_static_range_sum_exhaustive_test {
+        ($test_name: ident, $ty: ty, $range: expr) => {
+            randomized_static_range_sum_exhaustive_test!(
+                $test_name,
+                $ty,
+                |v| SegmentTree::<OpAdd<$ty>>::from(v),
+                |ds: &SegmentTree<_>, range| ds.fold(range),
+                200,
+                100,
+                $range
+            );
+        };
     }
 
-    #[test]
-    fn test_max_random() {
-        fn naive_bisect_right(v: &[i32], l: usize, mut f: impl FnMut(i32) -> bool) -> usize {
-            let mut cur = i32::MIN;
-            let mut r = l;
-            while r < v.len() {
-                let nm = cur.max(v[r]);
-                if f(nm) {
-                    cur = nm;
-                    r += 1;
-                } else {
-                    break;
-                }
-            }
-            r
-        }
+    macro_rules! seg_randomized_static_range_min_max_gcd_xor_exhaustive_test {
+        ($min_test_name: ident, $max_test_name: ident, $gcd_test_name: ident, $xor_test_name: ident, $ty: ty) => {
+            randomized_static_range_min_exhaustive_test!(
+                $min_test_name,
+                $ty,
+                |v| SegmentTree::<OpMin<$ty>>::from(v),
+                |ds: &SegmentTree<_>, range| ds.fold(range),
+                200,
+                100
+            );
 
-        fn naive_bisect_left(v: &[i32], r: usize, mut f: impl FnMut(i32) -> bool) -> usize {
-            let mut cur = i32::MIN;
-            let mut l = r;
-            while l > 0 {
-                let nl = l - 1;
-                let nm = v[nl].max(cur);
-                if f(nm) {
-                    cur = nm;
-                    l = nl;
-                } else {
-                    break;
-                }
-            }
-            l
-        }
+            randomized_static_range_max_exhaustive_test!(
+                $max_test_name,
+                $ty,
+                |v| SegmentTree::<OpMax<$ty>>::from(v),
+                |ds: &SegmentTree<_>, range| ds.fold(range),
+                200,
+                100
+            );
 
-        let mut rng = get_test_rng();
+            randomized_static_range_gcd_exhaustive_test!(
+                $gcd_test_name,
+                $ty,
+                |v| SegmentTree::<OpGcd<$ty>>::from(v),
+                |ds: &SegmentTree<_>, range| ds.fold(range),
+                100,
+                100
+            );
 
-        const T: usize = 10;
-        const Q: usize = 100000;
-        const N_MAX: usize = 1000;
-        const MIN: i32 = -1000000000;
-        const MAX: i32 = 1000000000;
-
-        for _ in 0..T {
-            let n = rng.random_range(10..=N_MAX);
-
-            let mut v = (0..n)
-                .map(|_| rng.random_range(MIN..=MAX))
-                .collect::<Vec<_>>();
-
-            let mut seg = SegmentTree::<OpMax<i32>>::from(v.clone());
-
-            for _ in 0..Q {
-                match rng.random_range(0..=4) {
-                    0 => {
-                        // set
-                        let i = rng.random_range(0..n);
-                        let vi = rng.random_range(MIN..=MAX);
-                        v[i] = vi;
-                        seg.set(i, vi);
-                        assert_eq!(seg[i], v[i]);
-                    }
-                    1 => {
-                        // entry_mut
-                        let i = rng.random_range(0..n);
-                        let d = rng.random_range(-1000..=1000);
-                        v[i] += d;
-                        *seg.entry_mut(i) += d;
-                        assert_eq!(seg[i], v[i]);
-                    }
-                    2 => {
-                        let l = rng.random_range(0..n);
-                        let r = rng.random_range(l + 1..=n);
-                        let naive = *v[l..r].iter().max().unwrap();
-                        assert_eq!(seg.fold(l..r), naive);
-                    }
-                    3 => {
-                        // bisect_right
-                        let l = rng.random_range(0..=n);
-                        let t = rng.random_range(MIN..=MAX);
-                        assert_eq!(
-                            seg.bisect_right(l, |m| *m <= t),
-                            naive_bisect_right(&v, l, |m| m <= t)
-                        );
-                    }
-                    4 => {
-                        // bisect_left
-                        let r = rng.random_range(0..=n);
-                        let t = rng.random_range(MIN..=MAX);
-                        assert_eq!(
-                            seg.bisect_left(r, |m| *m <= t),
-                            naive_bisect_left(&v, r, |m| m <= t)
-                        );
-                    }
-                    _ => unreachable!(),
-                }
-
-                if rng.random_bool(0.05) {
-                    assert_eq!(seg.fold(..), *v.iter().max().unwrap());
-                }
-            }
-        }
+            randomized_static_range_xor_exhaustive_test!(
+                $xor_test_name,
+                $ty,
+                |v| SegmentTree::<OpXor<$ty>>::from(v),
+                |ds: &SegmentTree<_>, range| ds.fold(range),
+                200,
+                100
+            );
+        };
     }
+
+    seg_randomized_static_range_sum_exhaustive_test!(
+        test_randomized_static_range_sum_exhaustive_i8,
+        i8,
+        -1..=1
+    );
+    seg_randomized_static_range_sum_exhaustive_test!(
+        test_randomized_static_range_sum_exhaustive_u8,
+        u8,
+        0..=1
+    );
+    seg_randomized_static_range_sum_exhaustive_test!(
+        test_randomized_static_range_sum_exhaustive_i16,
+        i16,
+        -300..=300
+    );
+    seg_randomized_static_range_sum_exhaustive_test!(
+        test_randomized_static_range_sum_exhaustive_u16,
+        u16,
+        0..=300
+    );
+    seg_randomized_static_range_sum_exhaustive_test!(
+        test_randomized_static_range_sum_exhaustive_i32,
+        i32,
+        -100000..=100000
+    );
+    seg_randomized_static_range_sum_exhaustive_test!(
+        test_randomized_static_range_sum_exhaustive_u32,
+        u32,
+        0..=100000
+    );
+    seg_randomized_static_range_sum_exhaustive_test!(
+        test_randomized_static_range_sum_exhaustive_i64,
+        i64,
+        -1000000000..=1000000000
+    );
+    seg_randomized_static_range_sum_exhaustive_test!(
+        test_randomized_static_range_sum_exhaustive_u64,
+        u64,
+        0..=1000000000
+    );
+    seg_randomized_static_range_sum_exhaustive_test!(
+        test_randomized_static_range_sum_exhaustive_i128,
+        i128,
+        -1000000000000000000..=1000000000000000000
+    );
+    seg_randomized_static_range_sum_exhaustive_test!(
+        test_randomized_static_range_sum_exhaustive_u128,
+        u128,
+        0..=1000000000000000000
+    );
+    seg_randomized_static_range_sum_exhaustive_test!(
+        test_randomized_static_range_sum_exhaustive_usize,
+        usize,
+        0..=1000000000
+    );
+
+    seg_randomized_static_range_min_max_gcd_xor_exhaustive_test!(
+        test_randomized_static_range_min_exhaustive_i8,
+        test_randomized_static_range_max_exhaustive_i8,
+        test_randomized_static_range_gcd_exhaustive_i8,
+        test_randomized_static_range_xor_exhaustive_i8,
+        i8
+    );
+    seg_randomized_static_range_min_max_gcd_xor_exhaustive_test!(
+        test_randomized_static_range_min_exhaustive_u8,
+        test_randomized_static_range_max_exhaustive_u8,
+        test_randomized_static_range_gcd_exhaustive_u8,
+        test_randomized_static_range_xor_exhaustive_u8,
+        u8
+    );
+    seg_randomized_static_range_min_max_gcd_xor_exhaustive_test!(
+        test_randomized_static_range_min_exhaustive_i16,
+        test_randomized_static_range_max_exhaustive_i16,
+        test_randomized_static_range_gcd_exhaustive_i16,
+        test_randomized_static_range_xor_exhaustive_i16,
+        i16
+    );
+    seg_randomized_static_range_min_max_gcd_xor_exhaustive_test!(
+        test_randomized_static_range_min_exhaustive_u16,
+        test_randomized_static_range_max_exhaustive_u16,
+        test_randomized_static_range_gcd_exhaustive_u16,
+        test_randomized_static_range_xor_exhaustive_u16,
+        u16
+    );
+    seg_randomized_static_range_min_max_gcd_xor_exhaustive_test!(
+        test_randomized_static_range_min_exhaustive_i32,
+        test_randomized_static_range_max_exhaustive_i32,
+        test_randomized_static_range_gcd_exhaustive_i32,
+        test_randomized_static_range_xor_exhaustive_i32,
+        i32
+    );
+    seg_randomized_static_range_min_max_gcd_xor_exhaustive_test!(
+        test_randomized_static_range_min_exhaustive_u32,
+        test_randomized_static_range_max_exhaustive_u32,
+        test_randomized_static_range_gcd_exhaustive_u32,
+        test_randomized_static_range_xor_exhaustive_u32,
+        u32
+    );
+    seg_randomized_static_range_min_max_gcd_xor_exhaustive_test!(
+        test_randomized_static_range_min_exhaustive_i64,
+        test_randomized_static_range_max_exhaustive_i64,
+        test_randomized_static_range_gcd_exhaustive_i64,
+        test_randomized_static_range_xor_exhaustive_i64,
+        i64
+    );
+    seg_randomized_static_range_min_max_gcd_xor_exhaustive_test!(
+        test_randomized_static_range_min_exhaustive_u64,
+        test_randomized_static_range_max_exhaustive_u64,
+        test_randomized_static_range_gcd_exhaustive_u64,
+        test_randomized_static_range_xor_exhaustive_u64,
+        u64
+    );
+    seg_randomized_static_range_min_max_gcd_xor_exhaustive_test!(
+        test_randomized_static_range_min_exhaustive_i128,
+        test_randomized_static_range_max_exhaustive_i128,
+        test_randomized_static_range_gcd_exhaustive_i128,
+        test_randomized_static_range_xor_exhaustive_i128,
+        i128
+    );
+    seg_randomized_static_range_min_max_gcd_xor_exhaustive_test!(
+        test_randomized_static_range_min_exhaustive_u128,
+        test_randomized_static_range_max_exhaustive_u128,
+        test_randomized_static_range_gcd_exhaustive_u128,
+        test_randomized_static_range_xor_exhaustive_u128,
+        u128
+    );
+    seg_randomized_static_range_min_max_gcd_xor_exhaustive_test!(
+        test_randomized_static_range_min_exhaustive_usize,
+        test_randomized_static_range_max_exhaustive_usize,
+        test_randomized_static_range_gcd_exhaustive_usize,
+        test_randomized_static_range_xor_exhaustive_usize,
+        usize
+    );
+
+    macro_rules! seg_randomized_point_set_range_sum_test {
+        ($test_name: ident, $ty: ty, $range: expr) => {
+            randomized_point_set_range_sum_test!(
+                $test_name,
+                $ty,
+                |v| SegmentTree::<OpAdd<$ty>>::from(v),
+                |ds: &SegmentTree<_>, range| ds.fold(range),
+                |ds: &mut SegmentTree<_>, index, value| ds.set(index, value),
+                20,     // T
+                100000, //Q
+                100,    // N_MAX
+                $range
+            );
+        };
+    }
+
+    macro_rules! seg_randomized_point_set_range_min_max_gcd_xor_test {
+        ($min_test_name: ident, $max_test_name: ident, $gcd_test_name: ident, $xor_test_name: ident, $ty: ty) => {
+            randomized_point_set_range_min_test!(
+                $min_test_name,
+                $ty,
+                |v| SegmentTree::<OpMin<$ty>>::from(v),
+                |ds: &SegmentTree<_>, range| ds.fold(range),
+                |ds: &mut SegmentTree<_>, index, value| ds.set(index, value),
+                10,     // T
+                100000, //Q
+                100     // N_MAX
+            );
+
+            randomized_point_set_range_max_test!(
+                $max_test_name,
+                $ty,
+                |v| SegmentTree::<OpMax<$ty>>::from(v),
+                |ds: &SegmentTree<_>, range| ds.fold(range),
+                |ds: &mut SegmentTree<_>, index, value| ds.set(index, value),
+                10,     // T
+                100000, //Q
+                100     // N_MAX
+            );
+
+            randomized_point_set_range_gcd_test!(
+                $gcd_test_name,
+                $ty,
+                |v| SegmentTree::<OpGcd<$ty>>::from(v),
+                |ds: &SegmentTree<_>, range| ds.fold(range),
+                |ds: &mut SegmentTree<_>, index, value| ds.set(index, value),
+                10,     // T
+                100000, //Q
+                100     // N_MAX
+            );
+
+            randomized_point_set_range_xor_test!(
+                $xor_test_name,
+                $ty,
+                |v| SegmentTree::<OpXor<$ty>>::from(v),
+                |ds: &SegmentTree<_>, range| ds.fold(range),
+                |ds: &mut SegmentTree<_>, index, value| ds.set(index, value),
+                10,     // T
+                100000, //Q
+                100     // N_MAX
+            );
+        };
+    }
+
+    seg_randomized_point_set_range_sum_test!(test_randomized_point_set_range_sum_i8, i8, -1..=1);
+    seg_randomized_point_set_range_sum_test!(test_randomized_point_set_range_sum_u8, u8, 0..=1);
+    seg_randomized_point_set_range_sum_test!(
+        test_randomized_point_set_range_sum_i16,
+        i16,
+        -300..=300
+    );
+    seg_randomized_point_set_range_sum_test!(test_randomized_point_set_range_sum_u16, u16, 0..=300);
+    seg_randomized_point_set_range_sum_test!(
+        test_randomized_point_set_range_sum_i32,
+        i32,
+        -100000..=100000
+    );
+    seg_randomized_point_set_range_sum_test!(
+        test_randomized_point_set_range_sum_u32,
+        u32,
+        0..=100000
+    );
+    seg_randomized_point_set_range_sum_test!(
+        test_randomized_point_set_range_sum_i64,
+        i64,
+        -1000000000..=1000000000
+    );
+    seg_randomized_point_set_range_sum_test!(
+        test_randomized_point_set_range_sum_u64,
+        u64,
+        0..=1000000000
+    );
+    seg_randomized_point_set_range_sum_test!(
+        test_randomized_point_set_range_sum_i128,
+        i128,
+        -1000000000000000000..=1000000000000000000
+    );
+    seg_randomized_point_set_range_sum_test!(
+        test_randomized_point_set_range_sum_u128,
+        u128,
+        0..=1000000000000000000
+    );
+    seg_randomized_point_set_range_sum_test!(
+        test_randomized_point_set_range_sum_usize,
+        usize,
+        0..=1000000000
+    );
+
+    seg_randomized_point_set_range_min_max_gcd_xor_test!(
+        test_randomized_point_set_range_min_i8,
+        test_randomized_point_set_range_max_i8,
+        test_randomized_point_set_range_gcd_i8,
+        test_randomized_point_set_range_xor_i8,
+        i8
+    );
+    seg_randomized_point_set_range_min_max_gcd_xor_test!(
+        test_randomized_point_set_range_min_u8,
+        test_randomized_point_set_range_max_u8,
+        test_randomized_point_set_range_gcd_u8,
+        test_randomized_point_set_range_xor_u8,
+        u8
+    );
+    seg_randomized_point_set_range_min_max_gcd_xor_test!(
+        test_randomized_point_set_range_min_i16,
+        test_randomized_point_set_range_max_i16,
+        test_randomized_point_set_range_gcd_i16,
+        test_randomized_point_set_range_xor_i16,
+        i16
+    );
+    seg_randomized_point_set_range_min_max_gcd_xor_test!(
+        test_randomized_point_set_range_min_u16,
+        test_randomized_point_set_range_max_u16,
+        test_randomized_point_set_range_gcd_u16,
+        test_randomized_point_set_range_xor_u16,
+        u16
+    );
+    seg_randomized_point_set_range_min_max_gcd_xor_test!(
+        test_randomized_point_set_range_min_i32,
+        test_randomized_point_set_range_max_i32,
+        test_randomized_point_set_range_gcd_i32,
+        test_randomized_point_set_range_xor_i32,
+        i32
+    );
+    seg_randomized_point_set_range_min_max_gcd_xor_test!(
+        test_randomized_point_set_range_min_u32,
+        test_randomized_point_set_range_max_u32,
+        test_randomized_point_set_range_gcd_u32,
+        test_randomized_point_set_range_xor_u32,
+        u32
+    );
+    seg_randomized_point_set_range_min_max_gcd_xor_test!(
+        test_randomized_point_set_range_min_i64,
+        test_randomized_point_set_range_max_i64,
+        test_randomized_point_set_range_gcd_i64,
+        test_randomized_point_set_range_xor_i64,
+        i64
+    );
+    seg_randomized_point_set_range_min_max_gcd_xor_test!(
+        test_randomized_point_set_range_min_u64,
+        test_randomized_point_set_range_max_u64,
+        test_randomized_point_set_range_gcd_u64,
+        test_randomized_point_set_range_xor_u64,
+        u64
+    );
+    seg_randomized_point_set_range_min_max_gcd_xor_test!(
+        test_randomized_point_set_range_min_i128,
+        test_randomized_point_set_range_max_i128,
+        test_randomized_point_set_range_gcd_i128,
+        test_randomized_point_set_range_xor_i128,
+        i128
+    );
+    seg_randomized_point_set_range_min_max_gcd_xor_test!(
+        test_randomized_point_set_range_min_u128,
+        test_randomized_point_set_range_max_u128,
+        test_randomized_point_set_range_gcd_u128,
+        test_randomized_point_set_range_xor_u128,
+        u128
+    );
+    seg_randomized_point_set_range_min_max_gcd_xor_test!(
+        test_randomized_point_set_range_min_usize,
+        test_randomized_point_set_range_max_usize,
+        test_randomized_point_set_range_gcd_usize,
+        test_randomized_point_set_range_xor_usize,
+        usize
+    );
 }

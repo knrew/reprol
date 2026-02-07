@@ -114,10 +114,6 @@ impl<O: Monoid> CumulativeArray<O> {
         assert!(l <= r);
         self.op.op(&self.inner[r], &self.op.inv(&self.inner[l]))
     }
-
-    pub fn iter(&self) -> impl Iterator<Item = &O::Element> {
-        self.inner.iter()
-    }
 }
 
 impl<O: Monoid> From<(Vec<O::Element>, O)> for CumulativeArray<O> {
@@ -150,36 +146,6 @@ impl<O: Monoid + Default> FromIterator<O::Element> for CumulativeArray<O> {
     }
 }
 
-impl<O: Monoid + Clone> Clone for CumulativeArray<O>
-where
-    O::Element: Clone,
-{
-    fn clone(&self) -> Self {
-        Self {
-            inner: self.inner.clone(),
-            op: self.op.clone(),
-        }
-    }
-}
-
-impl<'a, O: Monoid> IntoIterator for &'a CumulativeArray<O> {
-    type IntoIter = std::slice::Iter<'a, O::Element>;
-    type Item = &'a O::Element;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.inner.iter()
-    }
-}
-
-impl<O: Monoid> IntoIterator for CumulativeArray<O> {
-    type IntoIter = std::vec::IntoIter<O::Element>;
-    type Item = O::Element;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.inner.into_iter()
-    }
-}
-
 /// 累積和
 pub type CumulativeSum<T> = CumulativeArray<OpAdd<T>>;
 
@@ -189,8 +155,8 @@ mod tests {
 
     use super::*;
     use crate::{
-        ops::{op_max::OpMax, op_min::OpMin},
-        utils::test_utils::random::get_test_rng,
+        ops::{op_max::OpMax, op_min::OpMin, op_xor::OpXor},
+        utils::test_utils::{random::get_test_rng, static_range_query::*},
     };
 
     #[test]
@@ -237,144 +203,97 @@ mod tests {
         }
     }
 
-    #[test]
-    fn test_sum_random() {
-        macro_rules! define_test_function {
-            ($name:ident, $ty:ident) => {
-                fn $name(rng: &mut impl Rng, range: Range<$ty>) {
-                    const T: usize = 200;
-                    const N_MAX: usize = 100;
-                    for _ in 0..T {
-                        let n = rng.random_range(1..=N_MAX);
-                        let v = (0..n)
-                            .map(|_| rng.random_range(range.clone()))
-                            .collect::<Vec<_>>();
-                        let cum = CumulativeSum::new(v.clone());
-                        for l in 0..v.len() {
-                            for r in l..=v.len() {
-                                assert_eq!(cum.fold(l..r), v[l..r].iter().sum());
-                            }
-                        }
-                    }
-                }
-            };
-        }
-
-        define_test_function!(test_i8, i8);
-        define_test_function!(test_u8, u8);
-        define_test_function!(test_i16, i16);
-        define_test_function!(test_u16, u16);
-        define_test_function!(test_i32, i32);
-        define_test_function!(test_u32, u32);
-        define_test_function!(test_i64, i64);
-        define_test_function!(test_u64, u64);
-        define_test_function!(test_i128, i128);
-        define_test_function!(test_u128, u128);
-        define_test_function!(test_usize, usize);
-
-        let mut rng = get_test_rng();
-
-        test_i8(&mut rng, -1..2);
-        test_u8(&mut rng, 0..2);
-        test_i16(&mut rng, -300..300);
-        test_u16(&mut rng, 0..300);
-        test_i32(&mut rng, -100000..100000);
-        test_u32(&mut rng, 0..100000);
-        test_i64(&mut rng, -1000000000..1000000000);
-        test_u64(&mut rng, 0..1000000000);
-        test_i128(&mut rng, -10i128.pow(18)..10i128.pow(18));
-        test_u128(&mut rng, 0..10u128.pow(18));
-        test_usize(&mut rng, 0..1000000000);
+    macro_rules! random_sum_test {
+        ($test_name: ident, $ty: ty, $range: expr) => {
+            randomized_static_range_sum_exhaustive_test!(
+                $test_name,
+                $ty,
+                |v| CumulativeSum::<$ty>::from(v),
+                |ds: &CumulativeSum<_>, range| ds.fold(range),
+                200,
+                100,
+                $range
+            );
+        };
     }
 
-    #[test]
-    fn test_min_random() {
-        macro_rules! define_test_function {
-            ($name:ident, $ty:ident) => {
-                fn $name(rng: &mut impl Rng) {
-                    const T: usize = 100;
-                    const N_MAX: usize = 100;
-
-                    for _ in 0..T {
-                        let n = rng.random_range(1..=N_MAX);
-                        let v = (0..n).map(|_| rng.random()).collect::<Vec<_>>();
-                        let cum = CumulativeArray::<OpMin<_>>::new(v.clone());
-                        for r in 0..=v.len() {
-                            let naive = v[..r].iter().min().unwrap_or(&$ty::MAX);
-                            assert_eq!(cum.prefix(r), naive);
-                        }
-                    }
-                }
-            };
-        }
-
-        define_test_function!(test_i8, i8);
-        define_test_function!(test_u8, u8);
-        define_test_function!(test_i16, i16);
-        define_test_function!(test_u16, u16);
-        define_test_function!(test_i32, i32);
-        define_test_function!(test_u32, u32);
-        define_test_function!(test_i64, i64);
-        define_test_function!(test_u64, u64);
-        define_test_function!(test_i128, i128);
-        define_test_function!(test_u128, u128);
-
-        let mut rng = get_test_rng();
-
-        test_i8(&mut rng);
-        test_u8(&mut rng);
-        test_i16(&mut rng);
-        test_u16(&mut rng);
-        test_i32(&mut rng);
-        test_u32(&mut rng);
-        test_i64(&mut rng);
-        test_u64(&mut rng);
-        test_i128(&mut rng);
-        test_u128(&mut rng);
+    macro_rules! random_xor_test {
+        ($test_name: ident, $ty: ty) => {
+            randomized_static_range_xor_exhaustive_test!(
+                $test_name,
+                $ty,
+                |v| CumulativeArray::<OpXor<$ty>>::from(v),
+                |ds: &CumulativeArray<_>, range| ds.fold(range),
+                100,
+                100
+            );
+        };
     }
 
-    #[test]
-    fn test_max_random() {
-        macro_rules! define_test_function {
-            ($name:ident, $ty:ident) => {
-                fn $name(rng: &mut impl Rng) {
-                    const T: usize = 100;
-                    const N: usize = 100;
+    random_sum_test!(test_random_sum_i32, i32, -100000..=100000);
+    random_sum_test!(test_random_sum_u32, u32, 0..=100000);
+    random_sum_test!(test_random_sum_i64, i64, -1000000000..=1000000000);
+    random_sum_test!(test_random_sum_u64, u64, 0..=1000000000);
+    random_sum_test!(test_random_sum_usize, usize, 0..=1000000000);
 
-                    for _ in 0..T {
-                        let v = (0..N).map(|_| rng.random()).collect::<Vec<_>>();
-                        let cum = CumulativeArray::<OpMax<_>>::new(v.clone());
-                        for r in 0..=v.len() {
-                            let naive = v[..r].iter().max().unwrap_or(&$ty::MIN);
-                            assert_eq!(cum.prefix(r), naive);
-                        }
+    random_xor_test!(test_random_xor_i32, i32);
+    random_xor_test!(test_random_xor_u32, u32);
+    random_xor_test!(test_random_xor_i64, i64);
+    random_xor_test!(test_random_xor_u64, u64);
+    random_xor_test!(test_random_xor_usize, usize);
+
+    macro_rules! random_prefix_test {
+        (
+            $test_name: ident,
+            $ty: ty,
+            $ds_op_monoid: ty,
+            $fold_op: expr,
+            $fold_id: expr,
+            $num_testcases: expr,
+            $num_elements_max: expr
+        ) => {
+            #[test]
+            fn $test_name() {
+                let mut rng = get_test_rng();
+                for _ in 0..$num_testcases {
+                    let n = rng.random_range(1..=$num_testcases);
+                    let v = (0..n).map(|_| rng.random()).collect::<Vec<_>>();
+                    let cum = CumulativeArray::<$ds_op_monoid>::new(v.clone());
+                    for r in 1..=v.len() {
+                        let naive = v[..r].iter().fold($fold_id, |prod, &e| $fold_op(prod, e));
+                        assert_eq!(cum.prefix(r), &naive);
                     }
                 }
-            };
-        }
-
-        define_test_function!(test_i8, i8);
-        define_test_function!(test_u8, u8);
-        define_test_function!(test_i16, i16);
-        define_test_function!(test_u16, u16);
-        define_test_function!(test_i32, i32);
-        define_test_function!(test_u32, u32);
-        define_test_function!(test_i64, i64);
-        define_test_function!(test_u64, u64);
-        define_test_function!(test_i128, i128);
-        define_test_function!(test_u128, u128);
-
-        let mut rng = get_test_rng();
-
-        test_i8(&mut rng);
-        test_u8(&mut rng);
-        test_i16(&mut rng);
-        test_u16(&mut rng);
-        test_i32(&mut rng);
-        test_u32(&mut rng);
-        test_i64(&mut rng);
-        test_u64(&mut rng);
-        test_i128(&mut rng);
-        test_u128(&mut rng);
+            }
+        };
     }
+
+    macro_rules! random_prefix_min_max_test {
+        ($min_test_name: ident, $max_test_name: ident, $ty: ty) => {
+            random_prefix_test!(
+                $min_test_name,
+                $ty,
+                OpMin<$ty>,
+                |a: $ty, b| a.min(b),
+                <$ty>::MAX,
+                100,
+                100
+            );
+
+            random_prefix_test!(
+                $max_test_name,
+                $ty,
+                OpMax<$ty>,
+                |a: $ty, b| a.max(b),
+                <$ty>::MIN,
+                100,
+                100
+            );
+        };
+    }
+
+    random_prefix_min_max_test!(test_random_prefix_min_i32, test_random_prefix_max_i32, i32);
+    random_prefix_min_max_test!(test_random_prefix_min_u32, test_random_prefix_max_u32, u32);
+    random_prefix_min_max_test!(test_random_prefix_min_i64, test_random_prefix_max_i64, i64);
+    random_prefix_min_max_test!(test_random_prefix_min_u64, test_random_prefix_max_u64, u64);
 }
