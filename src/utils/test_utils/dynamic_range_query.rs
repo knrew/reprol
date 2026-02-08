@@ -55,7 +55,7 @@ macro_rules! randomized_point_set_range_fold_test {
                         let naive = v_naive[l..r]
                             .iter()
                             .fold($naive_id, |prod, &vi| $naive_op(prod, vi));
-                        assert_eq!($ds_fold(&ds, l..r), naive);
+                        assert_eq!($ds_fold(&mut ds, l..r), naive);
                     }
                 }
             }

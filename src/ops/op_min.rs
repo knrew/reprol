@@ -2,10 +2,9 @@ use std::marker::PhantomData;
 
 use crate::ops::monoid::{IdempotentMonoid, Monoid};
 
+/// 区間Minモノイド
 #[derive(Default, Clone)]
-pub struct OpMin<T> {
-    phantom: PhantomData<T>,
-}
+pub struct OpMin<T>(PhantomData<T>);
 
 impl<T: Copy + PartialOrd + OpMinUtils> Monoid for OpMin<T> {
     type Element = T;

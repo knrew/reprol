@@ -30,13 +30,13 @@ macro_rules! randomized_static_range_fold_exhaustive_test {
                 let v: Vec<$ty> = (0..n)
                     .map(|_| rng.random_range($element_value_range))
                     .collect();
-                let ds = $ds_from_vec(v.clone());
+                let mut ds = $ds_from_vec(v.clone());
                 for l in 0..v.len() {
                     for r in l + 1..=v.len() {
                         let naive = v[l..r]
                             .iter()
                             .fold($naive_id, |prod, &e| $naive_op(prod, e));
-                        assert_eq!($ds_fold(&ds, l..r), naive);
+                        assert_eq!($ds_fold(&mut ds, l..r), naive);
                     }
                 }
             }

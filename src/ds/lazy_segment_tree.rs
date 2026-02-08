@@ -502,11 +502,33 @@ where
 
 #[cfg(test)]
 mod tests {
+    use rand::Rng;
+
     use super::*;
-    use crate::ops::{act_add::ActAdd, op_max::OpMax};
+    use crate::{
+        math::gcd::Gcd,
+        ops::{
+            act_add::ActAdd,
+            act_add_with_len::ActAddWithLen,
+            act_affine::{ActAffine, OpAffineElement},
+            act_set::ActSet,
+            act_set_with_len::ActSetWithLen,
+            op_add::OpAdd,
+            op_add_with_len::{OpAddWithLen, OpAddWithLenElement},
+            op_gcd::OpGcd,
+            op_max::OpMax,
+            op_min::OpMin,
+            op_xor::OpXor,
+        },
+        utils::test_utils::{dynamic_range_query::*, random::get_test_rng, static_range_query::*},
+    };
+
+    // ============================================================
+    // 基本機能テスト
+    // ============================================================
 
     #[test]
-    fn test_opmax_actadd() {
+    fn test_act_add_range_max() {
         type Op = OpMax<i64>;
         type Act = ActAdd<i64>;
 
@@ -533,12 +555,1122 @@ mod tests {
             assert_eq!(*seg.get(0), 5);
         }
 
-        // test set
         {
             let mut seg = LazySegmentTree::<Op, Act>::from(vec![1, 2, 3, 4]);
             assert_eq!(seg.fold(..), 4);
             seg.set(2, 10);
             assert_eq!(seg.fold(..), 10);
+            *seg.entry_mut(0) += 10;
+            assert_eq!(seg.fold(..), 11);
         }
+    }
+
+    #[test]
+    fn test_act_set_range_min() {
+        type Op = OpMin<i64>;
+        type Act = ActSet<i64>;
+
+        {
+            let v = vec![5, 3, 7, 2, 8];
+            let mut seg = LazySegmentTree::<Op, Act>::from(v.clone());
+
+            // 区間 [1..4) を 10 にセット
+            seg.act(1..4, &Some(10));
+            assert_eq!(seg.fold(0..5), 5);
+            assert_eq!(
+                (0..5).map(|i| *seg.get(i)).collect::<Vec<_>>(),
+                vec![5, 10, 10, 10, 8]
+            );
+
+            // 全区間をセット
+            seg.act(.., &Some(3));
+            assert_eq!(seg.fold(..), 3);
+        }
+
+        {
+            // entry_mut との併用
+            let mut seg = LazySegmentTree::<Op, Act>::from(vec![1, 5, 3]);
+            seg.set(1, 10);
+            assert_eq!(seg.fold(..), 1);
+        }
+    }
+
+    #[test]
+    fn test_act_add_range_sum() {
+        type Op = OpAddWithLen<i64>;
+        type Act = ActAddWithLen<i64>;
+
+        let v = vec![1, 2, 3, 4, 5];
+        let mut seg =
+            LazySegmentTree::<Op, Act>::from_iter(v.iter().cloned().map(OpAddWithLenElement::leaf));
+
+        // 区間 [1..4) に 10 を加算: [1, 12, 13, 14, 5]
+        seg.act(1..4, &10);
+        assert_eq!(
+            (0..5).map(|i| seg.get(i).value).collect::<Vec<_>>(),
+            vec![1, 12, 13, 14, 5]
+        );
+        assert_eq!(seg.fold(0..=2).value, 26); // 1 + 12 + 13
+
+        // 全区間に加算
+        seg.act(.., &(-1));
+        assert_eq!(seg.fold(..).value, 40); // (1-1) + (12-1) + (13-1) + (14-1) + (5-1) = 40
+    }
+
+    #[test]
+    fn test_act_set_range_sum() {
+        type Op = OpAddWithLen<i64>;
+        type Act = ActSetWithLen<i64>;
+
+        let v = vec![1, 2, 3, 4, 5];
+        let mut seg =
+            LazySegmentTree::<Op, Act>::from_iter(v.iter().cloned().map(OpAddWithLenElement::leaf));
+
+        // 区間 [1..4) を 10 にセット: [1, 10, 10, 10, 5]
+        seg.act(1..4, &Some(10));
+        assert_eq!(
+            (0..5).map(|i| seg.get(i).value).collect::<Vec<_>>(),
+            vec![1, 10, 10, 10, 5]
+        );
+        assert_eq!(seg.fold(0..=2).value, 21); // 1 + 10 + 10
+
+        // 全区間をセット
+        seg.act(.., &Some(3));
+        assert_eq!(seg.fold(..).value, 15); // 3 * 5
+    }
+
+    #[test]
+    fn test_act_affine_range_sum() {
+        type Op = OpAddWithLen<i64>;
+        type Act = ActAffine<i64>;
+
+        let v = vec![1, 2, 3, 4, 5];
+        let mut seg =
+            LazySegmentTree::<Op, Act>::from_iter(v.iter().cloned().map(OpAddWithLenElement::leaf));
+
+        // f(x) = 2*x + 3 を区間 [1..4) に適用
+        // [1, 2, 3, 4, 5] -> [1, 2*2+3, 2*3+3, 2*4+3, 5] = [1, 7, 9, 11, 5]
+        seg.act(1..4, &OpAffineElement { a: 2, b: 3 });
+        assert_eq!(seg.fold(..).value, 33); // 1 + 7 + 9 + 11 + 5
+
+        // g(x) = 3*x (乗算のみ)
+        seg.act(.., &OpAffineElement { a: 3, b: 0 });
+        assert_eq!(seg.fold(..).value, 99); // 33 * 3
+
+        // h(x) = x + 10 (加算のみ)
+        seg.act(.., &OpAffineElement { a: 1, b: 10 });
+        assert_eq!(seg.fold(..).value, 149); // 99 + 10*5
+    }
+
+    // ============================================================
+    // bisect(二分探索)の基本機能テスト
+    // ============================================================
+
+    #[test]
+    fn test_bisect_right_add_max_basic() {
+        // OpMax + ActAddでのbisect_right基本機能テスト
+        type Op = OpMax<i64>;
+        type Act = ActAdd<i64>;
+
+        let mut seg = LazySegmentTree::<Op, Act>::from(vec![5, 3, 7, 2, 8, 4, 6, 1]);
+
+        // 初期状態でのbisect_right
+        // maxのプレフィックス: [5], [5,3]=5, [5,3,7]=7, [5,3,7,2]=7, [5,3,7,2,8]=8...
+        assert_eq!(seg.bisect_right(0, |s| *s <= 5), 2);
+        assert_eq!(seg.bisect_right(0, |s| *s <= 7), 4);
+        assert_eq!(seg.bisect_right(0, |s| *s <= 8), 8);
+        assert_eq!(seg.bisect_right(0, |s| *s <= 100), 8);
+
+        // act後のbisect_right（範囲加算）
+        seg.act(2..6, &5);
+        // 配列: [5, 3, 12, 7, 13, 9, 6, 1]
+        // maxのプレフィックス: [5], [5,3]=5, [5,3,12]=12, [5,3,12,7]=12, [5,3,12,7,13]=13...
+        assert_eq!(seg.bisect_right(0, |s| *s <= 5), 2);
+        assert_eq!(seg.bisect_right(0, |s| *s <= 12), 4);
+        assert_eq!(seg.bisect_right(0, |s| *s <= 13), 8);
+
+        // set後のbisect_right
+        seg.set(3, 20);
+        // 配列: [5, 3, 12, 20, 13, 9, 6, 1]
+        assert_eq!(seg.bisect_right(0, |s| *s <= 20), 8);
+
+        // entry_mut後のbisect_right
+        *seg.entry_mut(5) += 10;
+        // 配列: [5, 3, 12, 20, 13, 19, 6, 1]
+        assert_eq!(seg.bisect_right(0, |s| *s <= 19), 3);
+        assert_eq!(seg.bisect_right(0, |s| *s <= 20), 8);
+    }
+
+    #[test]
+    fn test_bisect_add_with_len_sum() {
+        // OpAddWithLen + ActAddでの累積和bisectテスト
+        type Op = OpAddWithLen<i64>;
+        type Act = ActAddWithLen<i64>;
+
+        let mut seg = LazySegmentTree::<Op, Act>::from_iter(
+            vec![1i64, 2, 3, 4, 5]
+                .into_iter()
+                .map(OpAddWithLenElement::leaf),
+        );
+
+        // 累積和でのbisect（常に単調）
+        // [1], [1+2]=3, [1+2+3]=6, [1+2+3+4]=10, [1+2+3+4+5]=15
+        assert_eq!(seg.bisect_right(0, |s| s.value <= 3), 2);
+        assert_eq!(seg.bisect_right(0, |s| s.value <= 6), 3);
+        assert_eq!(seg.bisect_right(0, |s| s.value <= 10), 4);
+        assert_eq!(seg.bisect_right(0, |s| s.value <= 15), 5);
+
+        // 範囲加算後の累積和bisect
+        seg.act(1..4, &5);
+        // 配列: [1, 7, 8, 9, 5]
+        // 累積和: [1], [1+7]=8, [1+7+8]=16, [1+7+8+9]=25, [1+7+8+9+5]=30
+        assert_eq!(seg.bisect_right(0, |s| s.value <= 8), 2);
+        assert_eq!(seg.bisect_right(0, |s| s.value <= 16), 3);
+        assert_eq!(seg.bisect_right(0, |s| s.value <= 25), 4);
+    }
+
+    #[test]
+    fn test_bisect_boundary_conditions() {
+        // 境界条件・エッジケースのテスト
+
+        // 単一要素配列
+        {
+            type Op = OpMax<i64>;
+            type Act = ActAdd<i64>;
+
+            let mut seg = LazySegmentTree::<Op, Act>::from(vec![5]);
+            assert_eq!(seg.bisect_right(0, |s| *s <= 4), 0);
+            assert_eq!(seg.bisect_right(0, |s| *s <= 5), 1);
+            assert_eq!(seg.bisect_right(0, |s| *s <= 6), 1);
+        }
+
+        // 空のプレフィックス（常にtrueの述語）
+        {
+            type Op = OpMax<i64>;
+            type Act = ActAdd<i64>;
+
+            let mut seg = LazySegmentTree::<Op, Act>::from(vec![1, 2, 3]);
+            assert_eq!(seg.bisect_right(0, |s| *s <= 100), 3);
+        }
+
+        // 完全プレフィックス（常にfalseの述語 - 最初からfalse）
+        {
+            type Op = OpMax<i64>;
+            type Act = ActAdd<i64>;
+
+            let mut seg = LazySegmentTree::<Op, Act>::from(vec![5, 6, 7]);
+            assert_eq!(seg.bisect_right(0, |s| *s <= 0), 0);
+        }
+
+        // 配列境界でのbisect（位置0、位置len）
+        {
+            type Op = OpMax<i64>;
+            type Act = ActAdd<i64>;
+
+            let mut seg = LazySegmentTree::<Op, Act>::from(vec![1, 2, 3, 4]);
+            assert_eq!(seg.bisect_right(0, |s| *s <= 0), 0);
+            assert_eq!(seg.bisect_right(0, |s| *s <= 100), 4);
+            assert_eq!(seg.bisect_right(4, |s| *s <= 0), 4);
+        }
+    }
+
+    #[test]
+    fn test_bisect_after_overlapping_acts() {
+        // 重複する遅延操作後のbisectテスト
+        type Op = OpMax<i64>;
+        type Act = ActAdd<i64>;
+
+        let mut seg = LazySegmentTree::<Op, Act>::from(vec![1, 2, 3, 4, 5, 6, 7, 8]);
+
+        // 複数の重複するact操作
+        seg.act(0..4, &10); // [11, 12, 13, 14, 5, 6, 7, 8]
+        seg.act(2..6, &5); // [11, 12, 18, 19, 10, 11, 7, 8]
+        seg.act(4..8, &3); // [11, 12, 18, 19, 13, 14, 10, 11]
+
+        // 遅延範囲内でのbisect
+        assert_eq!(seg.bisect_right(0, |s| *s <= 12), 2);
+        assert_eq!(seg.bisect_right(0, |s| *s <= 18), 3);
+        assert_eq!(seg.bisect_right(0, |s| *s <= 19), 8);
+    }
+
+    #[test]
+    fn test_bisect_entry_mut_act_interaction() {
+        // entry_mut、act、bisectの相互作用テスト
+        type Op = OpMax<i64>;
+        type Act = ActAdd<i64>;
+
+        // entry_mut → act → bisect
+        {
+            let mut seg = LazySegmentTree::<Op, Act>::from(vec![1, 2, 3, 4, 5]);
+            *seg.entry_mut(2) = 10;
+            seg.act(0..4, &5);
+            // [6, 7, 15, 9, 5]
+            assert_eq!(seg.bisect_right(0, |s| *s <= 9), 2);
+        }
+
+        // act → entry_mut → bisect
+        {
+            let mut seg = LazySegmentTree::<Op, Act>::from(vec![1, 2, 3, 4, 5]);
+            seg.act(0..4, &5);
+            *seg.entry_mut(2) = 1;
+            // [6, 7, 1, 9, 5]
+            assert_eq!(seg.bisect_right(0, |s| *s <= 7), 3);
+        }
+
+        // 複数のインターリーブされた操作
+        {
+            let mut seg = LazySegmentTree::<Op, Act>::from(vec![1, 2, 3, 4, 5]);
+            seg.act(0..3, &5);
+            *seg.entry_mut(1) = 3;
+            seg.act(2..5, &2);
+            // [6, 3, 10, 6, 7]
+            assert_eq!(seg.bisect_right(0, |s| *s <= 6), 2);
+            assert_eq!(seg.bisect_right(0, |s| *s <= 10), 5);
+        }
+    }
+
+    #[test]
+    fn test_bisect_with_act_affine() {
+        // ActAffine（アフィン変換）でのbisectテスト
+        type Op = OpAddWithLen<i64>;
+        type Act = ActAffine<i64>;
+
+        let mut seg = LazySegmentTree::<Op, Act>::from_iter(
+            vec![1i64, 2, 3, 4, 5]
+                .into_iter()
+                .map(OpAddWithLenElement::leaf),
+        );
+
+        // f(x) = 2*x + 1（a > 0で単調性維持）
+        seg.act(1..4, &OpAffineElement { a: 2, b: 1 });
+        // [1, 5, 7, 9, 5]
+        // 累積和: [1], [1+5]=6, [1+5+7]=13, [1+5+7+9]=22, [1+5+7+9+5]=27
+        assert_eq!(seg.bisect_right(0, |s| s.value <= 6), 2);
+        assert_eq!(seg.bisect_right(0, |s| s.value <= 13), 3);
+        assert_eq!(seg.bisect_right(0, |s| s.value <= 22), 4);
+
+        // さらにアフィン変換（乗算のみ、単調性維持）
+        seg.act(.., &OpAffineElement { a: 3, b: 0 });
+        // [3, 15, 21, 27, 15]
+        // 累積和: [3], [3+15]=18, [3+15+21]=39, [3+15+21+27]=66, [3+15+21+27+15]=81
+        assert_eq!(seg.bisect_right(0, |s| s.value <= 18), 2);
+        assert_eq!(seg.bisect_right(0, |s| s.value <= 39), 3);
+    }
+
+    // ============================================================
+    // 静的クエリのランダムテスト
+    // ============================================================
+
+    macro_rules! seg_randomized_static_range_sum_exhaustive_test {
+        ($test_name: ident, $ty: ty, $range: expr) => {
+            randomized_static_range_sum_exhaustive_test!(
+                $test_name,
+                $ty,
+                |v| LazySegmentTree::<OpAdd<$ty>, ActSet<$ty>>::from(v),
+                |ds: &mut LazySegmentTree<_, _>, range| ds.fold(range),
+                200,
+                100,
+                $range
+            );
+        };
+    }
+
+    macro_rules! seg_randomized_static_range_min_max_gcd_xor_exhaustive_test {
+        ($min_test_name: ident, $max_test_name: ident, $gcd_test_name: ident, $xor_test_name: ident, $ty: ty) => {
+            randomized_static_range_min_exhaustive_test!(
+                $min_test_name,
+                $ty,
+                |v| LazySegmentTree::<OpMin<$ty>, ActSet<$ty>>::from(v),
+                |ds: &mut LazySegmentTree<_, _>, range| ds.fold(range),
+                200,
+                100
+            );
+
+            randomized_static_range_max_exhaustive_test!(
+                $max_test_name,
+                $ty,
+                |v| LazySegmentTree::<OpMax<$ty>, ActAdd<_>>::from(v),
+                |ds: &mut LazySegmentTree<_, _>, range| ds.fold(range),
+                200,
+                100
+            );
+
+            randomized_static_range_gcd_exhaustive_test!(
+                $gcd_test_name,
+                $ty,
+                |v| LazySegmentTree::<OpGcd<$ty>, ActAdd<_>>::from(v),
+                |ds: &mut LazySegmentTree<_, _>, range| ds.fold(range),
+                100,
+                100
+            );
+
+            randomized_static_range_xor_exhaustive_test!(
+                $xor_test_name,
+                $ty,
+                |v| LazySegmentTree::<OpXor<$ty>, ActSet<$ty>>::from(v),
+                |ds: &mut LazySegmentTree<_, _>, range| ds.fold(range),
+                200,
+                100
+            );
+        };
+    }
+
+    seg_randomized_static_range_sum_exhaustive_test!(
+        test_randomized_static_range_sum_exhaustive_i8,
+        i8,
+        -1..=1
+    );
+    seg_randomized_static_range_sum_exhaustive_test!(
+        test_randomized_static_range_sum_exhaustive_u8,
+        u8,
+        0..=1
+    );
+    seg_randomized_static_range_sum_exhaustive_test!(
+        test_randomized_static_range_sum_exhaustive_i16,
+        i16,
+        -300..=300
+    );
+    seg_randomized_static_range_sum_exhaustive_test!(
+        test_randomized_static_range_sum_exhaustive_u16,
+        u16,
+        0..=300
+    );
+    seg_randomized_static_range_sum_exhaustive_test!(
+        test_randomized_static_range_sum_exhaustive_i32,
+        i32,
+        -100000..=100000
+    );
+    seg_randomized_static_range_sum_exhaustive_test!(
+        test_randomized_static_range_sum_exhaustive_u32,
+        u32,
+        0..=100000
+    );
+    seg_randomized_static_range_sum_exhaustive_test!(
+        test_randomized_static_range_sum_exhaustive_i64,
+        i64,
+        -1000000000..=1000000000
+    );
+    seg_randomized_static_range_sum_exhaustive_test!(
+        test_randomized_static_range_sum_exhaustive_u64,
+        u64,
+        0..=1000000000
+    );
+    seg_randomized_static_range_sum_exhaustive_test!(
+        test_randomized_static_range_sum_exhaustive_i128,
+        i128,
+        -1000000000000000000..=1000000000000000000
+    );
+    seg_randomized_static_range_sum_exhaustive_test!(
+        test_randomized_static_range_sum_exhaustive_u128,
+        u128,
+        0..=1000000000000000000
+    );
+    seg_randomized_static_range_sum_exhaustive_test!(
+        test_randomized_static_range_sum_exhaustive_usize,
+        usize,
+        0..=1000000000
+    );
+
+    seg_randomized_static_range_min_max_gcd_xor_exhaustive_test!(
+        test_randomized_static_range_min_exhaustive_i8,
+        test_randomized_static_range_max_exhaustive_i8,
+        test_randomized_static_range_gcd_exhaustive_i8,
+        test_randomized_static_range_xor_exhaustive_i8,
+        i8
+    );
+    seg_randomized_static_range_min_max_gcd_xor_exhaustive_test!(
+        test_randomized_static_range_min_exhaustive_u8,
+        test_randomized_static_range_max_exhaustive_u8,
+        test_randomized_static_range_gcd_exhaustive_u8,
+        test_randomized_static_range_xor_exhaustive_u8,
+        u8
+    );
+    seg_randomized_static_range_min_max_gcd_xor_exhaustive_test!(
+        test_randomized_static_range_min_exhaustive_i16,
+        test_randomized_static_range_max_exhaustive_i16,
+        test_randomized_static_range_gcd_exhaustive_i16,
+        test_randomized_static_range_xor_exhaustive_i16,
+        i16
+    );
+    seg_randomized_static_range_min_max_gcd_xor_exhaustive_test!(
+        test_randomized_static_range_min_exhaustive_u16,
+        test_randomized_static_range_max_exhaustive_u16,
+        test_randomized_static_range_gcd_exhaustive_u16,
+        test_randomized_static_range_xor_exhaustive_u16,
+        u16
+    );
+    seg_randomized_static_range_min_max_gcd_xor_exhaustive_test!(
+        test_randomized_static_range_min_exhaustive_i32,
+        test_randomized_static_range_max_exhaustive_i32,
+        test_randomized_static_range_gcd_exhaustive_i32,
+        test_randomized_static_range_xor_exhaustive_i32,
+        i32
+    );
+    seg_randomized_static_range_min_max_gcd_xor_exhaustive_test!(
+        test_randomized_static_range_min_exhaustive_u32,
+        test_randomized_static_range_max_exhaustive_u32,
+        test_randomized_static_range_gcd_exhaustive_u32,
+        test_randomized_static_range_xor_exhaustive_u32,
+        u32
+    );
+    seg_randomized_static_range_min_max_gcd_xor_exhaustive_test!(
+        test_randomized_static_range_min_exhaustive_i64,
+        test_randomized_static_range_max_exhaustive_i64,
+        test_randomized_static_range_gcd_exhaustive_i64,
+        test_randomized_static_range_xor_exhaustive_i64,
+        i64
+    );
+    seg_randomized_static_range_min_max_gcd_xor_exhaustive_test!(
+        test_randomized_static_range_min_exhaustive_u64,
+        test_randomized_static_range_max_exhaustive_u64,
+        test_randomized_static_range_gcd_exhaustive_u64,
+        test_randomized_static_range_xor_exhaustive_u64,
+        u64
+    );
+    seg_randomized_static_range_min_max_gcd_xor_exhaustive_test!(
+        test_randomized_static_range_min_exhaustive_i128,
+        test_randomized_static_range_max_exhaustive_i128,
+        test_randomized_static_range_gcd_exhaustive_i128,
+        test_randomized_static_range_xor_exhaustive_i128,
+        i128
+    );
+    seg_randomized_static_range_min_max_gcd_xor_exhaustive_test!(
+        test_randomized_static_range_min_exhaustive_u128,
+        test_randomized_static_range_max_exhaustive_u128,
+        test_randomized_static_range_gcd_exhaustive_u128,
+        test_randomized_static_range_xor_exhaustive_u128,
+        u128
+    );
+    seg_randomized_static_range_min_max_gcd_xor_exhaustive_test!(
+        test_randomized_static_range_min_exhaustive_usize,
+        test_randomized_static_range_max_exhaustive_usize,
+        test_randomized_static_range_gcd_exhaustive_usize,
+        test_randomized_static_range_xor_exhaustive_usize,
+        usize
+    );
+
+    // ============================================================
+    // 1点更新と区間クエリのランダムテスト
+    // ============================================================
+
+    macro_rules! seg_randomized_point_set_range_sum_test {
+        ($test_name: ident, $ty: ty, $range: expr) => {
+            randomized_point_set_range_sum_test!(
+                $test_name,
+                $ty,
+                |v| LazySegmentTree::<OpAdd<$ty>, ActSet<$ty>>::from(v),
+                |ds: &mut LazySegmentTree<_, _>, range| ds.fold(range),
+                |ds: &mut LazySegmentTree<_, _>, index, value| ds.set(index, value),
+                20,     // T
+                100000, //Q
+                100,    // N_MAX
+                $range
+            );
+        };
+    }
+
+    macro_rules! seg_randomized_point_set_range_min_max_gcd_xor_test {
+        ($min_test_name: ident, $max_test_name: ident, $gcd_test_name: ident, $xor_test_name: ident, $ty: ty) => {
+            randomized_point_set_range_min_test!(
+                $min_test_name,
+                $ty,
+                |v| LazySegmentTree::<OpMin<$ty>, ActAdd<$ty>>::from(v),
+                |ds: &mut LazySegmentTree<_, _>, range| ds.fold(range),
+                |ds: &mut LazySegmentTree<_, _>, index, value| ds.set(index, value),
+                10,     // T
+                100000, //Q
+                100     // N_MAX
+            );
+
+            randomized_point_set_range_max_test!(
+                $max_test_name,
+                $ty,
+                |v| LazySegmentTree::<OpMax<$ty>, ActSet<$ty>>::from(v),
+                |ds: &mut LazySegmentTree<_, _>, range| ds.fold(range),
+                |ds: &mut LazySegmentTree<_, _>, index, value| ds.set(index, value),
+                10,     // T
+                100000, //Q
+                100     // N_MAX
+            );
+
+            randomized_point_set_range_gcd_test!(
+                $gcd_test_name,
+                $ty,
+                |v| LazySegmentTree::<OpGcd<$ty>, ActAdd<$ty>>::from(v),
+                |ds: &mut LazySegmentTree<_, _>, range| ds.fold(range),
+                |ds: &mut LazySegmentTree<_, _>, index, value| ds.set(index, value),
+                10,     // T
+                100000, //Q
+                100     // N_MAX
+            );
+
+            randomized_point_set_range_xor_test!(
+                $xor_test_name,
+                $ty,
+                |v| LazySegmentTree::<OpXor<$ty>, ActSet<_>>::from(v),
+                |ds: &mut LazySegmentTree<_, _>, range| ds.fold(range),
+                |ds: &mut LazySegmentTree<_, _>, index, value| ds.set(index, value),
+                10,     // T
+                100000, //Q
+                100     // N_MAX
+            );
+        };
+    }
+
+    seg_randomized_point_set_range_sum_test!(test_randomized_point_set_range_sum_i8, i8, -1..=1);
+    seg_randomized_point_set_range_sum_test!(test_randomized_point_set_range_sum_u8, u8, 0..=1);
+    seg_randomized_point_set_range_sum_test!(
+        test_randomized_point_set_range_sum_i16,
+        i16,
+        -300..=300
+    );
+    seg_randomized_point_set_range_sum_test!(test_randomized_point_set_range_sum_u16, u16, 0..=300);
+    seg_randomized_point_set_range_sum_test!(
+        test_randomized_point_set_range_sum_i32,
+        i32,
+        -100000..=100000
+    );
+    seg_randomized_point_set_range_sum_test!(
+        test_randomized_point_set_range_sum_u32,
+        u32,
+        0..=100000
+    );
+    seg_randomized_point_set_range_sum_test!(
+        test_randomized_point_set_range_sum_i64,
+        i64,
+        -1000000000..=1000000000
+    );
+    seg_randomized_point_set_range_sum_test!(
+        test_randomized_point_set_range_sum_u64,
+        u64,
+        0..=1000000000
+    );
+    seg_randomized_point_set_range_sum_test!(
+        test_randomized_point_set_range_sum_i128,
+        i128,
+        -1000000000000000000..=1000000000000000000
+    );
+    seg_randomized_point_set_range_sum_test!(
+        test_randomized_point_set_range_sum_u128,
+        u128,
+        0..=1000000000000000000
+    );
+    seg_randomized_point_set_range_sum_test!(
+        test_randomized_point_set_range_sum_usize,
+        usize,
+        0..=1000000000
+    );
+
+    seg_randomized_point_set_range_min_max_gcd_xor_test!(
+        test_randomized_point_set_range_min_i8,
+        test_randomized_point_set_range_max_i8,
+        test_randomized_point_set_range_gcd_i8,
+        test_randomized_point_set_range_xor_i8,
+        i8
+    );
+    seg_randomized_point_set_range_min_max_gcd_xor_test!(
+        test_randomized_point_set_range_min_u8,
+        test_randomized_point_set_range_max_u8,
+        test_randomized_point_set_range_gcd_u8,
+        test_randomized_point_set_range_xor_u8,
+        u8
+    );
+    seg_randomized_point_set_range_min_max_gcd_xor_test!(
+        test_randomized_point_set_range_min_i16,
+        test_randomized_point_set_range_max_i16,
+        test_randomized_point_set_range_gcd_i16,
+        test_randomized_point_set_range_xor_i16,
+        i16
+    );
+    seg_randomized_point_set_range_min_max_gcd_xor_test!(
+        test_randomized_point_set_range_min_u16,
+        test_randomized_point_set_range_max_u16,
+        test_randomized_point_set_range_gcd_u16,
+        test_randomized_point_set_range_xor_u16,
+        u16
+    );
+    seg_randomized_point_set_range_min_max_gcd_xor_test!(
+        test_randomized_point_set_range_min_i32,
+        test_randomized_point_set_range_max_i32,
+        test_randomized_point_set_range_gcd_i32,
+        test_randomized_point_set_range_xor_i32,
+        i32
+    );
+    seg_randomized_point_set_range_min_max_gcd_xor_test!(
+        test_randomized_point_set_range_min_u32,
+        test_randomized_point_set_range_max_u32,
+        test_randomized_point_set_range_gcd_u32,
+        test_randomized_point_set_range_xor_u32,
+        u32
+    );
+    seg_randomized_point_set_range_min_max_gcd_xor_test!(
+        test_randomized_point_set_range_min_i64,
+        test_randomized_point_set_range_max_i64,
+        test_randomized_point_set_range_gcd_i64,
+        test_randomized_point_set_range_xor_i64,
+        i64
+    );
+    seg_randomized_point_set_range_min_max_gcd_xor_test!(
+        test_randomized_point_set_range_min_u64,
+        test_randomized_point_set_range_max_u64,
+        test_randomized_point_set_range_gcd_u64,
+        test_randomized_point_set_range_xor_u64,
+        u64
+    );
+    seg_randomized_point_set_range_min_max_gcd_xor_test!(
+        test_randomized_point_set_range_min_i128,
+        test_randomized_point_set_range_max_i128,
+        test_randomized_point_set_range_gcd_i128,
+        test_randomized_point_set_range_xor_i128,
+        i128
+    );
+    seg_randomized_point_set_range_min_max_gcd_xor_test!(
+        test_randomized_point_set_range_min_u128,
+        test_randomized_point_set_range_max_u128,
+        test_randomized_point_set_range_gcd_u128,
+        test_randomized_point_set_range_xor_u128,
+        u128
+    );
+    seg_randomized_point_set_range_min_max_gcd_xor_test!(
+        test_randomized_point_set_range_min_usize,
+        test_randomized_point_set_range_max_usize,
+        test_randomized_point_set_range_gcd_usize,
+        test_randomized_point_set_range_xor_usize,
+        usize
+    );
+
+    // ============================================================
+    // 区間更新と区間クエリのランダムテスト
+    // ============================================================
+
+    /// 区間actと区間foldクエリのランダムテストを生成するマクロ
+    ///
+    /// # パラメータ
+    /// - `$test_name`: テスト関数の名前
+    /// - `$ty`: 要素の型
+    /// - `$naive_op`: fold演算(例: `|a: $ty, b| a + b`)
+    /// - `$naive_id`: fold演算の単位元
+    /// - `$naive_act`: act演算(例: `|x: $ty, f: $ty| x + f`)
+    /// - `$ds_from_vec`: データ構造をVecから構築する式
+    /// - `$ds_fold`: データ構造のfold操作
+    /// - `$ds_act`: データ構造のact操作
+    /// - `$num_testcases`: テストケースの数
+    /// - `$num_queries`: 各テストケースでのクエリ数
+    /// - `$num_elements_max`: 配列サイズの最大値
+    /// - `$element_value_range`: 要素値の区間
+    /// - `$action_value_range`: 作用値の区間
+    macro_rules! randomized_range_act_range_fold_test {
+        (
+        $test_name: ident,
+        $ty: ty,
+        $naive_op: expr,
+        $naive_id: expr,
+        $naive_act: expr,
+        $ds_from_vec: expr,
+        $ds_fold: expr,
+        $ds_act: expr,
+        $num_testcases: expr,
+        $num_queries: expr,
+        $num_elements_max: expr,
+        $element_value_range: expr,
+        $action_value_range: expr
+    ) => {
+            #[test]
+            fn $test_name() {
+                let mut rng = get_test_rng();
+
+                for _ in 0..$num_testcases {
+                    let n = rng.random_range(1..=$num_elements_max);
+
+                    let mut v_naive: Vec<$ty> = (0..n)
+                        .map(|_| rng.random_range($element_value_range))
+                        .collect();
+                    let mut ds = $ds_from_vec(v_naive.clone());
+
+                    for _ in 0..$num_queries {
+                        match rng.random_range(0..=1) {
+                            0 => {
+                                let l = rng.random_range(0..n);
+                                let r = rng.random_range(l + 1..=n);
+                                let f = rng.random_range($action_value_range);
+                                for e in v_naive[l..r].iter_mut() {
+                                    *e = $naive_act(*e, f);
+                                }
+                                $ds_act(&mut ds, l..r, f);
+                            }
+                            1 => {
+                                let l = rng.random_range(0..n);
+                                let r = rng.random_range(l + 1..=n);
+                                let naive = v_naive[l..r]
+                                    .iter()
+                                    .fold($naive_id, |prod, &vi| $naive_op(prod, vi));
+                                assert_eq!($ds_fold(&mut ds, l..r), naive);
+                            }
+                            _ => unreachable!(),
+                        }
+                    }
+                }
+            }
+        };
+    }
+
+    macro_rules! randomized_range_add_range_min_test {
+        ($test_name: ident, $ty: ty, $range: expr) => {
+            randomized_range_act_range_fold_test!(
+                $test_name,
+                $ty,
+                |a: $ty, b| a.min(b),
+                <$ty>::MAX,
+                |x: $ty, f| x.wrapping_add(f),
+                |v| LazySegmentTree::<OpMin<$ty>, ActAdd<$ty>>::from(v),
+                |ds: &mut LazySegmentTree<_, _>, range| ds.fold(range),
+                |ds: &mut LazySegmentTree<_, _>, range, f| ds.act(range, &f),
+                20,     // T
+                100000, //Q
+                100,    // N_MAX
+                $range,
+                $range
+            );
+        };
+    }
+
+    macro_rules! randomized_range_set_range_max_test {
+        ($test_name: ident, $ty: ty) => {
+            randomized_range_act_range_fold_test!(
+                $test_name,
+                $ty,
+                |a: $ty, b| a.max(b),
+                <$ty>::MIN,
+                |_: $ty, f| f,
+                |v| LazySegmentTree::<OpMax<$ty>, ActSet<$ty>>::from(v),
+                |ds: &mut LazySegmentTree<_, _>, range| ds.fold(range),
+                |ds: &mut LazySegmentTree<_, _>, range, f| ds.act(range, &Some(f)),
+                20,     // T
+                100000, //Q
+                100,    // N_MAX
+                <$ty>::MIN..=<$ty>::MAX,
+                <$ty>::MIN..=<$ty>::MAX
+            );
+        };
+    }
+
+    randomized_range_add_range_min_test!(
+        test_randomized_range_add_range_min_i32,
+        i32,
+        -100000..=100000
+    );
+    randomized_range_add_range_min_test!(test_randomized_range_add_range_min_u32, u32, 0..=100000);
+    randomized_range_add_range_min_test!(
+        test_randomized_range_add_range_min_i64,
+        i64,
+        -1000000000..=1000000000
+    );
+    randomized_range_add_range_min_test!(
+        test_randomized_range_add_range_min_u64,
+        u64,
+        0..=1000000000
+    );
+    randomized_range_add_range_min_test!(
+        test_randomized_range_add_range_min_usize,
+        usize,
+        0..=1000000000
+    );
+    randomized_range_set_range_max_test!(test_randomized_range_set_range_max_i32, i32);
+    randomized_range_set_range_max_test!(test_randomized_range_set_range_max_u32, u32);
+    randomized_range_set_range_max_test!(test_randomized_range_set_range_max_i64, i64);
+    randomized_range_set_range_max_test!(test_randomized_range_set_range_max_u64, u64);
+    randomized_range_set_range_max_test!(test_randomized_range_set_range_max_usize, usize);
+
+    #[test]
+    fn test_random_range_add_range_sum_i64() {
+        type Op = OpAddWithLen<i64>;
+        type Act = ActAddWithLen<i64>;
+
+        const NUM_TESTCASES: usize = 20;
+        const NUM_QUERIES: usize = 100000;
+        const NUM_ELEMENTS_MAX: usize = 100;
+        const RANGE: Range<i64> = -100000..100001;
+
+        let mut rng = get_test_rng();
+
+        for _ in 0..NUM_TESTCASES {
+            let n = rng.random_range(1..=NUM_ELEMENTS_MAX);
+
+            let mut v_naive = (0..n).map(|_| rng.random_range(RANGE)).collect::<Vec<_>>();
+            let mut seg = LazySegmentTree::<Op, Act>::from_iter(
+                v_naive.iter().cloned().map(OpAddWithLenElement::leaf),
+            );
+
+            for _ in 0..NUM_QUERIES {
+                match rng.random_range(0..=1) {
+                    0 => {
+                        let l = rng.random_range(0..n);
+                        let r = rng.random_range(l + 1..=n);
+                        let f = rng.random_range(RANGE);
+                        for e in v_naive[l..r].iter_mut() {
+                            *e = *e + f;
+                        }
+                        seg.act(l..r, &f);
+                    }
+                    1 => {
+                        let l = rng.random_range(0..n);
+                        let r = rng.random_range(l + 1..=n);
+                        let naive = v_naive[l..r].iter().sum::<i64>();
+                        assert_eq!(seg.fold(l..r).value, naive);
+                    }
+                    _ => unreachable!(),
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_random_range_set_range_sum_i64() {
+        type Op = OpAddWithLen<i64>;
+        type Act = ActSetWithLen<i64>;
+
+        const NUM_TESTCASES: usize = 20;
+        const NUM_QUERIES: usize = 100000;
+        const NUM_ELEMENTS_MAX: usize = 100;
+        const RANGE: Range<i64> = -100000..100001;
+
+        let mut rng = get_test_rng();
+
+        for _ in 0..NUM_TESTCASES {
+            let n = rng.random_range(1..=NUM_ELEMENTS_MAX);
+
+            let mut v_naive = (0..n).map(|_| rng.random_range(RANGE)).collect::<Vec<_>>();
+            let mut seg = LazySegmentTree::<Op, Act>::from_iter(
+                v_naive.iter().cloned().map(OpAddWithLenElement::leaf),
+            );
+
+            for _ in 0..NUM_QUERIES {
+                match rng.random_range(0..=1) {
+                    0 => {
+                        let l = rng.random_range(0..n);
+                        let r = rng.random_range(l + 1..=n);
+                        let f = rng.random_range(RANGE);
+                        for e in v_naive[l..r].iter_mut() {
+                            *e = f;
+                        }
+                        seg.act(l..r, &Some(f));
+                    }
+                    1 => {
+                        let l = rng.random_range(0..n);
+                        let r = rng.random_range(l + 1..=n);
+                        let naive = v_naive[l..r].iter().sum::<i64>();
+                        assert_eq!(seg.fold(l..r).value, naive);
+                    }
+                    _ => unreachable!(),
+                }
+            }
+        }
+    }
+
+    // ============================================================
+    // エッジケースなど
+    // ============================================================
+
+    #[test]
+    fn test_empty_range() {
+        type Op = OpMin<i32>;
+        type Act = ActAdd<i32>;
+
+        let mut seg = LazySegmentTree::<Op, Act>::from(vec![1, 2, 3, 4, 5]);
+
+        // 空区間でのact
+        let original_min = seg.fold(..);
+        seg.act(0..0, &100);
+        assert_eq!(seg.fold(..), original_min);
+
+        seg.act(2..2, &100);
+        assert_eq!(seg.fold(..), original_min);
+
+        seg.act(5..5, &100);
+        assert_eq!(seg.fold(..), original_min);
+
+        // 空区間でのfoldは単位元を返す
+        assert_eq!(seg.fold(0..0), i32::MAX);
+        assert_eq!(seg.fold(2..2), i32::MAX);
+        assert_eq!(seg.fold(5..5), i32::MAX);
+    }
+
+    #[test]
+    fn test_boundary_values() {
+        // i32 MIN/MAX
+        {
+            type Op = OpMin<i32>;
+            type Act = ActAdd<i32>;
+
+            let mut seg = LazySegmentTree::<Op, Act>::from(vec![i32::MIN, i32::MAX, 0]);
+            assert_eq!(seg.fold(..), i32::MIN);
+            seg.act(0..1, &1);
+            assert_eq!(*seg.get(0), i32::MIN + 1);
+        }
+
+        // u32 MIN/MAX
+        {
+            type Op = OpMax<u32>;
+            type Act = ActAdd<u32>;
+
+            let mut seg = LazySegmentTree::<Op, Act>::from(vec![0, u32::MAX, u32::MAX / 2]);
+            assert_eq!(seg.fold(..), u32::MAX);
+            seg.act(0..1, &1);
+            assert_eq!(*seg.get(0), 1);
+        }
+    }
+
+    #[test]
+    fn test_entry_mut_with_act() {
+        type Op = OpMin<i32>;
+        type Act = ActAdd<i32>;
+
+        let mut seg = LazySegmentTree::<Op, Act>::from(vec![1, 2, 3, 4, 5]);
+
+        seg.act(0..3, &10);
+        {
+            let mut entry = seg.entry_mut(1);
+            *entry = 100;
+        }
+        assert_eq!(seg.fold(0..3), 11);
+
+        assert_eq!(*seg.get(0), 11);
+        assert_eq!(*seg.get(1), 100);
+        assert_eq!(*seg.get(2), 13);
+
+        // entry_mut -> act -> fold の順序
+        let mut seg2 = LazySegmentTree::<Op, Act>::from(vec![10, 20, 30]);
+        {
+            let mut entry = seg2.entry_mut(1);
+            *entry = 50;
+        }
+        seg2.act(0..3, &5);
+        assert_eq!(seg2.fold(..), 15);
+
+        // entry_mutで遅延作用が正しく伝播されるか
+        let mut seg3 = LazySegmentTree::<Op, Act>::from(vec![1, 2, 3, 4]);
+        seg3.act(0..4, &10);
+        {
+            let mut entry = seg3.entry_mut(1);
+            assert_eq!(*entry, 12);
+            *entry = 50;
+        }
+        assert_eq!(seg3.fold(0..2), 11);
+    }
+
+    #[test]
+    fn test_action_composition() {
+        type Op = OpMax<i32>;
+        type Act = ActSet<i32>;
+
+        let mut seg = LazySegmentTree::<Op, Act>::from(vec![5, 5, 5, 5, 5]);
+
+        seg.act(1..4, &Some(10));
+        seg.act(2..5, &Some(7));
+
+        assert_eq!(*seg.get(0), 5);
+        assert_eq!(*seg.get(1), 10);
+        assert_eq!(*seg.get(2), 7);
+        assert_eq!(*seg.get(3), 7);
+        assert_eq!(*seg.get(4), 7);
+        assert_eq!(seg.fold(..), 10);
+    }
+
+    #[test]
+    fn test_complex_action_patterns() {
+        type Op = OpMin<i32>;
+        type Act = ActAdd<i32>;
+
+        let mut seg = LazySegmentTree::<Op, Act>::from(vec![10, 20, 30, 40, 50, 60, 70, 80]);
+
+        seg.act(0..4, &5);
+        seg.act(4..8, &10);
+        assert_eq!(seg.fold(0..4), 15);
+        assert_eq!(seg.fold(4..8), 60);
+
+        seg.act(0..8, &100);
+        assert_eq!(seg.fold(..), 115);
+
+        seg.act(2..5, &-200);
+        assert_eq!(seg.fold(2..5), -65);
+    }
+
+    #[test]
+    fn test_range_bounds_variants_lazy() {
+        type Op = OpMin<i64>;
+        type Act = ActSet<i64>;
+
+        let mut seg = LazySegmentTree::<Op, Act>::from(vec![8, 2, 10, 3, 4, 1, 5, 9]);
+
+        // .. (全区間)
+        assert_eq!(seg.fold(..), 1);
+
+        // ..a
+        assert_eq!(seg.fold(..3), 2);
+        assert_eq!(seg.fold(..=2), 2);
+
+        // a..
+        assert_eq!(seg.fold(2..), 1);
+
+        // a..b
+        assert_eq!(seg.fold(1..4), 2);
+
+        // a..=b
+        assert_eq!(seg.fold(1..=3), 2);
+
+        // act
+        seg.act(1..=5, &Some(100));
+        assert_eq!(seg.fold(..), 5);
+    }
+
+    #[test]
+    fn test_chained_lazy_propagations() {
+        type Op = OpMin<i32>;
+        type Act = ActAdd<i32>;
+
+        let mut seg = LazySegmentTree::<Op, Act>::from(vec![1, 2, 3, 4, 5, 6, 7, 8]);
+
+        // 連鎖する遅延伝播
+        seg.act(0..4, &10);
+        seg.act(2..6, &5);
+        seg.act(4..8, &3);
+
+        // [11, 12, 18, 19, 12, 13, 10, 11]
+        assert_eq!(seg.fold(0..4), 11); // min(11, 12, 18, 19)
+        assert_eq!(seg.fold(4..8), 10); // min(12, 13, 10, 11)
+    }
+
+    #[test]
+    fn test_deeply_nested_lazy_propagations() {
+        type Op = OpMax<i64>;
+        type Act = ActAdd<i64>;
+
+        let mut seg = LazySegmentTree::<Op, Act>::from(vec![0; 16]);
+
+        seg.act(0..8, &1);
+        seg.act(0..4, &2);
+        seg.act(0..2, &3);
+        seg.act(0..1, &4);
+
+        assert_eq!(*seg.get(0), 10);
+        assert_eq!(*seg.get(1), 6);
+        assert_eq!(*seg.get(2), 3);
+        assert_eq!(*seg.get(4), 1);
+        assert_eq!(seg.fold(..), 10);
+    }
+
+    #[test]
+    fn test_nested_range_acts() {
+        type Op = OpMin<i32>;
+        type Act = ActAdd<i32>;
+
+        let mut seg = LazySegmentTree::<Op, Act>::from(vec![10, 20, 30, 40, 50]);
+
+        seg.act(0..5, &100);
+        seg.act(1..4, &50);
+        seg.act(2..3, &25);
+
+        assert_eq!(seg.fold(..), 110);
+        assert_eq!(seg.fold(1..4), 170);
     }
 }

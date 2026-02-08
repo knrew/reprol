@@ -2,13 +2,12 @@ use std::marker::PhantomData;
 
 use crate::ops::{action::Action, monoid::Monoid};
 
-/// LazySegmentTree用
-/// 値をセット(上書き)する作用
-/// `seg.act(l..r, &Some(x))`のように書くと[l, r)の区間の値をxにする
+/// LazySegmentTreeにおける区間代入作用
+///
+/// ## NOTE
+/// - OpAddと組み合わせて使うことはできない
 #[derive(Default, Clone)]
-pub struct ActSet<T> {
-    phantom: PhantomData<T>,
-}
+pub struct ActSet<T>(PhantomData<T>);
 
 impl<T: Clone> Monoid for ActSet<T> {
     type Element = Option<T>;

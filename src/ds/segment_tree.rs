@@ -328,8 +328,12 @@ mod tests {
         utils::test_utils::{dynamic_range_query::*, random::get_test_rng, static_range_query::*},
     };
 
+    // ============================================================
+    // 基本機能テスト
+    // ============================================================
+
     #[test]
-    fn test_add() {
+    fn test_range_sum() {
         let v = vec![1, 3, 5, 7, 9, 11];
         let mut seg = SegmentTree::<OpAdd<i64>>::from(v);
         assert_eq!(seg.fold(0..3), 9);
@@ -341,7 +345,7 @@ mod tests {
     }
 
     #[test]
-    fn test_min() {
+    fn test_range_min() {
         let v = vec![5, 2, 6, 3, 7, 1];
         let mut seg = SegmentTree::<OpMin<i32>>::from(v);
         assert_eq!(seg.fold(0..4), 2);
@@ -485,6 +489,10 @@ mod tests {
         );
     }
 
+    // ============================================================
+    // bisect(二分探索)の基本機能テスト
+    // ============================================================
+
     #[test]
     fn test_bisect_add() {
         let mut seg = SegmentTree::<OpAdd<i64>>::from(vec![1, 3, 5, 7, 9, 11]);
@@ -527,6 +535,10 @@ mod tests {
         assert_eq!(seg.bisect_right(0, |m| *m >= 3), 6);
         assert_eq!(seg.bisect_left(4, |m| *m > 5), 4);
     }
+
+    // ============================================================
+    // 静的クエリのランダムテスト
+    // ============================================================
 
     macro_rules! seg_randomized_static_range_sum_exhaustive_test {
         ($test_name: ident, $ty: ty, $range: expr) => {
@@ -716,6 +728,10 @@ mod tests {
         usize
     );
 
+    // ============================================================
+    // 1点更新と区間クエリのランダムテスト
+    // ============================================================
+
     macro_rules! seg_randomized_point_set_range_sum_test {
         ($test_name: ident, $ty: ty, $range: expr) => {
             randomized_point_set_range_sum_test!(
@@ -901,4 +917,455 @@ mod tests {
         test_randomized_point_set_range_xor_usize,
         usize
     );
+
+    // ============================================================
+    // エッジケースなど
+    // ============================================================
+
+    #[test]
+    fn test_size_boundaries() {
+        // 最小サイズ（1要素）
+        {
+            let seg = SegmentTree::<OpAdd<i32>>::from(vec![42]);
+            assert_eq!(seg.fold(..), 42);
+            assert_eq!(seg.fold(0..1), 42);
+        }
+
+        // 2の冪サイズ
+        for size in [1, 2, 4, 8, 16, 32] {
+            let v: Vec<i32> = (0..size).map(|i| i as i32).collect();
+            let seg = SegmentTree::<OpAdd<i32>>::from(v.clone());
+            assert_eq!(seg.fold(..), v.iter().sum());
+        }
+
+        // 非2の冪サイズ
+        for size in [3, 5, 7, 9, 17, 33] {
+            let v: Vec<i32> = (0..size).map(|i| i as i32).collect();
+            let seg = SegmentTree::<OpAdd<i32>>::from(v.clone());
+            assert_eq!(seg.fold(..), v.iter().sum());
+        }
+
+        // 境界値での操作確認
+        {
+            let mut seg = SegmentTree::<OpMin<i32>>::from(vec![5, 3, 8, 1, 9]);
+            seg.set(0, i32::MAX);
+            seg.set(4, 0);
+            assert_eq!(seg.fold(..), 0);
+        }
+    }
+
+    #[test]
+    fn test_value_extremes() {
+        // OpMin/OpMax での極値
+        {
+            let mut seg = SegmentTree::<OpMin<i32>>::from(vec![i32::MIN, i32::MAX, 0]);
+            assert_eq!(seg.fold(..), i32::MIN);
+            seg.set(0, i32::MAX);
+            assert_eq!(seg.fold(..), 0);
+        }
+
+        {
+            let mut seg = SegmentTree::<OpMax<u32>>::from(vec![0, u32::MAX, u32::MAX / 2]);
+            assert_eq!(seg.fold(..), u32::MAX);
+            seg.set(1, 0);
+            assert_eq!(seg.fold(..), u32::MAX / 2);
+        }
+
+        // OpXor での全ビットセット
+        {
+            let seg = SegmentTree::<OpXor<u64>>::from(vec![u64::MAX, u64::MAX, u64::MAX]);
+            assert_eq!(seg.fold(..), u64::MAX); // MAX ^ MAX ^ MAX = MAX
+        }
+
+        // OpGcd でのゼロ
+        {
+            let seg = SegmentTree::<OpGcd<i32>>::from(vec![0, 12, 0, 18]);
+            assert_eq!(seg.fold(..), 6);
+            assert_eq!(seg.fold(0..2), 12);
+            assert_eq!(seg.fold(2..4), 18);
+        }
+    }
+
+    #[test]
+    fn test_range_boundaries() {
+        let seg = SegmentTree::<OpAdd<i32>>::from(vec![1, 2, 3, 4, 5]);
+
+        // 単一要素範囲
+        assert_eq!(seg.fold(0..1), 1);
+        assert_eq!(seg.fold(2..3), 3);
+        assert_eq!(seg.fold(4..5), 5);
+
+        // 全区間
+        assert_eq!(seg.fold(..), 15);
+        assert_eq!(seg.fold(0..5), 15);
+        assert_eq!(seg.fold(0..=4), 15);
+
+        // 前置範囲
+        assert_eq!(seg.fold(..3), 6);
+        assert_eq!(seg.fold(..=2), 6);
+
+        // 後置範囲
+        assert_eq!(seg.fold(2..), 12);
+        assert_eq!(seg.fold(3..), 9);
+
+        // 空範囲->単位元を返すことを確認
+        assert_eq!(seg.fold(0..0), 0);
+        assert_eq!(seg.fold(5..5), 0);
+        assert_eq!(seg.fold(2..2), 0);
+    }
+
+    #[test]
+    fn test_range_bounds_variants() {
+        let seg = SegmentTree::<OpMin<i64>>::from(vec![8, 2, 10, 3, 4, 1, 5, 9]);
+
+        // .. (全区間)
+        assert_eq!(seg.fold(..), 1);
+
+        // ..a
+        assert_eq!(seg.fold(..3), 2);
+        assert_eq!(seg.fold(..=2), 2);
+
+        // a..
+        assert_eq!(seg.fold(2..), 1);
+        assert_eq!(seg.fold(5..), 1);
+
+        // a..b
+        assert_eq!(seg.fold(1..4), 2);
+        assert_eq!(seg.fold(3..6), 1);
+
+        // a..=b
+        assert_eq!(seg.fold(1..=3), 2);
+        assert_eq!(seg.fold(3..=5), 1);
+
+        // 境界値
+        assert_eq!(seg.fold(..0), i64::MAX);
+        assert_eq!(seg.fold(0..1), 8);
+        assert_eq!(seg.fold(7..), 9);
+        assert_eq!(seg.fold(..=7), 1);
+    }
+
+    #[test]
+    fn test_bisect_edge_cases() {
+        // 単一要素配列
+        {
+            let seg = SegmentTree::<OpAdd<i32>>::from(vec![5]);
+
+            // bisect_right: 累積和が条件を満たす最大位置
+            assert_eq!(seg.bisect_right(0, |&x| x <= 5), 1);
+            assert_eq!(seg.bisect_right(0, |&x| x <= 4), 0);
+
+            // bisect_left: 後ろから累積和が条件を満たす最小位置
+            assert_eq!(seg.bisect_left(1, |&x| x <= 5), 0);
+            assert_eq!(seg.bisect_left(1, |&x| x <= 4), 1);
+
+            // 単位元のみの場合
+            assert_eq!(seg.bisect_right(0, |&x| x <= 0), 0); // 単位元のみなら0
+            assert_eq!(seg.bisect_left(1, |&x| x <= 0), 1); // 後ろから見て単位元のみなら1
+        }
+
+        // 常にtrueな述語
+        {
+            let seg = SegmentTree::<OpAdd<i32>>::from(vec![1, 2, 3, 4, 5]);
+
+            assert_eq!(seg.bisect_right(0, |_| true), 5);
+            assert_eq!(seg.bisect_left(5, |_| true), 0);
+        }
+
+        // 境界位置
+        {
+            let seg = SegmentTree::<OpAdd<i32>>::from(vec![1, 2, 3, 4, 5]);
+
+            assert_eq!(seg.bisect_right(0, |&x| x <= 15), 5); // 全部含んでも15以下
+            assert_eq!(seg.bisect_right(0, |&x| x < 6), 2); // fold(0..2)=3<6, fold(0..3)=6>=6
+            assert_eq!(seg.bisect_left(5, |&x| x <= 15), 0); // 全部含んでも15以下
+        }
+
+        // 全て同じ値の配列
+        {
+            let seg = SegmentTree::<OpAdd<i32>>::from(vec![5, 5, 5, 5]);
+
+            assert_eq!(seg.bisect_right(0, |&x| x <= 20), 4);
+            assert_eq!(seg.bisect_right(0, |&x| x <= 15), 3);
+            assert_eq!(seg.bisect_right(0, |&x| x <= 5), 1);
+            assert_eq!(seg.bisect_right(0, |&x| x <= 4), 0);
+        }
+
+        // 単調増加配列
+        {
+            let seg = SegmentTree::<OpAdd<i32>>::from(vec![1, 2, 3, 4, 5]);
+
+            assert_eq!(seg.bisect_right(0, |&x| x <= 6), 3); // 1+2+3=6
+            assert_eq!(seg.bisect_right(0, |&x| x <= 10), 4); // 1+2+3+4=10
+        }
+
+        // 2の冪サイズでの境界動作
+        {
+            // サイズ8（2^3）
+            let seg = SegmentTree::<OpAdd<i32>>::from(vec![1; 8]); // [1,1,1,1,1,1,1,1]
+
+            // 前半部分 [0..4)
+            assert_eq!(seg.bisect_right(0, |&x| x <= 4), 4); // fold(0..4)=4
+            assert_eq!(seg.bisect_right(0, |&x| x <= 3), 3);
+
+            // 後半部分 [4..8)
+            assert_eq!(seg.bisect_right(4, |&x| x <= 4), 8); // fold(4..8)=4
+            assert_eq!(seg.bisect_right(4, |&x| x <= 3), 7);
+
+            // bisect_left
+            assert_eq!(seg.bisect_left(8, |&x| x <= 4), 4); // fold(4..8)=4
+            assert_eq!(seg.bisect_left(8, |&x| x <= 3), 5);
+        }
+
+        // 空配列に近いケース（最小サイズ）
+        {
+            let seg = SegmentTree::<OpAdd<i32>>::from(vec![0]);
+
+            // f(identity) = f(0) = true となる述語のみ使用
+            // x <= 0: 0 <= 0 は true
+            assert_eq!(seg.bisect_right(0, |&x| x <= 0), 1); // fold(0..1)=0 <= 0
+            // x >= 0: 0 >= 0 は true
+            assert_eq!(seg.bisect_left(1, |&x| x >= 0), 0); // fold(0..1)=0 >= 0
+        }
+
+        // 開始位置からの累積和がちょうど境界のケース
+        {
+            let seg = SegmentTree::<OpAdd<i32>>::from(vec![3, 3, 3, 3, 3]); // [3,3,3,3,3]
+
+            // 位置2から開始
+            assert_eq!(seg.bisect_right(2, |&x| x <= 6), 4); // fold(2..4)=6
+            assert_eq!(seg.bisect_right(2, |&x| x <= 5), 3); // fold(2..3)=3, fold(2..4)=6
+
+            // bisect_left
+            assert_eq!(seg.bisect_left(4, |&x| x <= 6), 2); // fold(2..4)=6
+            assert_eq!(seg.bisect_left(4, |&x| x <= 5), 3); // fold(3..4)=3
+        }
+
+        // Min/Maxモノイドでのbisect
+        {
+            let seg = SegmentTree::<OpMin<i32>>::from(vec![5, 3, 8, 2, 9, 6]);
+
+            assert_eq!(seg.bisect_right(0, |&x| x >= 2), 6);
+            assert_eq!(seg.bisect_left(6, |&x| x >= 3), 4);
+        }
+    }
+
+    #[test]
+    fn test_entry_mut_edge_cases() {
+        // 境界インデックス
+        {
+            let mut seg = SegmentTree::<OpAdd<i32>>::from(vec![1, 2, 3, 4, 5]);
+
+            {
+                let mut e = seg.entry_mut(0);
+                *e *= 10;
+            }
+            assert_eq!(seg[0], 10);
+
+            {
+                let mut e = seg.entry_mut(4);
+                *e += 100;
+            }
+            assert_eq!(seg[4], 105);
+        }
+
+        // 境界でのin-place更新
+        {
+            let mut seg = SegmentTree::<OpMax<i32>>::from(vec![10, 20, 30]);
+
+            {
+                let mut e = seg.entry_mut(1);
+                *e *= 2;
+            }
+            assert_eq!(seg[1], 40);
+            assert_eq!(seg.fold(..), 40);
+
+            {
+                let mut e = seg.entry_mut(0);
+                *e = 100;
+            }
+            assert_eq!(seg.fold(..), 100);
+        }
+
+        // 連続するentry_mut
+        {
+            let mut seg = SegmentTree::<OpMin<i32>>::from(vec![5, 3, 8]);
+
+            {
+                let mut e = seg.entry_mut(0);
+                *e = 1;
+            }
+            assert_eq!(seg.fold(..), 1);
+
+            {
+                let mut e = seg.entry_mut(1);
+                *e = 0;
+            }
+            assert_eq!(seg.fold(..), 0);
+
+            {
+                let mut e = seg.entry_mut(2);
+                *e = -5;
+            }
+            assert_eq!(seg.fold(..), -5);
+        }
+
+        // カスタムモノイドでの使用
+        {
+            #[derive(Default)]
+            struct OpMul;
+            impl Monoid for OpMul {
+                type Element = i64;
+                fn id(&self) -> Self::Element {
+                    1
+                }
+                fn op(&self, &lhs: &Self::Element, &rhs: &Self::Element) -> Self::Element {
+                    lhs * rhs
+                }
+            }
+
+            let mut seg = SegmentTree::from((vec![2, 3, 4], OpMul));
+
+            {
+                let mut e = seg.entry_mut(1);
+                *e *= 5;
+            }
+            assert_eq!(seg[1], 15);
+            assert_eq!(seg.fold(..), 120); // 2 * 15 * 4
+        }
+    }
+
+    #[test]
+    fn test_zero_and_identity_elements() {
+        // 全要素が0
+        {
+            let seg = SegmentTree::<OpAdd<i32>>::from(vec![0, 0, 0, 0]);
+            assert_eq!(seg.fold(..), 0);
+            assert_eq!(seg.fold(1..3), 0);
+        }
+
+        {
+            let seg = SegmentTree::<OpXor<u32>>::from(vec![0, 0, 0, 0]);
+            assert_eq!(seg.fold(..), 0);
+        }
+
+        // 全要素が単位元
+        {
+            let seg = SegmentTree::<OpMin<i32>>::from(vec![i32::MAX; 5]);
+            assert_eq!(seg.fold(..), i32::MAX);
+        }
+
+        {
+            let seg = SegmentTree::<OpMax<i32>>::from(vec![i32::MIN; 5]);
+            assert_eq!(seg.fold(..), i32::MIN);
+        }
+
+        // ゼロ混在
+        {
+            let seg = SegmentTree::<OpAdd<i32>>::from(vec![0, 5, 0, 10, 0]);
+            assert_eq!(seg.fold(..), 15);
+            assert_eq!(seg.fold(1..4), 15);
+        }
+
+        {
+            let seg = SegmentTree::<OpGcd<i32>>::from(vec![0, 12, 0, 18, 0]);
+            assert_eq!(seg.fold(..), 6);
+        }
+    }
+
+    #[test]
+    fn test_power_of_two_sizes() {
+        // 各種2の冪サイズ
+        for size in [1, 2, 4, 8, 16, 32] {
+            let v: Vec<i32> = (0..size).map(|i| i as i32).collect();
+            let seg = SegmentTree::<OpAdd<i32>>::from(v.clone());
+
+            assert_eq!(seg.fold(..), v.iter().sum());
+            assert_eq!(seg.fold(0..size / 2), v[..size / 2].iter().sum());
+        }
+
+        // 2の冪より少し大きいサイズ
+        for size in [3, 5, 9, 17, 33] {
+            let v: Vec<i32> = (0..size).map(|i| i as i32).collect();
+            let seg = SegmentTree::<OpAdd<i32>>::from(v.clone());
+
+            assert_eq!(seg.fold(..), v.iter().sum());
+        }
+
+        // 2の冪境界でのfold動作確認
+        {
+            let seg =
+                SegmentTree::<OpMin<i32>>::from((0..16).map(|i| i as i32).collect::<Vec<_>>());
+            assert_eq!(seg.fold(0..8), 0);
+            assert_eq!(seg.fold(8..16), 8);
+        }
+    }
+
+    #[test]
+    fn test_sequential_operations() {
+        // 連続set
+        {
+            let mut seg = SegmentTree::<OpAdd<i32>>::from(vec![0; 5]);
+            for i in 0..5 {
+                seg.set(i, i as i32 * 2);
+            }
+            assert_eq!(seg.fold(..), 20);
+        }
+
+        // setとfoldの交互実行
+        {
+            let mut seg = SegmentTree::<OpMax<i32>>::from(vec![1, 5, 3, 7, 2]);
+            assert_eq!(seg.fold(..), 7);
+            seg.set(2, 10);
+            assert_eq!(seg.fold(..), 10);
+            assert_eq!(seg.fold(0..3), 10);
+            seg.set(4, 15);
+            assert_eq!(seg.fold(..), 15);
+        }
+
+        // 連続bisect
+        {
+            let seg = SegmentTree::<OpAdd<i32>>::from(vec![1, 2, 3, 4, 5]);
+
+            let pos1 = seg.bisect_right(0, |&x| x < 6);
+            assert_eq!(pos1, 2);
+
+            let pos2 = seg.bisect_right(pos1, |&x| x < 9);
+            assert_eq!(pos2, 4);
+
+            let pos3 = seg.bisect_left(5, |&x| x <= 15);
+            assert_eq!(pos3, 0);
+        }
+    }
+
+    #[test]
+    fn test_special_monoids() {
+        // OpGcd
+        {
+            let seg = SegmentTree::<OpGcd<i32>>::from(vec![0, 12, -18, 0, 24]);
+            assert_eq!(seg.fold(..), 6);
+            assert_eq!(seg.fold(1..3), 6);
+            assert_eq!(seg.fold(2..4), 18);
+        }
+
+        {
+            let seg = SegmentTree::<OpGcd<i32>>::from(vec![12, 18, 24]);
+            assert_eq!(seg.fold(..), 6);
+        }
+
+        // OpXor
+        {
+            let seg = SegmentTree::<OpXor<u64>>::from(vec![u64::MAX, 0, u64::MAX]);
+            assert_eq!(seg.fold(..), 0); // MAX ^ 0 ^ MAX = 0
+        }
+
+        {
+            let seg = SegmentTree::<OpXor<u32>>::from(vec![0b1010, 0b1100, 0b0011]);
+            assert_eq!(seg.fold(..), 0b0101);
+        }
+
+        {
+            let seg = SegmentTree::<OpXor<u8>>::from(vec![255, 255, 255]);
+            assert_eq!(seg.fold(..), 255); // 255 ^ 255 ^ 255 = 255
+        }
+    }
 }

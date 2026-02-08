@@ -2,15 +2,11 @@ use std::marker::PhantomData;
 
 use crate::ops::monoid::{IdempotentMonoid, Monoid};
 
+/// 区間Maxモノイド
 #[derive(Default, Clone)]
-pub struct OpMax<T> {
-    phantom: PhantomData<T>,
-}
+pub struct OpMax<T>(PhantomData<T>);
 
-impl<T> Monoid for OpMax<T>
-where
-    T: Copy + PartialOrd + OpMaxUtils,
-{
+impl<T: Copy + PartialOrd + OpMaxUtils> Monoid for OpMax<T> {
     type Element = T;
 
     #[inline]

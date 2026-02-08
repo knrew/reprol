@@ -5,10 +5,9 @@ use crate::{
     ops::{group::Group, monoid::Monoid},
 };
 
+/// 区間和モノイド
 #[derive(Default, Clone)]
-pub struct OpAdd<T> {
-    phantom: PhantomData<T>,
-}
+pub struct OpAdd<T>(PhantomData<T>);
 
 impl<T: Copy + OpAddUtils> Monoid for OpAdd<T> {
     type Element = T;
@@ -24,10 +23,7 @@ impl<T: Copy + OpAddUtils> Monoid for OpAdd<T> {
     }
 }
 
-impl<T> Group for OpAdd<T>
-where
-    T: Copy + OpAddUtils,
-{
+impl<T: Copy + OpAddUtils> Group for OpAdd<T> {
     #[inline]
     fn inv(&self, &x: &Self::Element) -> Self::Element {
         x.neg_()
