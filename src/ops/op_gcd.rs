@@ -5,10 +5,9 @@ use crate::{
     ops::monoid::{IdempotentMonoid, Monoid},
 };
 
+/// 区間Gcdモノイド
 #[derive(Default, Clone)]
-pub struct OpGcd<T> {
-    phantom: PhantomData<T>,
-}
+pub struct OpGcd<T>(PhantomData<T>);
 
 impl<T: Copy + Gcd + OpGcdUtils> Monoid for OpGcd<T> {
     type Element = T;

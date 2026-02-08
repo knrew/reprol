@@ -5,18 +5,14 @@ use crate::{
     ops::{action::Action, monoid::Monoid},
 };
 
-/// LazySegmentTree用
-/// 値の区間加算を行う作用
-/// `seg.act(l..r, &x)`のように書くと[l, r)の区間にそれぞれxを加算する
+/// LazySegmentTreeにおける区間加算作用
+///
+/// ## NOTE
+/// - OpAdd/OpGcdと組み合わせて使うことはできない
 #[derive(Default, Clone)]
-pub struct ActAdd<T> {
-    phantom: PhantomData<T>,
-}
+pub struct ActAdd<T>(PhantomData<T>);
 
-impl<T> Monoid for ActAdd<T>
-where
-    T: Copy + ActAddUtils,
-{
+impl<T: Copy + ActAddUtils> Monoid for ActAdd<T> {
     type Element = T;
 
     #[inline]

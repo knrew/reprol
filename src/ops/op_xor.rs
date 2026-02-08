@@ -2,10 +2,9 @@ use std::{marker::PhantomData, ops::BitXor};
 
 use crate::{ops::group::Group, ops::monoid::Monoid};
 
+/// 区間Xorモノイド
 #[derive(Default, Clone)]
-pub struct OpXor<T> {
-    phantom: PhantomData<T>,
-}
+pub struct OpXor<T>(PhantomData<T>);
 
 impl<T> Monoid for OpXor<T>
 where

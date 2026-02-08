@@ -508,18 +508,27 @@ mod tests {
     use crate::{
         math::gcd::Gcd,
         ops::{
-            act_add::ActAdd, act_set::ActSet, op_add::OpAdd, op_gcd::OpGcd, op_max::OpMax,
-            op_min::OpMin, op_xor::OpXor,
+            act_add::ActAdd,
+            act_add_with_len::ActAddWithLen,
+            act_affine::{ActAffine, OpAffineElement},
+            act_set::ActSet,
+            act_set_with_len::ActSetWithLen,
+            op_add::OpAdd,
+            op_add_with_len::{OpAddWithLen, OpAddWithLenElement},
+            op_gcd::OpGcd,
+            op_max::OpMax,
+            op_min::OpMin,
+            op_xor::OpXor,
         },
         utils::test_utils::{dynamic_range_query::*, random::get_test_rng, static_range_query::*},
     };
 
     // ============================================================
-    // 基本的な機能テスト
+    // 基本機能テスト
     // ============================================================
 
     #[test]
-    fn test_opmax_actadd() {
+    fn test_act_add_range_max() {
         type Op = OpMax<i64>;
         type Act = ActAdd<i64>;
 
@@ -556,8 +565,300 @@ mod tests {
         }
     }
 
+    #[test]
+    fn test_act_set_range_min() {
+        type Op = OpMin<i64>;
+        type Act = ActSet<i64>;
+
+        {
+            let v = vec![5, 3, 7, 2, 8];
+            let mut seg = LazySegmentTree::<Op, Act>::from(v.clone());
+
+            // 区間 [1..4) を 10 にセット
+            seg.act(1..4, &Some(10));
+            assert_eq!(seg.fold(0..5), 5);
+            assert_eq!(
+                (0..5).map(|i| *seg.get(i)).collect::<Vec<_>>(),
+                vec![5, 10, 10, 10, 8]
+            );
+
+            // 全区間をセット
+            seg.act(.., &Some(3));
+            assert_eq!(seg.fold(..), 3);
+        }
+
+        {
+            // entry_mut との併用
+            let mut seg = LazySegmentTree::<Op, Act>::from(vec![1, 5, 3]);
+            seg.set(1, 10);
+            assert_eq!(seg.fold(..), 1);
+        }
+    }
+
+    #[test]
+    fn test_act_add_range_sum() {
+        type Op = OpAddWithLen<i64>;
+        type Act = ActAddWithLen<i64>;
+
+        let v = vec![1, 2, 3, 4, 5];
+        let mut seg =
+            LazySegmentTree::<Op, Act>::from_iter(v.iter().cloned().map(OpAddWithLenElement::leaf));
+
+        // 区間 [1..4) に 10 を加算: [1, 12, 13, 14, 5]
+        seg.act(1..4, &10);
+        assert_eq!(
+            (0..5).map(|i| seg.get(i).value).collect::<Vec<_>>(),
+            vec![1, 12, 13, 14, 5]
+        );
+        assert_eq!(seg.fold(0..=2).value, 26); // 1 + 12 + 13
+
+        // 全区間に加算
+        seg.act(.., &(-1));
+        assert_eq!(seg.fold(..).value, 40); // (1-1) + (12-1) + (13-1) + (14-1) + (5-1) = 40
+    }
+
+    #[test]
+    fn test_act_set_range_sum() {
+        type Op = OpAddWithLen<i64>;
+        type Act = ActSetWithLen<i64>;
+
+        let v = vec![1, 2, 3, 4, 5];
+        let mut seg =
+            LazySegmentTree::<Op, Act>::from_iter(v.iter().cloned().map(OpAddWithLenElement::leaf));
+
+        // 区間 [1..4) を 10 にセット: [1, 10, 10, 10, 5]
+        seg.act(1..4, &Some(10));
+        assert_eq!(
+            (0..5).map(|i| seg.get(i).value).collect::<Vec<_>>(),
+            vec![1, 10, 10, 10, 5]
+        );
+        assert_eq!(seg.fold(0..=2).value, 21); // 1 + 10 + 10
+
+        // 全区間をセット
+        seg.act(.., &Some(3));
+        assert_eq!(seg.fold(..).value, 15); // 3 * 5
+    }
+
+    #[test]
+    fn test_act_affine_range_sum() {
+        type Op = OpAddWithLen<i64>;
+        type Act = ActAffine<i64>;
+
+        let v = vec![1, 2, 3, 4, 5];
+        let mut seg =
+            LazySegmentTree::<Op, Act>::from_iter(v.iter().cloned().map(OpAddWithLenElement::leaf));
+
+        // f(x) = 2*x + 3 を区間 [1..4) に適用
+        // [1, 2, 3, 4, 5] -> [1, 2*2+3, 2*3+3, 2*4+3, 5] = [1, 7, 9, 11, 5]
+        seg.act(1..4, &OpAffineElement { a: 2, b: 3 });
+        assert_eq!(seg.fold(..).value, 33); // 1 + 7 + 9 + 11 + 5
+
+        // g(x) = 3*x (乗算のみ)
+        seg.act(.., &OpAffineElement { a: 3, b: 0 });
+        assert_eq!(seg.fold(..).value, 99); // 33 * 3
+
+        // h(x) = x + 10 (加算のみ)
+        seg.act(.., &OpAffineElement { a: 1, b: 10 });
+        assert_eq!(seg.fold(..).value, 149); // 99 + 10*5
+    }
+
     // ============================================================
-    // 静的クエリの網羅的テスト（ランダム化）
+    // bisect(二分探索)の基本機能テスト
+    // ============================================================
+
+    #[test]
+    fn test_bisect_right_add_max_basic() {
+        // OpMax + ActAddでのbisect_right基本機能テスト
+        type Op = OpMax<i64>;
+        type Act = ActAdd<i64>;
+
+        let mut seg = LazySegmentTree::<Op, Act>::from(vec![5, 3, 7, 2, 8, 4, 6, 1]);
+
+        // 初期状態でのbisect_right
+        // maxのプレフィックス: [5], [5,3]=5, [5,3,7]=7, [5,3,7,2]=7, [5,3,7,2,8]=8...
+        assert_eq!(seg.bisect_right(0, |s| *s <= 5), 2);
+        assert_eq!(seg.bisect_right(0, |s| *s <= 7), 4);
+        assert_eq!(seg.bisect_right(0, |s| *s <= 8), 8);
+        assert_eq!(seg.bisect_right(0, |s| *s <= 100), 8);
+
+        // act後のbisect_right（範囲加算）
+        seg.act(2..6, &5);
+        // 配列: [5, 3, 12, 7, 13, 9, 6, 1]
+        // maxのプレフィックス: [5], [5,3]=5, [5,3,12]=12, [5,3,12,7]=12, [5,3,12,7,13]=13...
+        assert_eq!(seg.bisect_right(0, |s| *s <= 5), 2);
+        assert_eq!(seg.bisect_right(0, |s| *s <= 12), 4);
+        assert_eq!(seg.bisect_right(0, |s| *s <= 13), 8);
+
+        // set後のbisect_right
+        seg.set(3, 20);
+        // 配列: [5, 3, 12, 20, 13, 9, 6, 1]
+        assert_eq!(seg.bisect_right(0, |s| *s <= 20), 8);
+
+        // entry_mut後のbisect_right
+        *seg.entry_mut(5) += 10;
+        // 配列: [5, 3, 12, 20, 13, 19, 6, 1]
+        assert_eq!(seg.bisect_right(0, |s| *s <= 19), 3);
+        assert_eq!(seg.bisect_right(0, |s| *s <= 20), 8);
+    }
+
+    #[test]
+    fn test_bisect_add_with_len_sum() {
+        // OpAddWithLen + ActAddでの累積和bisectテスト
+        type Op = OpAddWithLen<i64>;
+        type Act = ActAddWithLen<i64>;
+
+        let mut seg = LazySegmentTree::<Op, Act>::from_iter(
+            vec![1i64, 2, 3, 4, 5]
+                .into_iter()
+                .map(OpAddWithLenElement::leaf),
+        );
+
+        // 累積和でのbisect（常に単調）
+        // [1], [1+2]=3, [1+2+3]=6, [1+2+3+4]=10, [1+2+3+4+5]=15
+        assert_eq!(seg.bisect_right(0, |s| s.value <= 3), 2);
+        assert_eq!(seg.bisect_right(0, |s| s.value <= 6), 3);
+        assert_eq!(seg.bisect_right(0, |s| s.value <= 10), 4);
+        assert_eq!(seg.bisect_right(0, |s| s.value <= 15), 5);
+
+        // 範囲加算後の累積和bisect
+        seg.act(1..4, &5);
+        // 配列: [1, 7, 8, 9, 5]
+        // 累積和: [1], [1+7]=8, [1+7+8]=16, [1+7+8+9]=25, [1+7+8+9+5]=30
+        assert_eq!(seg.bisect_right(0, |s| s.value <= 8), 2);
+        assert_eq!(seg.bisect_right(0, |s| s.value <= 16), 3);
+        assert_eq!(seg.bisect_right(0, |s| s.value <= 25), 4);
+    }
+
+    #[test]
+    fn test_bisect_boundary_conditions() {
+        // 境界条件・エッジケースのテスト
+
+        // 単一要素配列
+        {
+            type Op = OpMax<i64>;
+            type Act = ActAdd<i64>;
+
+            let mut seg = LazySegmentTree::<Op, Act>::from(vec![5]);
+            assert_eq!(seg.bisect_right(0, |s| *s <= 4), 0);
+            assert_eq!(seg.bisect_right(0, |s| *s <= 5), 1);
+            assert_eq!(seg.bisect_right(0, |s| *s <= 6), 1);
+        }
+
+        // 空のプレフィックス（常にtrueの述語）
+        {
+            type Op = OpMax<i64>;
+            type Act = ActAdd<i64>;
+
+            let mut seg = LazySegmentTree::<Op, Act>::from(vec![1, 2, 3]);
+            assert_eq!(seg.bisect_right(0, |s| *s <= 100), 3);
+        }
+
+        // 完全プレフィックス（常にfalseの述語 - 最初からfalse）
+        {
+            type Op = OpMax<i64>;
+            type Act = ActAdd<i64>;
+
+            let mut seg = LazySegmentTree::<Op, Act>::from(vec![5, 6, 7]);
+            assert_eq!(seg.bisect_right(0, |s| *s <= 0), 0);
+        }
+
+        // 配列境界でのbisect（位置0、位置len）
+        {
+            type Op = OpMax<i64>;
+            type Act = ActAdd<i64>;
+
+            let mut seg = LazySegmentTree::<Op, Act>::from(vec![1, 2, 3, 4]);
+            assert_eq!(seg.bisect_right(0, |s| *s <= 0), 0);
+            assert_eq!(seg.bisect_right(0, |s| *s <= 100), 4);
+            assert_eq!(seg.bisect_right(4, |s| *s <= 0), 4);
+        }
+    }
+
+    #[test]
+    fn test_bisect_after_overlapping_acts() {
+        // 重複する遅延操作後のbisectテスト
+        type Op = OpMax<i64>;
+        type Act = ActAdd<i64>;
+
+        let mut seg = LazySegmentTree::<Op, Act>::from(vec![1, 2, 3, 4, 5, 6, 7, 8]);
+
+        // 複数の重複するact操作
+        seg.act(0..4, &10); // [11, 12, 13, 14, 5, 6, 7, 8]
+        seg.act(2..6, &5); // [11, 12, 18, 19, 10, 11, 7, 8]
+        seg.act(4..8, &3); // [11, 12, 18, 19, 13, 14, 10, 11]
+
+        // 遅延範囲内でのbisect
+        assert_eq!(seg.bisect_right(0, |s| *s <= 12), 2);
+        assert_eq!(seg.bisect_right(0, |s| *s <= 18), 3);
+        assert_eq!(seg.bisect_right(0, |s| *s <= 19), 8);
+    }
+
+    #[test]
+    fn test_bisect_entry_mut_act_interaction() {
+        // entry_mut、act、bisectの相互作用テスト
+        type Op = OpMax<i64>;
+        type Act = ActAdd<i64>;
+
+        // entry_mut → act → bisect
+        {
+            let mut seg = LazySegmentTree::<Op, Act>::from(vec![1, 2, 3, 4, 5]);
+            *seg.entry_mut(2) = 10;
+            seg.act(0..4, &5);
+            // [6, 7, 15, 9, 5]
+            assert_eq!(seg.bisect_right(0, |s| *s <= 9), 2);
+        }
+
+        // act → entry_mut → bisect
+        {
+            let mut seg = LazySegmentTree::<Op, Act>::from(vec![1, 2, 3, 4, 5]);
+            seg.act(0..4, &5);
+            *seg.entry_mut(2) = 1;
+            // [6, 7, 1, 9, 5]
+            assert_eq!(seg.bisect_right(0, |s| *s <= 7), 3);
+        }
+
+        // 複数のインターリーブされた操作
+        {
+            let mut seg = LazySegmentTree::<Op, Act>::from(vec![1, 2, 3, 4, 5]);
+            seg.act(0..3, &5);
+            *seg.entry_mut(1) = 3;
+            seg.act(2..5, &2);
+            // [6, 3, 10, 6, 7]
+            assert_eq!(seg.bisect_right(0, |s| *s <= 6), 2);
+            assert_eq!(seg.bisect_right(0, |s| *s <= 10), 5);
+        }
+    }
+
+    #[test]
+    fn test_bisect_with_act_affine() {
+        // ActAffine（アフィン変換）でのbisectテスト
+        type Op = OpAddWithLen<i64>;
+        type Act = ActAffine<i64>;
+
+        let mut seg = LazySegmentTree::<Op, Act>::from_iter(
+            vec![1i64, 2, 3, 4, 5]
+                .into_iter()
+                .map(OpAddWithLenElement::leaf),
+        );
+
+        // f(x) = 2*x + 1（a > 0で単調性維持）
+        seg.act(1..4, &OpAffineElement { a: 2, b: 1 });
+        // [1, 5, 7, 9, 5]
+        // 累積和: [1], [1+5]=6, [1+5+7]=13, [1+5+7+9]=22, [1+5+7+9+5]=27
+        assert_eq!(seg.bisect_right(0, |s| s.value <= 6), 2);
+        assert_eq!(seg.bisect_right(0, |s| s.value <= 13), 3);
+        assert_eq!(seg.bisect_right(0, |s| s.value <= 22), 4);
+
+        // さらにアフィン変換（乗算のみ、単調性維持）
+        seg.act(.., &OpAffineElement { a: 3, b: 0 });
+        // [3, 15, 21, 27, 15]
+        // 累積和: [3], [3+15]=18, [3+15+21]=39, [3+15+21+27]=66, [3+15+21+27+15]=81
+        assert_eq!(seg.bisect_right(0, |s| s.value <= 18), 2);
+        assert_eq!(seg.bisect_right(0, |s| s.value <= 39), 3);
+    }
+
+    // ============================================================
+    // 静的クエリのランダムテスト
     // ============================================================
 
     macro_rules! seg_randomized_static_range_sum_exhaustive_test {
@@ -749,7 +1050,7 @@ mod tests {
     );
 
     // ============================================================
-    // 点更新と範囲クエリのランダム化テスト
+    // 1点更新と区間クエリのランダムテスト
     // ============================================================
 
     macro_rules! seg_randomized_point_set_range_sum_test {
@@ -939,200 +1240,10 @@ mod tests {
     );
 
     // ============================================================
-    // カスタム実装による範囲作用テスト
-    //   - 範囲加算 + 区間和取得（Node構造体使用）
-    //   - 範囲代入 + 区間和取得（Node構造体使用）
+    // 区間更新と区間クエリのランダムテスト
     // ============================================================
 
-    #[test]
-    fn test_random_range_add_range_sum_i64() {
-        #[derive(Clone, PartialEq, Eq)]
-        struct Node {
-            value: i64,
-            len: i64,
-        }
-
-        #[derive(Default)]
-        struct Op;
-
-        impl Monoid for Op {
-            type Element = Node;
-
-            fn op(&self, lhs: &Self::Element, rhs: &Self::Element) -> Self::Element {
-                Node {
-                    value: lhs.value + rhs.value,
-                    len: lhs.len + rhs.len,
-                }
-            }
-
-            fn id(&self) -> Self::Element {
-                Node { value: 0, len: 0 }
-            }
-        }
-
-        #[derive(Default)]
-        struct Act;
-
-        impl Monoid for Act {
-            type Element = i64;
-
-            fn op(&self, g: &Self::Element, f: &Self::Element) -> Self::Element {
-                g + f
-            }
-
-            fn id(&self) -> Self::Element {
-                0
-            }
-        }
-
-        impl Action<Op> for Act {
-            fn act(
-                &self,
-                f: &Self::Element,
-                x: &<Op as Monoid>::Element,
-            ) -> <Op as Monoid>::Element {
-                Node {
-                    value: x.value + f * x.len,
-                    len: x.len,
-                }
-            }
-        }
-
-        const NUM_TESTCASES: usize = 20;
-        const NUM_QUERIES: usize = 100000;
-        const NUM_ELEMENTS_MAX: usize = 100;
-        const RANGE: Range<i64> = -100000..100001;
-
-        let mut rng = get_test_rng();
-
-        for _ in 0..NUM_TESTCASES {
-            let n = rng.random_range(1..=NUM_ELEMENTS_MAX);
-
-            let mut v_naive = (0..n).map(|_| rng.random_range(RANGE)).collect::<Vec<_>>();
-            let mut seg = LazySegmentTree::<Op, Act>::from_iter(
-                v_naive.iter().cloned().map(|vi| Node { value: vi, len: 1 }),
-            );
-
-            for _ in 0..NUM_QUERIES {
-                match rng.random_range(0..=1) {
-                    0 => {
-                        let l = rng.random_range(0..n);
-                        let r = rng.random_range(l + 1..=n);
-                        let f = rng.random_range(RANGE);
-                        for e in v_naive[l..r].iter_mut() {
-                            *e = *e + f;
-                        }
-                        seg.act(l..r, &f);
-                    }
-                    1 => {
-                        let l = rng.random_range(0..n);
-                        let r = rng.random_range(l + 1..=n);
-                        let naive = v_naive[l..r].iter().sum::<i64>();
-                        assert_eq!(seg.fold(l..r).value, naive);
-                    }
-                    _ => unreachable!(),
-                }
-            }
-        }
-    }
-
-    #[test]
-    fn test_random_range_set_range_sum_i64() {
-        #[derive(Clone, PartialEq, Eq)]
-        struct Node {
-            value: i64,
-            len: i64,
-        }
-
-        #[derive(Default)]
-        struct Op;
-
-        impl Monoid for Op {
-            type Element = Node;
-
-            fn op(&self, lhs: &Self::Element, rhs: &Self::Element) -> Self::Element {
-                Node {
-                    value: lhs.value + rhs.value,
-                    len: lhs.len + rhs.len,
-                }
-            }
-
-            fn id(&self) -> Self::Element {
-                Node { value: 0, len: 0 }
-            }
-        }
-
-        #[derive(Default)]
-        struct Act;
-
-        impl Monoid for Act {
-            type Element = Option<i64>;
-
-            fn op(&self, g: &Self::Element, f: &Self::Element) -> Self::Element {
-                *if g.is_none() { f } else { g }
-            }
-
-            fn id(&self) -> Self::Element {
-                None
-            }
-        }
-
-        impl Action<Op> for Act {
-            fn act(
-                &self,
-                f: &Self::Element,
-                x: &<Op as Monoid>::Element,
-            ) -> <Op as Monoid>::Element {
-                if let Some(f) = f {
-                    Node {
-                        value: f * x.len,
-                        len: x.len,
-                    }
-                } else {
-                    x.clone()
-                }
-            }
-        }
-
-        const NUM_TESTCASES: usize = 20;
-        const NUM_QUERIES: usize = 100000;
-        const NUM_ELEMENTS_MAX: usize = 100;
-        const RANGE: Range<i64> = -100000..100001;
-
-        let mut rng = get_test_rng();
-
-        for _ in 0..NUM_TESTCASES {
-            let n = rng.random_range(1..=NUM_ELEMENTS_MAX);
-
-            let mut v_naive = (0..n).map(|_| rng.random_range(RANGE)).collect::<Vec<_>>();
-            let mut seg = LazySegmentTree::<Op, Act>::from_iter(
-                v_naive.iter().cloned().map(|vi| Node { value: vi, len: 1 }),
-            );
-
-            for _ in 0..NUM_QUERIES {
-                match rng.random_range(0..=1) {
-                    0 => {
-                        let l = rng.random_range(0..n);
-                        let r = rng.random_range(l + 1..=n);
-                        let f = rng.random_range(RANGE);
-                        for e in v_naive[l..r].iter_mut() {
-                            *e = f;
-                        }
-                        seg.act(l..r, &Some(f));
-                    }
-                    1 => {
-                        let l = rng.random_range(0..n);
-                        let r = rng.random_range(l + 1..=n);
-                        let naive = v_naive[l..r].iter().sum::<i64>();
-                        assert_eq!(seg.fold(l..r).value, naive);
-                    }
-                    _ => unreachable!(),
-                }
-            }
-        }
-    }
-
-    /// 範囲actと範囲foldクエリのランダムテストを生成するマクロ
+    /// 区間actと区間foldクエリのランダムテストを生成するマクロ
     ///
     /// # パラメータ
     /// - `$test_name`: テスト関数の名前
@@ -1146,8 +1257,8 @@ mod tests {
     /// - `$num_testcases`: テストケースの数
     /// - `$num_queries`: 各テストケースでのクエリ数
     /// - `$num_elements_max`: 配列サイズの最大値
-    /// - `$element_value_range`: 要素値の範囲
-    /// - `$action_value_range`: 作用値の範囲
+    /// - `$element_value_range`: 要素値の区間
+    /// - `$action_value_range`: 作用値の区間
     macro_rules! randomized_range_act_range_fold_test {
         (
         $test_name: ident,
@@ -1270,8 +1381,94 @@ mod tests {
     randomized_range_set_range_max_test!(test_randomized_range_set_range_max_u64, u64);
     randomized_range_set_range_max_test!(test_randomized_range_set_range_max_usize, usize);
 
+    #[test]
+    fn test_random_range_add_range_sum_i64() {
+        type Op = OpAddWithLen<i64>;
+        type Act = ActAddWithLen<i64>;
+
+        const NUM_TESTCASES: usize = 20;
+        const NUM_QUERIES: usize = 100000;
+        const NUM_ELEMENTS_MAX: usize = 100;
+        const RANGE: Range<i64> = -100000..100001;
+
+        let mut rng = get_test_rng();
+
+        for _ in 0..NUM_TESTCASES {
+            let n = rng.random_range(1..=NUM_ELEMENTS_MAX);
+
+            let mut v_naive = (0..n).map(|_| rng.random_range(RANGE)).collect::<Vec<_>>();
+            let mut seg = LazySegmentTree::<Op, Act>::from_iter(
+                v_naive.iter().cloned().map(OpAddWithLenElement::leaf),
+            );
+
+            for _ in 0..NUM_QUERIES {
+                match rng.random_range(0..=1) {
+                    0 => {
+                        let l = rng.random_range(0..n);
+                        let r = rng.random_range(l + 1..=n);
+                        let f = rng.random_range(RANGE);
+                        for e in v_naive[l..r].iter_mut() {
+                            *e = *e + f;
+                        }
+                        seg.act(l..r, &f);
+                    }
+                    1 => {
+                        let l = rng.random_range(0..n);
+                        let r = rng.random_range(l + 1..=n);
+                        let naive = v_naive[l..r].iter().sum::<i64>();
+                        assert_eq!(seg.fold(l..r).value, naive);
+                    }
+                    _ => unreachable!(),
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_random_range_set_range_sum_i64() {
+        type Op = OpAddWithLen<i64>;
+        type Act = ActSetWithLen<i64>;
+
+        const NUM_TESTCASES: usize = 20;
+        const NUM_QUERIES: usize = 100000;
+        const NUM_ELEMENTS_MAX: usize = 100;
+        const RANGE: Range<i64> = -100000..100001;
+
+        let mut rng = get_test_rng();
+
+        for _ in 0..NUM_TESTCASES {
+            let n = rng.random_range(1..=NUM_ELEMENTS_MAX);
+
+            let mut v_naive = (0..n).map(|_| rng.random_range(RANGE)).collect::<Vec<_>>();
+            let mut seg = LazySegmentTree::<Op, Act>::from_iter(
+                v_naive.iter().cloned().map(OpAddWithLenElement::leaf),
+            );
+
+            for _ in 0..NUM_QUERIES {
+                match rng.random_range(0..=1) {
+                    0 => {
+                        let l = rng.random_range(0..n);
+                        let r = rng.random_range(l + 1..=n);
+                        let f = rng.random_range(RANGE);
+                        for e in v_naive[l..r].iter_mut() {
+                            *e = f;
+                        }
+                        seg.act(l..r, &Some(f));
+                    }
+                    1 => {
+                        let l = rng.random_range(0..n);
+                        let r = rng.random_range(l + 1..=n);
+                        let naive = v_naive[l..r].iter().sum::<i64>();
+                        assert_eq!(seg.fold(l..r).value, naive);
+                    }
+                    _ => unreachable!(),
+                }
+            }
+        }
+    }
+
     // ============================================================
-    // エッジケースと複雑なパターンのテスト
+    // エッジケースなど
     // ============================================================
 
     #[test]
@@ -1281,7 +1478,7 @@ mod tests {
 
         let mut seg = LazySegmentTree::<Op, Act>::from(vec![1, 2, 3, 4, 5]);
 
-        // 空区間でのactは何もしない
+        // 空区間でのact
         let original_min = seg.fold(..);
         seg.act(0..0, &100);
         assert_eq!(seg.fold(..), original_min);
@@ -1330,63 +1527,55 @@ mod tests {
 
         let mut seg = LazySegmentTree::<Op, Act>::from(vec![1, 2, 3, 4, 5]);
 
-        // act → entry_mut → fold の順序
         seg.act(0..3, &10);
         {
             let mut entry = seg.entry_mut(1);
             *entry = 100;
         }
-        assert_eq!(seg.fold(0..3), 11); // min(11, 100, 13) = 11
+        assert_eq!(seg.fold(0..3), 11);
 
-        // 遅延伝播の確認
         assert_eq!(*seg.get(0), 11);
         assert_eq!(*seg.get(1), 100);
         assert_eq!(*seg.get(2), 13);
 
-        // entry_mut → act → fold の順序
+        // entry_mut -> act -> fold の順序
         let mut seg2 = LazySegmentTree::<Op, Act>::from(vec![10, 20, 30]);
         {
             let mut entry = seg2.entry_mut(1);
             *entry = 50;
         }
         seg2.act(0..3, &5);
-        assert_eq!(seg2.fold(..), 15); // min(15, 55, 35) = 15
+        assert_eq!(seg2.fold(..), 15);
 
-        // entry_mutで遅延作用が正しく伝播されることを確認
+        // entry_mutで遅延作用が正しく伝播されるか
         let mut seg3 = LazySegmentTree::<Op, Act>::from(vec![1, 2, 3, 4]);
         seg3.act(0..4, &10);
         {
             let mut entry = seg3.entry_mut(1);
-            assert_eq!(*entry, 12); // 遅延伝播されて取得できる
+            assert_eq!(*entry, 12);
             *entry = 50;
         }
-        assert_eq!(seg3.fold(0..2), 11); // min(11, 50) = 11
+        assert_eq!(seg3.fold(0..2), 11);
     }
 
     #[test]
     fn test_action_composition() {
-        // ActSetの順序依存性（後勝ち）の検証
-        {
-            type Op = OpMax<i32>;
-            type Act = ActSet<i32>;
+        type Op = OpMax<i32>;
+        type Act = ActSet<i32>;
 
-            let mut seg = LazySegmentTree::<Op, Act>::from(vec![5, 5, 5, 5, 5]);
+        let mut seg = LazySegmentTree::<Op, Act>::from(vec![5, 5, 5, 5, 5]);
 
-            // 後の作用が勝つ
-            seg.act(1..4, &Some(10));
-            seg.act(2..5, &Some(7));
+        seg.act(1..4, &Some(10));
+        seg.act(2..5, &Some(7));
 
-            // [5, 10, 7, 7, 7] になるはず
-            assert_eq!(*seg.get(0), 5);
-            assert_eq!(*seg.get(1), 10);
-            assert_eq!(*seg.get(2), 7);
-            assert_eq!(*seg.get(3), 7);
-            assert_eq!(*seg.get(4), 7);
-            assert_eq!(seg.fold(..), 10);
-        }
+        assert_eq!(*seg.get(0), 5);
+        assert_eq!(*seg.get(1), 10);
+        assert_eq!(*seg.get(2), 7);
+        assert_eq!(*seg.get(3), 7);
+        assert_eq!(*seg.get(4), 7);
+        assert_eq!(seg.fold(..), 10);
     }
 
-    /// より複雑な作用パターンのテスト
     #[test]
     fn test_complex_action_patterns() {
         type Op = OpMin<i32>;
@@ -1394,275 +1583,94 @@ mod tests {
 
         let mut seg = LazySegmentTree::<Op, Act>::from(vec![10, 20, 30, 40, 50, 60, 70, 80]);
 
-        // 交互の区間に作用
         seg.act(0..4, &5);
         seg.act(4..8, &10);
-        assert_eq!(seg.fold(0..4), 15); // min(15, 25, 35, 45)
-        assert_eq!(seg.fold(4..8), 60); // min(60, 70, 80, 90)
+        assert_eq!(seg.fold(0..4), 15);
+        assert_eq!(seg.fold(4..8), 60);
 
-        // 広い区間に作用で上書き
         seg.act(0..8, &100);
-        assert_eq!(seg.fold(..), 115); // min(115, 125, ..., 190)
+        assert_eq!(seg.fold(..), 115);
 
-        // 狭い区間で部分更新
         seg.act(2..5, &-200);
-        assert_eq!(seg.fold(2..5), -65); // min(-65, -55, -40)
+        assert_eq!(seg.fold(2..5), -65);
     }
 
     #[test]
-    fn test_range_affine_range_sum() {
-        #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-        struct Node {
-            sum: i64,
-            len: i64,
-        }
+    fn test_range_bounds_variants_lazy() {
+        type Op = OpMin<i64>;
+        type Act = ActSet<i64>;
 
-        #[derive(Default)]
-        struct Op;
+        let mut seg = LazySegmentTree::<Op, Act>::from(vec![8, 2, 10, 3, 4, 1, 5, 9]);
 
-        impl Monoid for Op {
-            type Element = Node;
+        // .. (全区間)
+        assert_eq!(seg.fold(..), 1);
 
-            fn id(&self) -> Self::Element {
-                Node { sum: 0, len: 0 }
-            }
+        // ..a
+        assert_eq!(seg.fold(..3), 2);
+        assert_eq!(seg.fold(..=2), 2);
 
-            fn op(&self, lhs: &Self::Element, rhs: &Self::Element) -> Self::Element {
-                Node {
-                    sum: lhs.sum + rhs.sum,
-                    len: lhs.len + rhs.len,
-                }
-            }
-        }
+        // a..
+        assert_eq!(seg.fold(2..), 1);
 
-        #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-        struct Affine {
-            a: i64,
-            b: i64,
-        }
+        // a..b
+        assert_eq!(seg.fold(1..4), 2);
 
-        #[derive(Default)]
-        struct ActAffine;
+        // a..=b
+        assert_eq!(seg.fold(1..=3), 2);
 
-        impl Monoid for ActAffine {
-            type Element = Affine;
-
-            fn id(&self) -> Self::Element {
-                Affine { a: 1, b: 0 }
-            }
-
-            fn op(&self, g: &Self::Element, f: &Self::Element) -> Self::Element {
-                Affine {
-                    a: g.a * f.a,
-                    b: g.a * f.b + g.b,
-                }
-            }
-        }
-
-        impl Action<Op> for ActAffine {
-            fn act(
-                &self,
-                f: &Self::Element,
-                x: &<Op as Monoid>::Element,
-            ) -> <Op as Monoid>::Element {
-                // 区間和に対するアフィン変換
-                // 各要素: v -> a v + b
-                // sum' = a*sum + b*len
-                Node {
-                    sum: f.a * x.sum + f.b * x.len,
-                    len: x.len,
-                }
-            }
-        }
-
-        let v = vec![1_i64, 2, 3, 4, 5];
-        let init = v
-            .into_iter()
-            .map(|x| Node { sum: x, len: 1 })
-            .collect::<Vec<_>>();
-        let mut seg = LazySegmentTree::<Op, ActAffine>::from(init);
-
-        assert_eq!(seg.fold(..).sum, 15);
-
-        seg.act(1..4, &Affine { a: 2, b: 1 });
-
-        assert_eq!(seg.get(0).sum, 1);
-        assert_eq!(seg.get(1).sum, 5);
-        assert_eq!(seg.get(2).sum, 7);
-        assert_eq!(seg.get(3).sum, 9);
-        assert_eq!(seg.get(4).sum, 5);
-
-        assert_eq!(seg.fold(0..=2).sum, 1 + 5 + 7); // 13
-        assert_eq!(seg.fold(..).sum, 1 + 5 + 7 + 9 + 5); // 27
-
-        // 作用の合成順チェック（単点なら分かりやすい）
-        let init2 = vec![Node { sum: 10, len: 1 }];
-        let mut seg2 = LazySegmentTree::<Op, ActAffine>::from(init2);
-
-        // f: 3x + 2
-        seg2.act(0..1, &Affine { a: 3, b: 2 });
-        // g: 2x + 5（後から適用）
-        seg2.act(0..1, &Affine { a: 2, b: 5 });
-
-        assert_eq!(seg2.get(0).sum, 69);
-        assert_eq!(seg2.fold(..).sum, 69);
-
-        let init3 = vec![0, 1, 2, 3]
-            .into_iter()
-            .map(|x| Node { sum: x, len: 1 })
-            .collect::<Vec<_>>();
-        let mut seg3 = LazySegmentTree::<Op, ActAffine>::from(init3);
-
-        seg3.act(0..3, &Affine { a: 1, b: 10 });
-        seg3.act(1..4, &Affine { a: 2, b: 0 });
-
-        assert_eq!(seg3.get(0).sum, 10);
-        assert_eq!(seg3.get(1).sum, 22);
-        assert_eq!(seg3.get(2).sum, 24);
-        assert_eq!(seg3.get(3).sum, 6);
-        assert_eq!(seg3.fold(..).sum, 10 + 22 + 24 + 6);
-    }
-
-    // ============================================================
-    // bisect（二分探索）のテスト
-    // ============================================================
-
-    #[test]
-    fn test_bisect_max_with_add() {
-        type Op = OpMax<i32>;
-        type Act = ActAdd<i32>;
-
-        let mut seg = LazySegmentTree::<Op, Act>::from(vec![4, 4, 4, 4, 4]);
-
-        assert_eq!(seg.bisect_right(0, |m| *m <= 4), 5);
-        assert_eq!(seg.bisect_right(0, |m| *m < 5), 5);
-        assert_eq!(seg.bisect_right(0, |m| *m < 4), 0);
-        assert_eq!(seg.bisect_right(2, |m| *m <= 4), 5);
-        assert_eq!(seg.bisect_right(5, |m| *m <= 4), 5);
-
-        seg.act(1..4, &2); // [4, 6, 6, 6, 4]
-
-        assert_eq!(seg.bisect_right(0, |m| *m <= 4), 1);
-        assert_eq!(seg.bisect_right(0, |m| *m <= 6), 5);
-        assert_eq!(seg.bisect_right(0, |m| *m < 6), 1);
-
-        assert_eq!(seg.bisect_left(5, |m| *m <= 6), 0);
-        assert_eq!(seg.bisect_left(5, |m| *m <= 4), 4);
-        assert_eq!(seg.bisect_left(5, |m| *m < 6), 4);
-        assert_eq!(seg.bisect_left(1, |m| *m <= 4), 0);
-        assert_eq!(seg.bisect_left(0, |m| *m <= 6), 0);
-
-        *seg.entry_mut(2) = 10; // [4, 6, 10, 6, 4]
-
-        assert_eq!(seg.bisect_right(0, |m| *m <= 6), 2);
-        assert_eq!(seg.bisect_right(0, |m| *m <= 10), 5);
-        assert_eq!(seg.bisect_right(0, |m| *m < 10), 2);
-
-        assert_eq!(seg.bisect_left(5, |m| *m <= 6), 3);
-        assert_eq!(seg.bisect_left(5, |m| *m < 10), 3);
+        // act
+        seg.act(1..=5, &Some(100));
+        assert_eq!(seg.fold(..), 5);
     }
 
     #[test]
-    fn test_bisect_min_with_add() {
+    fn test_chained_lazy_propagations() {
         type Op = OpMin<i32>;
         type Act = ActAdd<i32>;
 
-        let mut seg = LazySegmentTree::<Op, Act>::from(vec![5, 3, 7, 3, 9]);
+        let mut seg = LazySegmentTree::<Op, Act>::from(vec![1, 2, 3, 4, 5, 6, 7, 8]);
 
-        assert_eq!(seg.bisect_right(0, |m| *m >= 3), 5);
-        assert_eq!(seg.bisect_right(0, |m| *m > 3), 1);
-        assert_eq!(seg.bisect_right(1, |m| *m >= 3), 5);
+        // 連鎖する遅延伝播
+        seg.act(0..4, &10);
+        seg.act(2..6, &5);
+        seg.act(4..8, &3);
 
-        seg.act(1..4, &5); // [5, 8, 12, 8, 9]
-
-        assert_eq!(seg.bisect_right(0, |m| *m >= 5), 5);
-        assert_eq!(seg.bisect_right(0, |m| *m >= 8), 0);
-        assert_eq!(seg.bisect_right(1, |m| *m >= 8), 5);
-
-        assert_eq!(seg.bisect_left(5, |m| *m >= 9), 4);
-        assert_eq!(seg.bisect_left(5, |m| *m > 8), 4);
-        assert_eq!(seg.bisect_left(5, |m| *m >= 5), 0);
-
-        *seg.entry_mut(2) = 3; // [5, 8, 3, 8, 9]
-
-        assert_eq!(seg.bisect_left(5, |m| *m >= 3), 0);
-        assert_eq!(seg.bisect_left(3, |m| *m >= 3), 0);
+        // [11, 12, 18, 19, 12, 13, 10, 11]
+        assert_eq!(seg.fold(0..4), 11); // min(11, 12, 18, 19)
+        assert_eq!(seg.fold(4..8), 10); // min(12, 13, 10, 11)
     }
 
     #[test]
-    fn test_bisect_max_with_set() {
-        type Op = OpMax<i32>;
-        type Act = ActSet<i32>;
+    fn test_deeply_nested_lazy_propagations() {
+        type Op = OpMax<i64>;
+        type Act = ActAdd<i64>;
 
-        let mut seg = LazySegmentTree::<Op, Act>::from(vec![1, 2, 3, 4, 5]);
+        let mut seg = LazySegmentTree::<Op, Act>::from(vec![0; 16]);
 
-        assert_eq!(seg.bisect_right(0, |m| *m <= 3), 3);
-        assert_eq!(seg.bisect_right(0, |m| *m < 4), 3);
+        seg.act(0..8, &1);
+        seg.act(0..4, &2);
+        seg.act(0..2, &3);
+        seg.act(0..1, &4);
 
-        seg.act(1..4, &Some(10)); // [1, 10, 10, 10, 5]
-
-        assert_eq!(seg.bisect_right(0, |m| *m <= 5), 1);
-        assert_eq!(seg.bisect_right(0, |m| *m <= 10), 5);
-        assert_eq!(seg.bisect_right(0, |m| *m < 10), 1);
-
-        assert_eq!(seg.bisect_left(5, |m| *m <= 10), 0);
-        assert_eq!(seg.bisect_left(5, |m| *m < 10), 4);
+        assert_eq!(*seg.get(0), 10);
+        assert_eq!(*seg.get(1), 6);
+        assert_eq!(*seg.get(2), 3);
+        assert_eq!(*seg.get(4), 1);
+        assert_eq!(seg.fold(..), 10);
     }
 
     #[test]
-    fn test_bisect_edge_cases() {
-        type Op = OpMax<i32>;
+    fn test_nested_range_acts() {
+        type Op = OpMin<i32>;
         type Act = ActAdd<i32>;
 
-        let mut seg = LazySegmentTree::<Op, Act>::from(vec![1, 2, 3]);
-        assert_eq!(seg.bisect_right(0, |m| *m <= 0), 0);
-        assert_eq!(seg.bisect_right(0, |m| *m <= 3), 3);
-        assert_eq!(seg.bisect_left(0, |m| *m <= 1), 0);
-        assert_eq!(seg.bisect_left(3, |m| *m <= 0), 3);
+        let mut seg = LazySegmentTree::<Op, Act>::from(vec![10, 20, 30, 40, 50]);
 
-        let mut seg2 = LazySegmentTree::<Op, Act>::from(vec![42]);
-        assert_eq!(seg2.bisect_right(0, |m| *m <= 42), 1);
-        assert_eq!(seg2.bisect_right(0, |m| *m < 42), 0);
-        assert_eq!(seg2.bisect_left(1, |m| *m <= 42), 0);
-        assert_eq!(seg2.bisect_left(1, |m| *m < 42), 1);
+        seg.act(0..5, &100);
+        seg.act(1..4, &50);
+        seg.act(2..3, &25);
 
-        let mut seg3 = LazySegmentTree::<Op, Act>::from(vec![7; 100]);
-        assert_eq!(seg3.bisect_right(0, |m| *m <= 7), 100);
-        assert_eq!(seg3.bisect_right(50, |m| *m <= 7), 100);
-        assert_eq!(seg3.bisect_left(100, |m| *m <= 7), 0);
+        assert_eq!(seg.fold(..), 110);
+        assert_eq!(seg.fold(1..4), 170);
     }
-
-    randomized_range_add_bisect_max_test!(
-        test_randomized_bisect_max_with_add_i32,
-        i32,
-        -100000..=100000
-    );
-    randomized_range_add_bisect_max_test!(test_randomized_bisect_max_with_add_u32, u32, 0..=100000);
-    randomized_range_add_bisect_max_test!(
-        test_randomized_bisect_max_with_add_i64,
-        i64,
-        -1000000000..=1000000000
-    );
-    randomized_range_add_bisect_max_test!(
-        test_randomized_bisect_max_with_add_u64,
-        u64,
-        0..=1000000000
-    );
-
-    randomized_range_add_bisect_min_test!(
-        test_randomized_bisect_min_with_add_i32,
-        i32,
-        -100000..=100000
-    );
-    randomized_range_add_bisect_min_test!(test_randomized_bisect_min_with_add_u32, u32, 0..=100000);
-    randomized_range_add_bisect_min_test!(
-        test_randomized_bisect_min_with_add_i64,
-        i64,
-        -1000000000..=1000000000
-    );
-    randomized_range_add_bisect_min_test!(
-        test_randomized_bisect_min_with_add_u64,
-        u64,
-        0..=1000000000
-    );
 }
