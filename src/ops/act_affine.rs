@@ -7,7 +7,7 @@ use crate::{
 
 /// アフィン変換パラメータ: f(x) = a*x + b
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub struct OpAffineElement<T> {
+pub struct ActAffineElement<T> {
     pub a: T,
     pub b: T,
 }
@@ -19,11 +19,11 @@ pub struct OpAffineElement<T> {
 pub struct ActAffine<T>(PhantomData<T>);
 
 impl<T: Copy + ActAffineUtils> Monoid for ActAffine<T> {
-    type Element = OpAffineElement<T>;
+    type Element = ActAffineElement<T>;
 
     #[inline]
     fn id(&self) -> Self::Element {
-        OpAffineElement {
+        ActAffineElement {
             a: T::ONE,
             b: T::ZERO,
         }
@@ -33,7 +33,7 @@ impl<T: Copy + ActAffineUtils> Monoid for ActAffine<T> {
     fn op(&self, g: &Self::Element, f: &Self::Element) -> Self::Element {
         // アフィン変換の合成:
         // g∘f(x) = g(f(x)) = g.a*(f.a*x + f.b) + g.b = (g.a*f.a)*x + (g.a*f.b + g.b)
-        OpAffineElement {
+        ActAffineElement {
             a: g.a.mul_(f.a),
             b: g.a.mul_(f.b).add_(g.b),
         }
@@ -144,8 +144,8 @@ mod tests {
         // 作用の合成
         // f(x) = 2x + 3, g(x) = 3x + 1
         // g∘f(x) = 3(2x + 3) + 1 = 6x + 10
-        let f = OpAffineElement { a: 2, b: 3 };
-        let g = OpAffineElement { a: 3, b: 1 };
+        let f = ActAffineElement { a: 2, b: 3 };
+        let g = ActAffineElement { a: 3, b: 1 };
         let composed = act.op(&g, &f);
         assert_eq!(composed.a, 6);
         assert_eq!(composed.b, 10);
@@ -161,7 +161,7 @@ mod tests {
 
         // 作用の適用
         let node = OpAddWithLenElement { value: 10, len: 3 };
-        let affine = OpAffineElement { a: 2, b: 3 };
+        let affine = ActAffineElement { a: 2, b: 3 };
         let _op = OpDummy::<i64>::default();
 
         let result = Action::<OpDummy<i64>>::act(&act, &affine, &node);
@@ -181,7 +181,7 @@ mod tests {
         let act = ActAffine::<u64>::default();
 
         let node = OpAddWithLenElement { value: 10, len: 3 };
-        let affine = OpAffineElement { a: 2, b: 3 };
+        let affine = ActAffineElement { a: 2, b: 3 };
         let _op = OpDummy::<u64>::default();
 
         let result = Action::<OpDummy<u64>>::act(&act, &affine, &node);
@@ -199,9 +199,9 @@ mod tests {
         // g(x) = 5x + 7
         // h(x) = 3x + 1
         // h∘g∘f(x) = ?
-        let f = OpAffineElement { a: 2, b: 3 };
-        let g = OpAffineElement { a: 5, b: 7 };
-        let h = OpAffineElement { a: 3, b: 1 };
+        let f = ActAffineElement { a: 2, b: 3 };
+        let g = ActAffineElement { a: 5, b: 7 };
+        let h = ActAffineElement { a: 3, b: 1 };
 
         let gf = act.op(&g, &f);
         // g∘f(x) = 5(2x + 3) + 7 = 10x + 22
