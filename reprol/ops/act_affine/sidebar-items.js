@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["ActAffine","OpAffineElement"]};
+window.SIDEBAR_ITEMS = {"struct":["ActAffine","ActAffineElement"]};

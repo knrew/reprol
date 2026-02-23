@@ -7,7 +7,7 @@
 <a href=#7 id=7 data-nosnippet>7</a>
 <a href=#8 id=8 data-nosnippet>8</a><span class="doccomment">/// アフィン変換パラメータ: f(x) = a*x + b
 <a href=#9 id=9 data-nosnippet>9</a></span><span class="attr">#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-<a href=#10 id=10 data-nosnippet>10</a></span><span class="kw">pub struct </span>OpAffineElement&lt;T&gt; {
+<a href=#10 id=10 data-nosnippet>10</a></span><span class="kw">pub struct </span>ActAffineElement&lt;T&gt; {
 <a href=#11 id=11 data-nosnippet>11</a>    <span class="kw">pub </span>a: T,
 <a href=#12 id=12 data-nosnippet>12</a>    <span class="kw">pub </span>b: T,
 <a href=#13 id=13 data-nosnippet>13</a>}
@@ -19,11 +19,11 @@
 <a href=#19 id=19 data-nosnippet>19</a></span><span class="kw">pub struct </span>ActAffine&lt;T&gt;(PhantomData&lt;T&gt;);
 <a href=#20 id=20 data-nosnippet>20</a>
 <a href=#21 id=21 data-nosnippet>21</a><span class="kw">impl</span>&lt;T: Copy + ActAffineUtils&gt; Monoid <span class="kw">for </span>ActAffine&lt;T&gt; {
-<a href=#22 id=22 data-nosnippet>22</a>    <span class="kw">type </span>Element = OpAffineElement&lt;T&gt;;
+<a href=#22 id=22 data-nosnippet>22</a>    <span class="kw">type </span>Element = ActAffineElement&lt;T&gt;;
 <a href=#23 id=23 data-nosnippet>23</a>
 <a href=#24 id=24 data-nosnippet>24</a>    <span class="attr">#[inline]
 <a href=#25 id=25 data-nosnippet>25</a>    </span><span class="kw">fn </span>id(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self</span>::Element {
-<a href=#26 id=26 data-nosnippet>26</a>        OpAffineElement {
+<a href=#26 id=26 data-nosnippet>26</a>        ActAffineElement {
 <a href=#27 id=27 data-nosnippet>27</a>            a: T::ONE,
 <a href=#28 id=28 data-nosnippet>28</a>            b: T::ZERO,
 <a href=#29 id=29 data-nosnippet>29</a>        }
@@ -33,7 +33,7 @@
 <a href=#33 id=33 data-nosnippet>33</a>    </span><span class="kw">fn </span>op(<span class="kw-2">&amp;</span><span class="self">self</span>, g: <span class="kw-2">&amp;</span><span class="self">Self</span>::Element, f: <span class="kw-2">&amp;</span><span class="self">Self</span>::Element) -&gt; <span class="self">Self</span>::Element {
 <a href=#34 id=34 data-nosnippet>34</a>        <span class="comment">// アフィン変換の合成:
 <a href=#35 id=35 data-nosnippet>35</a>        // g∘f(x) = g(f(x)) = g.a*(f.a*x + f.b) + g.b = (g.a*f.a)*x + (g.a*f.b + g.b)
-<a href=#36 id=36 data-nosnippet>36</a>        </span>OpAffineElement {
+<a href=#36 id=36 data-nosnippet>36</a>        </span>ActAffineElement {
 <a href=#37 id=37 data-nosnippet>37</a>            a: g.a.mul_(f.a),
 <a href=#38 id=38 data-nosnippet>38</a>            b: g.a.mul_(f.b).add_(g.b),
 <a href=#39 id=39 data-nosnippet>39</a>        }
@@ -144,8 +144,8 @@
 <a href=#144 id=144 data-nosnippet>144</a>        <span class="comment">// 作用の合成
 <a href=#145 id=145 data-nosnippet>145</a>        // f(x) = 2x + 3, g(x) = 3x + 1
 <a href=#146 id=146 data-nosnippet>146</a>        // g∘f(x) = 3(2x + 3) + 1 = 6x + 10
-<a href=#147 id=147 data-nosnippet>147</a>        </span><span class="kw">let </span>f = OpAffineElement { a: <span class="number">2</span>, b: <span class="number">3 </span>};
-<a href=#148 id=148 data-nosnippet>148</a>        <span class="kw">let </span>g = OpAffineElement { a: <span class="number">3</span>, b: <span class="number">1 </span>};
+<a href=#147 id=147 data-nosnippet>147</a>        </span><span class="kw">let </span>f = ActAffineElement { a: <span class="number">2</span>, b: <span class="number">3 </span>};
+<a href=#148 id=148 data-nosnippet>148</a>        <span class="kw">let </span>g = ActAffineElement { a: <span class="number">3</span>, b: <span class="number">1 </span>};
 <a href=#149 id=149 data-nosnippet>149</a>        <span class="kw">let </span>composed = act.op(<span class="kw-2">&amp;</span>g, <span class="kw-2">&amp;</span>f);
 <a href=#150 id=150 data-nosnippet>150</a>        <span class="macro">assert_eq!</span>(composed.a, <span class="number">6</span>);
 <a href=#151 id=151 data-nosnippet>151</a>        <span class="macro">assert_eq!</span>(composed.b, <span class="number">10</span>);
@@ -161,7 +161,7 @@
 <a href=#161 id=161 data-nosnippet>161</a>
 <a href=#162 id=162 data-nosnippet>162</a>        <span class="comment">// 作用の適用
 <a href=#163 id=163 data-nosnippet>163</a>        </span><span class="kw">let </span>node = OpAddWithLenElement { value: <span class="number">10</span>, len: <span class="number">3 </span>};
-<a href=#164 id=164 data-nosnippet>164</a>        <span class="kw">let </span>affine = OpAffineElement { a: <span class="number">2</span>, b: <span class="number">3 </span>};
+<a href=#164 id=164 data-nosnippet>164</a>        <span class="kw">let </span>affine = ActAffineElement { a: <span class="number">2</span>, b: <span class="number">3 </span>};
 <a href=#165 id=165 data-nosnippet>165</a>        <span class="kw">let </span>_op = OpDummy::&lt;i64&gt;::default();
 <a href=#166 id=166 data-nosnippet>166</a>
 <a href=#167 id=167 data-nosnippet>167</a>        <span class="kw">let </span>result = Action::&lt;OpDummy&lt;i64&gt;&gt;::act(<span class="kw-2">&amp;</span>act, <span class="kw-2">&amp;</span>affine, <span class="kw-2">&amp;</span>node);
@@ -181,7 +181,7 @@
 <a href=#181 id=181 data-nosnippet>181</a>        <span class="kw">let </span>act = ActAffine::&lt;u64&gt;::default();
 <a href=#182 id=182 data-nosnippet>182</a>
 <a href=#183 id=183 data-nosnippet>183</a>        <span class="kw">let </span>node = OpAddWithLenElement { value: <span class="number">10</span>, len: <span class="number">3 </span>};
-<a href=#184 id=184 data-nosnippet>184</a>        <span class="kw">let </span>affine = OpAffineElement { a: <span class="number">2</span>, b: <span class="number">3 </span>};
+<a href=#184 id=184 data-nosnippet>184</a>        <span class="kw">let </span>affine = ActAffineElement { a: <span class="number">2</span>, b: <span class="number">3 </span>};
 <a href=#185 id=185 data-nosnippet>185</a>        <span class="kw">let </span>_op = OpDummy::&lt;u64&gt;::default();
 <a href=#186 id=186 data-nosnippet>186</a>
 <a href=#187 id=187 data-nosnippet>187</a>        <span class="kw">let </span>result = Action::&lt;OpDummy&lt;u64&gt;&gt;::act(<span class="kw-2">&amp;</span>act, <span class="kw-2">&amp;</span>affine, <span class="kw-2">&amp;</span>node);
@@ -199,9 +199,9 @@
 <a href=#199 id=199 data-nosnippet>199</a>        // g(x) = 5x + 7
 <a href=#200 id=200 data-nosnippet>200</a>        // h(x) = 3x + 1
 <a href=#201 id=201 data-nosnippet>201</a>        // h∘g∘f(x) = ?
-<a href=#202 id=202 data-nosnippet>202</a>        </span><span class="kw">let </span>f = OpAffineElement { a: <span class="number">2</span>, b: <span class="number">3 </span>};
-<a href=#203 id=203 data-nosnippet>203</a>        <span class="kw">let </span>g = OpAffineElement { a: <span class="number">5</span>, b: <span class="number">7 </span>};
-<a href=#204 id=204 data-nosnippet>204</a>        <span class="kw">let </span>h = OpAffineElement { a: <span class="number">3</span>, b: <span class="number">1 </span>};
+<a href=#202 id=202 data-nosnippet>202</a>        </span><span class="kw">let </span>f = ActAffineElement { a: <span class="number">2</span>, b: <span class="number">3 </span>};
+<a href=#203 id=203 data-nosnippet>203</a>        <span class="kw">let </span>g = ActAffineElement { a: <span class="number">5</span>, b: <span class="number">7 </span>};
+<a href=#204 id=204 data-nosnippet>204</a>        <span class="kw">let </span>h = ActAffineElement { a: <span class="number">3</span>, b: <span class="number">1 </span>};
 <a href=#205 id=205 data-nosnippet>205</a>
 <a href=#206 id=206 data-nosnippet>206</a>        <span class="kw">let </span>gf = act.op(<span class="kw-2">&amp;</span>g, <span class="kw-2">&amp;</span>f);
 <a href=#207 id=207 data-nosnippet>207</a>        <span class="comment">// g∘f(x) = 5(2x + 3) + 7 = 10x + 22
