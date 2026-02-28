@@ -24,7 +24,7 @@ use std::ops::{Range, RangeBounds};
 
 use crate::{
     ds::sparse_table::SparseTable, ops::monoid::IdempotentMonoid,
-    utils::range_utils::to_half_open_index_range,
+    utils::normalize_range::normalize_index,
 };
 
 /// 2次元Sparse Table
@@ -105,8 +105,8 @@ impl<O: IdempotentMonoid> SparseTable2d<O> {
         row_range: impl RangeBounds<usize>,
         col_range: impl RangeBounds<usize>,
     ) -> O::Element {
-        let Range { start: il, end: ir } = to_half_open_index_range(row_range, self.len_rows);
-        let Range { start: jl, end: jr } = to_half_open_index_range(col_range, self.len_cols);
+        let Range { start: il, end: ir } = normalize_index(row_range, self.len_rows);
+        let Range { start: jl, end: jr } = normalize_index(col_range, self.len_cols);
         assert!(il < ir && ir <= self.len_rows);
         assert!(jl < jr && jr <= self.len_cols);
 

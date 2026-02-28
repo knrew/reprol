@@ -63,7 +63,7 @@ use std::{
 
 use crate::{
     ops::{group::Group, monoid::Monoid, op_add::OpAdd},
-    utils::range_utils::to_half_open_index_range,
+    utils::normalize_range::normalize_index,
 };
 
 /// 累積積を管理するデータ構造
@@ -110,7 +110,7 @@ impl<O: Monoid> CumulativeArray<O> {
     where
         O: Group,
     {
-        let Range { start: l, end: r } = to_half_open_index_range(range, self.inner.len() - 1);
+        let Range { start: l, end: r } = normalize_index(range, self.inner.len() - 1);
         assert!(l <= r);
         self.op.op(&self.inner[r], &self.op.inv(&self.inner[l]))
     }

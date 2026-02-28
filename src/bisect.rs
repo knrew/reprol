@@ -26,7 +26,7 @@ use std::{
     ops::{Range, RangeBounds},
 };
 
-use crate::utils::range_utils::RangeUtils;
+use crate::utils::normalize_range::{Discrete, normalize};
 
 /// 二分探索を行うためのトレイト．
 pub trait Bisect<T> {
@@ -45,7 +45,7 @@ where
         let Range {
             start: mut ok,
             end: mut ng,
-        } = T::to_half_open_range(self);
+        } = normalize(self, T::MIN, T::MAX);
 
         assert!(!T::is_empty_range(&ok, &ng));
 
@@ -171,7 +171,10 @@ impl<T: Ord> Bounds for [T] {
     }
 }
 
-trait BisectInteger: RangeUtils {
+trait BisectInteger: Discrete {
+    const MIN: Self;
+    const MAX: Self;
+
     /// [start, end)に1個以上要素が存在するかどうか．
     fn is_empty_range(start: &Self, end: &Self) -> bool;
 
@@ -181,6 +184,9 @@ trait BisectInteger: RangeUtils {
 macro_rules! impl_bisect_integer {
     ($ty: ty) => {
         impl BisectInteger for $ty {
+            const MIN: Self = <$ty>::MIN;
+            const MAX: Self = <$ty>::MAX;
+
             fn is_empty_range(start: &Self, end: &Self) -> bool {
                 start >= end
             }

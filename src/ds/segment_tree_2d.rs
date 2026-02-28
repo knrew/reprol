@@ -23,7 +23,7 @@
 
 use std::ops::{Deref, DerefMut, Index, Range, RangeBounds};
 
-use crate::{ops::monoid::Monoid, utils::range_utils::to_half_open_index_range};
+use crate::{ops::monoid::Monoid, utils::normalize_range::normalize_index};
 
 /// 2次元セグメント木
 pub struct SegmentTree2d<O: Monoid> {
@@ -115,8 +115,8 @@ impl<O: Monoid> SegmentTree2d<O> {
         row_range: impl RangeBounds<usize>,
         col_range: impl RangeBounds<usize>,
     ) -> O::Element {
-        let Range { start: il, end: ir } = to_half_open_index_range(row_range, self.len_rows);
-        let Range { start: jl, end: jr } = to_half_open_index_range(col_range, self.len_cols);
+        let Range { start: il, end: ir } = normalize_index(row_range, self.len_rows);
+        let Range { start: jl, end: jr } = normalize_index(col_range, self.len_cols);
         assert!(il <= ir && ir <= self.len_rows);
         assert!(jl <= jr && jr <= self.len_cols);
 

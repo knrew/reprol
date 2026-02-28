@@ -4,7 +4,7 @@ use std::ops::{Range, RangeBounds};
 
 use crate::{
     ops::{group::Group, monoid::Monoid, op_add::OpAdd},
-    utils::range_utils::to_half_open_index_range,
+    utils::normalize_range::normalize_index,
 };
 
 /// 3次元累積積を管理するデータ構造
@@ -104,9 +104,9 @@ impl<O: Monoid> CumulativeArray3d<O> {
     where
         O: Group,
     {
-        let Range { start: il, end: ir } = to_half_open_index_range(i_range, self.len_i);
-        let Range { start: jl, end: jr } = to_half_open_index_range(j_range, self.len_j);
-        let Range { start: kl, end: kr } = to_half_open_index_range(k_range, self.len_k);
+        let Range { start: il, end: ir } = normalize_index(i_range, self.len_i);
+        let Range { start: jl, end: jr } = normalize_index(j_range, self.len_j);
+        let Range { start: kl, end: kr } = normalize_index(k_range, self.len_k);
 
         assert!(il <= ir);
         assert!(jl <= jr);

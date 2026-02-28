@@ -26,7 +26,7 @@ use std::ops::{Range, RangeBounds};
 
 use crate::{
     ops::{group::Group, monoid::Monoid, op_add::OpAdd},
-    utils::range_utils::to_half_open_index_range,
+    utils::normalize_range::normalize_index,
 };
 
 /// 2次元累積積を管理するデータ構造
@@ -109,8 +109,8 @@ impl<O: Monoid> CumulativeArray2d<O> {
     where
         O: Group,
     {
-        let Range { start: il, end: ir } = to_half_open_index_range(row_range, self.len_rows);
-        let Range { start: jl, end: jr } = to_half_open_index_range(col_range, self.len_cols);
+        let Range { start: il, end: ir } = normalize_index(row_range, self.len_rows);
+        let Range { start: jl, end: jr } = normalize_index(col_range, self.len_cols);
         assert!(il <= ir);
         assert!(jl <= jr);
         let mut prod = self.op.op(self.prefix(ir, jr), self.prefix(il, jl));

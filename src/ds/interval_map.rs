@@ -28,8 +28,6 @@ use std::{
     ops::{Bound, Range, RangeBounds, Sub},
 };
 
-use crate::utils::range_utils::RangeUtils;
-
 /// `IntervalMap`内部で扱う半開区間を表す構造体．
 #[repr(transparent)]
 #[derive(Clone, PartialEq, Eq)]
@@ -37,18 +35,10 @@ pub struct Interval<T> {
     range: Range<T>,
 }
 
-#[allow(private_bounds)]
-impl<T: Clone + Ord + RangeUtils> Interval<T> {
+impl<T: Clone + Ord> Interval<T> {
     /// 半開区間`[range.start, range.end)`をそのまま保持する`Interval`を生成する．
     pub fn new(range: Range<T>) -> Self {
         Self { range }
-    }
-
-    /// 任意の`RangeBounds`を半開区間に正規化して`Interval`を生成する．
-    pub fn from_range_bounds(range_bounds: impl RangeBounds<T>) -> Self {
-        Self {
-            range: T::to_half_open_range(range_bounds),
-        }
     }
 
     /// 区間が`x`を含むかどうかを返す．
@@ -110,6 +100,11 @@ impl<T: Clone + Ord + RangeUtils> Interval<T> {
             range: self.end()..self.end(),
         }
     }
+
+    /// 内部の`Range`を返す．
+    fn into_range(self) -> Range<T> {
+        self.range
+    }
 }
 
 impl<T> RangeBounds<T> for Interval<T> {
@@ -153,8 +148,7 @@ pub struct IntervalMap<K, V> {
     inner: BTreeMap<Interval<K>, V>,
 }
 
-#[allow(private_bounds)]
-impl<K: Clone + Ord + RangeUtils, V: Clone + PartialEq> IntervalMap<K, V> {
+impl<K: Clone + Ord, V: Clone + PartialEq> IntervalMap<K, V> {
     /// 空の`IntervalMap`を生成する．
     pub fn new() -> Self {
         Self {
@@ -178,14 +172,14 @@ impl<K: Clone + Ord + RangeUtils, V: Clone + PartialEq> IntervalMap<K, V> {
     }
 
     /// 区間`range`に値`value`を割り当て，同じ値で隣接する区間を結合する．
-    pub fn insert(&mut self, range: impl RangeBounds<K>, value: V) {
-        let mut new_interval = Interval::from_range_bounds(range);
+    pub fn insert(&mut self, range: Range<K>, value: V) {
+        let mut new_interval = Interval::new(range);
 
         if new_interval.is_empty() {
             return;
         }
 
-        self.remove(new_interval.clone());
+        self.remove(new_interval.clone().into_range());
 
         if let Some((interval, v)) = self
             .inner
@@ -212,8 +206,8 @@ impl<K: Clone + Ord + RangeUtils, V: Clone + PartialEq> IntervalMap<K, V> {
     }
 
     /// 指定した区間と重なる部分を削除し，切り取られた区間と値を返す．
-    pub fn remove(&mut self, range: impl RangeBounds<K>) -> Vec<(Interval<K>, V)> {
-        let to_remove_interval = Interval::from_range_bounds(range);
+    pub fn remove(&mut self, range: Range<K>) -> Vec<(Interval<K>, V)> {
+        let to_remove_interval = Interval::new(range);
 
         if to_remove_interval.is_empty() {
             return Vec::new();
@@ -282,8 +276,8 @@ impl<K: Clone + Ord + RangeUtils, V: Clone + PartialEq> IntervalMap<K, V> {
     }
 
     /// 区間全体を包含するエントリがあればその参照を返す．
-    pub fn superset_of(&self, range: impl RangeBounds<K>) -> Option<(&Interval<K>, &V)> {
-        let target = Interval::from_range_bounds(range);
+    pub fn superset_of(&self, range: Range<K>) -> Option<(&Interval<K>, &V)> {
+        let target = Interval::new(range);
 
         if target.is_empty() {
             return None;
@@ -336,8 +330,7 @@ impl<K: Debug, V: Debug> Debug for IntervalMap<K, V> {
 #[derive(Clone, Default)]
 pub struct IntervalSet<K>(IntervalMap<K, ()>);
 
-#[allow(private_bounds)]
-impl<K: Clone + Ord + RangeUtils> IntervalSet<K> {
+impl<K: Clone + Ord> IntervalSet<K> {
     /// 空の集合を生成する．
     pub fn new() -> Self {
         Self(IntervalMap::new())
@@ -359,12 +352,12 @@ impl<K: Clone + Ord + RangeUtils> IntervalSet<K> {
     }
 
     /// 区間を挿入し，必要なら隣接区間を併合する．
-    pub fn insert(&mut self, range: impl RangeBounds<K>) {
+    pub fn insert(&mut self, range: Range<K>) {
         self.0.insert(range, ());
     }
 
     /// 区間を削除し，削除した半開区間を列挙して返す．
-    pub fn remove(&mut self, range: impl RangeBounds<K>) -> Vec<Interval<K>> {
+    pub fn remove(&mut self, range: Range<K>) -> Vec<Interval<K>> {
         self.0
             .remove(range)
             .into_iter()
@@ -373,7 +366,7 @@ impl<K: Clone + Ord + RangeUtils> IntervalSet<K> {
     }
 
     /// 指定区間を包含する区間への参照を返す．
-    pub fn superset_of(&self, range: impl RangeBounds<K>) -> Option<&Interval<K>> {
+    pub fn superset_of(&self, range: Range<K>) -> Option<&Interval<K>> {
         self.0.superset_of(range).map(|(interval, _)| interval)
     }
 }
