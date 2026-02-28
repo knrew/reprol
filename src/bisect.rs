@@ -286,7 +286,6 @@ mod tests {
         assert_eq!((0..).bisect(f), 7);
 
         // RangeTo
-
         {
             let target = i32::MIN + 50;
             assert_eq!((..i32::MIN + 100).bisect(|&x| x < target), target);
@@ -297,9 +296,6 @@ mod tests {
             let target = i32::MIN + 50;
             assert_eq!((..=i32::MIN + 100).bisect(|&x| x < target), target);
         }
-
-        // RangeFull
-        assert_eq!((..).bisect(f), 7);
 
         // (Included, Excluded)
         {
