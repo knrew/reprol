@@ -10,7 +10,7 @@
 //! assert_eq!(v.inversion(), 3);
 //! ```
 
-use crate::{bisect::Bounds, ds::fenwick_tree::FenwickTree, ops::op_add::OpAdd};
+use crate::{bisect::SliceBoundsExt, ds::fenwick_tree::FenwickTree, ops::op_add::OpAdd};
 
 pub trait Inversion {
     fn inversion(&self) -> u64;

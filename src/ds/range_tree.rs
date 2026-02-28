@@ -23,7 +23,7 @@
 
 use std::ops::Range;
 
-use crate::{bisect::Bounds, ds::segment_tree::SegmentTree, ops::monoid::Monoid};
+use crate::{bisect::SliceBoundsExt, ds::segment_tree::SegmentTree, ops::monoid::Monoid};
 
 /// Range Tree
 pub struct RangeTree<O: Monoid> {
