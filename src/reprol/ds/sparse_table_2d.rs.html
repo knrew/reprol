@@ -24,7 +24,7 @@
 <a href=#24 id=24 data-nosnippet>24</a>
 <a href=#25 id=25 data-nosnippet>25</a><span class="kw">use crate</span>::{
 <a href=#26 id=26 data-nosnippet>26</a>    ds::sparse_table::SparseTable, ops::monoid::IdempotentMonoid,
-<a href=#27 id=27 data-nosnippet>27</a>    utils::range_utils::to_half_open_index_range,
+<a href=#27 id=27 data-nosnippet>27</a>    utils::normalize_range::normalize_index,
 <a href=#28 id=28 data-nosnippet>28</a>};
 <a href=#29 id=29 data-nosnippet>29</a>
 <a href=#30 id=30 data-nosnippet>30</a><span class="doccomment">/// 2次元Sparse Table
@@ -105,8 +105,8 @@
 <a href=#105 id=105 data-nosnippet>105</a>        row_range: <span class="kw">impl </span>RangeBounds&lt;usize&gt;,
 <a href=#106 id=106 data-nosnippet>106</a>        col_range: <span class="kw">impl </span>RangeBounds&lt;usize&gt;,
 <a href=#107 id=107 data-nosnippet>107</a>    ) -&gt; O::Element {
-<a href=#108 id=108 data-nosnippet>108</a>        <span class="kw">let </span>Range { start: il, end: ir } = to_half_open_index_range(row_range, <span class="self">self</span>.len_rows);
-<a href=#109 id=109 data-nosnippet>109</a>        <span class="kw">let </span>Range { start: jl, end: jr } = to_half_open_index_range(col_range, <span class="self">self</span>.len_cols);
+<a href=#108 id=108 data-nosnippet>108</a>        <span class="kw">let </span>Range { start: il, end: ir } = normalize_index(row_range, <span class="self">self</span>.len_rows);
+<a href=#109 id=109 data-nosnippet>109</a>        <span class="kw">let </span>Range { start: jl, end: jr } = normalize_index(col_range, <span class="self">self</span>.len_cols);
 <a href=#110 id=110 data-nosnippet>110</a>        <span class="macro">assert!</span>(il &lt; ir &amp;&amp; ir &lt;= <span class="self">self</span>.len_rows);
 <a href=#111 id=111 data-nosnippet>111</a>        <span class="macro">assert!</span>(jl &lt; jr &amp;&amp; jr &lt;= <span class="self">self</span>.len_cols);
 <a href=#112 id=112 data-nosnippet>112</a>

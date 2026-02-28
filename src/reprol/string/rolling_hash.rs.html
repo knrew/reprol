@@ -12,7 +12,7 @@
 <a href=#12 id=12 data-nosnippet>12</a>
 <a href=#13 id=13 data-nosnippet>13</a></span><span class="kw">use </span>std::ops::{Range, RangeBounds};
 <a href=#14 id=14 data-nosnippet>14</a>
-<a href=#15 id=15 data-nosnippet>15</a><span class="kw">use crate</span>::{math::modint::ModInt, utils::range_utils::to_half_open_index_range};
+<a href=#15 id=15 data-nosnippet>15</a><span class="kw">use crate</span>::{math::modint::ModInt, utils::normalize_range::normalize_index};
 <a href=#16 id=16 data-nosnippet>16</a>
 <a href=#17 id=17 data-nosnippet>17</a><span class="kw">pub struct </span>RollingHash&lt;<span class="kw">const </span>P: u64&gt; {
 <a href=#18 id=18 data-nosnippet>18</a>    hash: Vec&lt;ModInt&lt;P&gt;&gt;,
@@ -37,7 +37,7 @@
 <a href=#37 id=37 data-nosnippet>37</a>
 <a href=#38 id=38 data-nosnippet>38</a>    <span class="doccomment">///　文字列の区間`[l, r)`のハッシュ値を計算する．
 <a href=#39 id=39 data-nosnippet>39</a>    </span><span class="kw">pub fn </span>get(<span class="kw-2">&amp;</span><span class="self">self</span>, range: <span class="kw">impl </span>RangeBounds&lt;usize&gt;) -&gt; u64 {
-<a href=#40 id=40 data-nosnippet>40</a>        <span class="kw">let </span>Range { start: l, end: r } = to_half_open_index_range(range, <span class="self">self</span>.hash.len() - <span class="number">1</span>);
+<a href=#40 id=40 data-nosnippet>40</a>        <span class="kw">let </span>Range { start: l, end: r } = normalize_index(range, <span class="self">self</span>.hash.len() - <span class="number">1</span>);
 <a href=#41 id=41 data-nosnippet>41</a>        <span class="macro">assert!</span>(l &lt;= r);
 <a href=#42 id=42 data-nosnippet>42</a>        (<span class="self">self</span>.hash[r] - <span class="self">self</span>.hash[l] * <span class="self">self</span>.pow[r - l]).value()
 <a href=#43 id=43 data-nosnippet>43</a>    }

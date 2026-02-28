@@ -63,7 +63,7 @@
 <a href=#63 id=63 data-nosnippet>63</a>
 <a href=#64 id=64 data-nosnippet>64</a><span class="kw">use crate</span>::{
 <a href=#65 id=65 data-nosnippet>65</a>    ops::{group::Group, monoid::Monoid, op_add::OpAdd},
-<a href=#66 id=66 data-nosnippet>66</a>    utils::range_utils::to_half_open_index_range,
+<a href=#66 id=66 data-nosnippet>66</a>    utils::normalize_range::normalize_index,
 <a href=#67 id=67 data-nosnippet>67</a>};
 <a href=#68 id=68 data-nosnippet>68</a>
 <a href=#69 id=69 data-nosnippet>69</a><span class="doccomment">/// 累積積を管理するデータ構造
@@ -110,7 +110,7 @@
 <a href=#110 id=110 data-nosnippet>110</a>    <span class="kw">where
 <a href=#111 id=111 data-nosnippet>111</a>        </span>O: Group,
 <a href=#112 id=112 data-nosnippet>112</a>    {
-<a href=#113 id=113 data-nosnippet>113</a>        <span class="kw">let </span>Range { start: l, end: r } = to_half_open_index_range(range, <span class="self">self</span>.inner.len() - <span class="number">1</span>);
+<a href=#113 id=113 data-nosnippet>113</a>        <span class="kw">let </span>Range { start: l, end: r } = normalize_index(range, <span class="self">self</span>.inner.len() - <span class="number">1</span>);
 <a href=#114 id=114 data-nosnippet>114</a>        <span class="macro">assert!</span>(l &lt;= r);
 <a href=#115 id=115 data-nosnippet>115</a>        <span class="self">self</span>.op.op(<span class="kw-2">&amp;</span><span class="self">self</span>.inner[r], <span class="kw-2">&amp;</span><span class="self">self</span>.op.inv(<span class="kw-2">&amp;</span><span class="self">self</span>.inner[l]))
 <a href=#116 id=116 data-nosnippet>116</a>    }

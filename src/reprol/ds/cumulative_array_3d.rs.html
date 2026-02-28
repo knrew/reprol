@@ -4,7 +4,7 @@
 <a href=#4 id=4 data-nosnippet>4</a>
 <a href=#5 id=5 data-nosnippet>5</a><span class="kw">use crate</span>::{
 <a href=#6 id=6 data-nosnippet>6</a>    ops::{group::Group, monoid::Monoid, op_add::OpAdd},
-<a href=#7 id=7 data-nosnippet>7</a>    utils::range_utils::to_half_open_index_range,
+<a href=#7 id=7 data-nosnippet>7</a>    utils::normalize_range::normalize_index,
 <a href=#8 id=8 data-nosnippet>8</a>};
 <a href=#9 id=9 data-nosnippet>9</a>
 <a href=#10 id=10 data-nosnippet>10</a><span class="doccomment">/// 3次元累積積を管理するデータ構造
@@ -104,9 +104,9 @@
 <a href=#104 id=104 data-nosnippet>104</a>    <span class="kw">where
 <a href=#105 id=105 data-nosnippet>105</a>        </span>O: Group,
 <a href=#106 id=106 data-nosnippet>106</a>    {
-<a href=#107 id=107 data-nosnippet>107</a>        <span class="kw">let </span>Range { start: il, end: ir } = to_half_open_index_range(i_range, <span class="self">self</span>.len_i);
-<a href=#108 id=108 data-nosnippet>108</a>        <span class="kw">let </span>Range { start: jl, end: jr } = to_half_open_index_range(j_range, <span class="self">self</span>.len_j);
-<a href=#109 id=109 data-nosnippet>109</a>        <span class="kw">let </span>Range { start: kl, end: kr } = to_half_open_index_range(k_range, <span class="self">self</span>.len_k);
+<a href=#107 id=107 data-nosnippet>107</a>        <span class="kw">let </span>Range { start: il, end: ir } = normalize_index(i_range, <span class="self">self</span>.len_i);
+<a href=#108 id=108 data-nosnippet>108</a>        <span class="kw">let </span>Range { start: jl, end: jr } = normalize_index(j_range, <span class="self">self</span>.len_j);
+<a href=#109 id=109 data-nosnippet>109</a>        <span class="kw">let </span>Range { start: kl, end: kr } = normalize_index(k_range, <span class="self">self</span>.len_k);
 <a href=#110 id=110 data-nosnippet>110</a>
 <a href=#111 id=111 data-nosnippet>111</a>        <span class="macro">assert!</span>(il &lt;= ir);
 <a href=#112 id=112 data-nosnippet>112</a>        <span class="macro">assert!</span>(jl &lt;= jr);

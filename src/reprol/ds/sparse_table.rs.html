@@ -20,7 +20,7 @@
 <a href=#20 id=20 data-nosnippet>20</a>    ops::{Range, RangeBounds},
 <a href=#21 id=21 data-nosnippet>21</a>};
 <a href=#22 id=22 data-nosnippet>22</a>
-<a href=#23 id=23 data-nosnippet>23</a><span class="kw">use crate</span>::{ops::monoid::IdempotentMonoid, utils::range_utils::to_half_open_index_range};
+<a href=#23 id=23 data-nosnippet>23</a><span class="kw">use crate</span>::{ops::monoid::IdempotentMonoid, utils::normalize_range::normalize_index};
 <a href=#24 id=24 data-nosnippet>24</a>
 <a href=#25 id=25 data-nosnippet>25</a><span class="kw">pub struct </span>SparseTable&lt;O: IdempotentMonoid&gt; {
 <a href=#26 id=26 data-nosnippet>26</a>    len: usize,
@@ -65,7 +65,7 @@
 <a href=#65 id=65 data-nosnippet>65</a>
 <a href=#66 id=66 data-nosnippet>66</a>    <span class="doccomment">/// 区間`[l, r)`の区間積を返す．
 <a href=#67 id=67 data-nosnippet>67</a>    </span><span class="kw">pub fn </span>fold(<span class="kw-2">&amp;</span><span class="self">self</span>, range: <span class="kw">impl </span>RangeBounds&lt;usize&gt;) -&gt; O::Element {
-<a href=#68 id=68 data-nosnippet>68</a>        <span class="kw">let </span>Range { start: l, end: r } = to_half_open_index_range(range, <span class="self">self</span>.len);
+<a href=#68 id=68 data-nosnippet>68</a>        <span class="kw">let </span>Range { start: l, end: r } = normalize_index(range, <span class="self">self</span>.len);
 <a href=#69 id=69 data-nosnippet>69</a>        <span class="macro">assert!</span>(l &lt; r);
 <a href=#70 id=70 data-nosnippet>70</a>        <span class="kw">let </span>k = (r - l + <span class="number">1</span>).next_power_of_two().trailing_zeros() <span class="kw">as </span>usize - <span class="number">1</span>;
 <a href=#71 id=71 data-nosnippet>71</a>        <span class="self">self</span>.op.op(<span class="kw-2">&amp;</span><span class="self">self</span>.nodes[k][l], <span class="kw-2">&amp;</span><span class="self">self</span>.nodes[k][r - (<span class="number">1 </span>&lt;&lt; k)])

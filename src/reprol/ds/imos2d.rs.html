@@ -18,7 +18,7 @@
 <a href=#18 id=18 data-nosnippet>18</a>
 <a href=#19 id=19 data-nosnippet>19</a></span><span class="kw">use </span>std::ops::{Index, Range, RangeBounds};
 <a href=#20 id=20 data-nosnippet>20</a>
-<a href=#21 id=21 data-nosnippet>21</a><span class="kw">use </span><span class="kw">crate</span>::utils::range_utils::to_half_open_index_range;
+<a href=#21 id=21 data-nosnippet>21</a><span class="kw">use </span><span class="kw">crate</span>::utils::normalize_range::normalize_index;
 <a href=#22 id=22 data-nosnippet>22</a>
 <a href=#23 id=23 data-nosnippet>23</a><span class="doccomment">/// 2次元グリッド上の矩形範囲加算を管理するいもす法
 <a href=#24 id=24 data-nosnippet>24</a></span><span class="kw">pub struct </span>Imos2d {
@@ -50,8 +50,8 @@
 <a href=#50 id=50 data-nosnippet>50</a>    ) {
 <a href=#51 id=51 data-nosnippet>51</a>        <span class="macro">assert!</span>(!<span class="self">self</span>.has_built);
 <a href=#52 id=52 data-nosnippet>52</a>
-<a href=#53 id=53 data-nosnippet>53</a>        <span class="kw">let </span>Range { start: il, end: ir } = to_half_open_index_range(row_range, <span class="self">self</span>.h + <span class="number">1</span>);
-<a href=#54 id=54 data-nosnippet>54</a>        <span class="kw">let </span>Range { start: jl, end: jr } = to_half_open_index_range(col_range, <span class="self">self</span>.w + <span class="number">1</span>);
+<a href=#53 id=53 data-nosnippet>53</a>        <span class="kw">let </span>Range { start: il, end: ir } = normalize_index(row_range, <span class="self">self</span>.h + <span class="number">1</span>);
+<a href=#54 id=54 data-nosnippet>54</a>        <span class="kw">let </span>Range { start: jl, end: jr } = normalize_index(col_range, <span class="self">self</span>.w + <span class="number">1</span>);
 <a href=#55 id=55 data-nosnippet>55</a>
 <a href=#56 id=56 data-nosnippet>56</a>        <span class="macro">assert!</span>(il &lt;= ir &amp;&amp; ir &lt;= <span class="self">self</span>.h);
 <a href=#57 id=57 data-nosnippet>57</a>        <span class="macro">assert!</span>(jl &lt;= jr &amp;&amp; jr &lt;= <span class="self">self</span>.w);
