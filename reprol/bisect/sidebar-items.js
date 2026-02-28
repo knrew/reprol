@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"trait":["Bisect","Bounds"]};
+window.SIDEBAR_ITEMS = {"trait":["Bisect","SliceBoundsExt"]};
