@@ -510,7 +510,7 @@ mod tests {
         ops::{
             act_add::ActAdd,
             act_add_with_len::ActAddWithLen,
-            act_affine::{ActAffine, OpAffineElement},
+            act_affine::{ActAffine, ActAffineElement},
             act_set::ActSet,
             act_set_with_len::ActSetWithLen,
             op_add::OpAdd,
@@ -650,15 +650,15 @@ mod tests {
 
         // f(x) = 2*x + 3 を区間 [1..4) に適用
         // [1, 2, 3, 4, 5] -> [1, 2*2+3, 2*3+3, 2*4+3, 5] = [1, 7, 9, 11, 5]
-        seg.act(1..4, &OpAffineElement { a: 2, b: 3 });
+        seg.act(1..4, &ActAffineElement { a: 2, b: 3 });
         assert_eq!(seg.fold(..).value, 33); // 1 + 7 + 9 + 11 + 5
 
         // g(x) = 3*x (乗算のみ)
-        seg.act(.., &OpAffineElement { a: 3, b: 0 });
+        seg.act(.., &ActAffineElement { a: 3, b: 0 });
         assert_eq!(seg.fold(..).value, 99); // 33 * 3
 
         // h(x) = x + 10 (加算のみ)
-        seg.act(.., &OpAffineElement { a: 1, b: 10 });
+        seg.act(.., &ActAffineElement { a: 1, b: 10 });
         assert_eq!(seg.fold(..).value, 149); // 99 + 10*5
     }
 
@@ -842,7 +842,7 @@ mod tests {
         );
 
         // f(x) = 2*x + 1（a > 0で単調性維持）
-        seg.act(1..4, &OpAffineElement { a: 2, b: 1 });
+        seg.act(1..4, &ActAffineElement { a: 2, b: 1 });
         // [1, 5, 7, 9, 5]
         // 累積和: [1], [1+5]=6, [1+5+7]=13, [1+5+7+9]=22, [1+5+7+9+5]=27
         assert_eq!(seg.bisect_right(0, |s| s.value <= 6), 2);
@@ -850,7 +850,7 @@ mod tests {
         assert_eq!(seg.bisect_right(0, |s| s.value <= 22), 4);
 
         // さらにアフィン変換（乗算のみ、単調性維持）
-        seg.act(.., &OpAffineElement { a: 3, b: 0 });
+        seg.act(.., &ActAffineElement { a: 3, b: 0 });
         // [3, 15, 21, 27, 15]
         // 累積和: [3], [3+15]=18, [3+15+21]=39, [3+15+21+27]=66, [3+15+21+27+15]=81
         assert_eq!(seg.bisect_right(0, |s| s.value <= 18), 2);

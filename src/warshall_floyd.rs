@@ -20,7 +20,7 @@ use std::ops::Add;
 pub struct WarshallFloyd<C> {
     costs: Vec<Vec<Option<C>>>,
     zero: C,
-    has_build: bool,
+    has_built: bool,
 }
 
 impl<C> WarshallFloyd<C>
@@ -38,7 +38,7 @@ where
         Self {
             costs,
             zero,
-            has_build: true,
+            has_built: true,
         }
     }
 
@@ -46,7 +46,7 @@ where
     ///
     /// - 計算量: O(N^3)
     pub fn build(&mut self) {
-        self.has_build = true;
+        self.has_built = true;
         let n = self.costs.len();
         for k in 0..n {
             for i in 0..n {
@@ -68,7 +68,7 @@ where
     /// 頂点`u`から`v`へコスト`c`の有向辺を追加する．
     /// コストの計算は行われない．
     pub fn add_edge(&mut self, u: usize, v: usize, c: C) {
-        self.has_build = false;
+        self.has_built = false;
         if self.costs[u][v].as_ref().is_none_or(|cost_uv| &c < cost_uv) {
             self.costs[u][v] = Some(c);
         }
@@ -78,7 +78,7 @@ where
     ///
     /// - 計算量: O(N^2)
     pub fn add_edge_incremental(&mut self, u: usize, v: usize, c: C) {
-        assert!(self.has_build);
+        assert!(self.has_built);
 
         let n = self.costs.len();
 
@@ -104,7 +104,7 @@ where
     /// 頂点`u`から`v`への最小コストを返す．
     /// `build()`を呼んでコストを計算してから呼び出す．
     pub fn cost(&self, u: usize, v: usize) -> Option<&C> {
-        assert!(self.has_build);
+        assert!(self.has_built);
         self.costs[u][v].as_ref()
     }
 
@@ -112,7 +112,7 @@ where
     ///
     /// - 計算量：O(N)
     pub fn has_negative_cycle(&self) -> bool {
-        assert!(self.has_build);
+        assert!(self.has_built);
         let n = self.costs.len();
         (0..n).any(|v| self.costs[v][v].as_ref().is_some_and(|c| c < &self.zero))
     }

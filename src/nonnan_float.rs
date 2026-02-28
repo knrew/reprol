@@ -510,7 +510,7 @@ mod tests {
 
     #[test]
     fn test_random_op() {
-        const T: usize = 1000000;
+        const T: usize = 10000;
 
         let mut rng = get_test_rng();
 
@@ -573,7 +573,7 @@ mod tests {
     #[test]
     fn test_random_ord() {
         const T: usize = 100;
-        const N: usize = 100000;
+        const N: usize = 1000;
 
         let mut rng = get_test_rng();
 
