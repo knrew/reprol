@@ -18,7 +18,7 @@
 
 use std::ops::{Index, Range, RangeBounds};
 
-use crate::utils::range_utils::to_half_open_index_range;
+use crate::utils::normalize_range::normalize_index;
 
 /// 2次元グリッド上の矩形範囲加算を管理するいもす法
 pub struct Imos2d {
@@ -50,8 +50,8 @@ impl Imos2d {
     ) {
         assert!(!self.has_built);
 
-        let Range { start: il, end: ir } = to_half_open_index_range(row_range, self.h + 1);
-        let Range { start: jl, end: jr } = to_half_open_index_range(col_range, self.w + 1);
+        let Range { start: il, end: ir } = normalize_index(row_range, self.h + 1);
+        let Range { start: jl, end: jr } = normalize_index(col_range, self.w + 1);
 
         assert!(il <= ir && ir <= self.h);
         assert!(jl <= jr && jr <= self.w);
