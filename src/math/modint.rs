@@ -620,6 +620,48 @@ mod tests {
         check::<P3>();
     }
 
+    #[test]
+    fn test_inv_composite_mod() {
+        // P=8: gcd(a, 8)=1 となるのは a in {1,3,5,7}
+        for a in [1u64, 3, 5, 7] {
+            let m = ModInt::<8>::new(a);
+            assert_eq!((m * m.inv()).inner(), 1, "{a}^-1 mod 8");
+        }
+
+        // P=15: gcd(a, 15)=1 となるのは a in {1,2,4,7,8,11,13,14}
+        for a in [1u64, 2, 4, 7, 8, 11, 13, 14] {
+            let m = ModInt::<15>::new(a);
+            assert_eq!((m * m.inv()).inner(), 1, "{a}^-1 mod 15");
+        }
+    }
+
+    #[test]
+    fn test_div_composite_mod() {
+        // P=8: 分母 b は gcd(b, 8)=1 のもののみ
+        for a in 0u64..8 {
+            for b in [1u64, 3, 5, 7] {
+                let result = ModInt::<8>::new(a) / ModInt::<8>::new(b);
+                assert_eq!(
+                    (result * ModInt::<8>::new(b)).inner(),
+                    a % 8,
+                    "{a} / {b} mod 8"
+                );
+            }
+        }
+
+        // P=15: 分母 b は gcd(b, 15)=1 のもののみ
+        for a in 0u64..15 {
+            for b in [1u64, 2, 4, 7, 8, 11, 13, 14] {
+                let result = ModInt::<15>::new(a) / ModInt::<15>::new(b);
+                assert_eq!(
+                    (result * ModInt::<15>::new(b)).inner(),
+                    a % 15,
+                    "{a} / {b} mod 15"
+                );
+            }
+        }
+    }
+
     // ========== エッジケース ==========
 
     #[test]
@@ -1029,6 +1071,18 @@ mod tests {
     fn test_inv_panic_not_coprime() {
         // gcd(4, 6) == 2 != 1
         let _ = ModInt::<6>::new(4).inv();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_inv_panic_p_one() {
+        let _ = ModInt::<1>::new(0).inv();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_div_panic_p_one() {
+        let _ = ModInt::<1>::new(0) / ModInt::<1>::new(0);
     }
 
     // ========== 小さい入力での全探索 ==========

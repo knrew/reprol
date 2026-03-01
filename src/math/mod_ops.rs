@@ -22,31 +22,57 @@ pub trait ModOps {
     ///
     /// # Panics
     ///
-    /// `p == 0` のとき．
+    /// `p <= 0` のとき．
     fn reduce_mod(self, p: Self) -> Self;
 
     /// 剰余加算．
+    ///
+    /// # Panics
+    ///
+    /// `p <= 0` のとき．
     fn add_mod(self, rhs: Self, p: Self) -> Self;
 
     /// 剰余減算．
+    ///
+    /// # Panics
+    ///
+    /// `p <= 0` のとき．
     fn sub_mod(self, rhs: Self, p: Self) -> Self;
 
     /// 剰余乗算．
+    ///
+    /// # Panics
+    ///
+    /// `p <= 0` のとき．
     fn mul_mod(self, rhs: Self, p: Self) -> Self;
 
     /// 剰余除算．
+    ///
+    /// # Panics
+    ///
+    /// - `p <= 0` のとき．
+    /// - `rhs` が mod `p` で可逆でないとき(`rhs == 0` または `gcd(rhs, p) != 1`)．
     fn div_mod(self, rhs: Self, p: Self) -> Self;
 
     /// 剰余における加法逆元．
+    ///
+    /// # Panics
+    ///
+    /// `p <= 0` のとき．
     fn neg_mod(self, p: Self) -> Self;
 
     /// 剰余累乗．
+    ///
+    /// # Panics
+    ///
+    /// `p <= 0` のとき．
     fn pow_mod(self, exp: u64, p: Self) -> Self;
 
     /// 剰余における乗法逆元．
     ///
     /// # Panics
     ///
+    /// - `p <= 0` のとき．
     /// - `self == 0` のとき．
     /// - `gcd(self, p) != 1` のとき．
     fn inv_mod(self, p: Self) -> Self;
@@ -421,7 +447,7 @@ mod tests {
     #[test]
     fn test_reduce_mod_zero() {
         for &p in &PRIMES {
-            assert_eq!(0u64.reduce_mod(p), 0, "reduce_mode(0, {p})");
+            assert_eq!(0u64.reduce_mod(p), 0, "reduce_mod(0, {p})");
         }
         assert_eq!(0u64.reduce_mod(1), 0, "reduce_mod(0, 1)");
         assert_eq!(0u64.reduce_mod(2), 0, "reduce_mod(0, 2)");
@@ -581,7 +607,7 @@ mod tests {
                 assert_eq!(
                     a.mul_mod(b, p).mul_mod(c, p),
                     a.mul_mod(b.mul_mod(c, p), p),
-                    "({a} * {b}) * {c} = {b} * ({b} * {c}) (mod {p})"
+                    "({a} * {b}) * {c} = {a} * ({b} * {c}) (mod {p})"
                 );
             }
         }
@@ -674,6 +700,30 @@ mod tests {
     fn test_inv_mod_panic_not_coprime() {
         // gcd(4, 6) == 2 != 1
         let _ = 4u64.inv_mod(6);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_inv_mod_panic_zero() {
+        let _ = 0u64.inv_mod(7);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_div_mod_panic_rhs_zero() {
+        let _ = 3u64.div_mod(0, 7);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_reduce_mod_panic_negative_p() {
+        let _ = 5i64.reduce_mod(-3);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_add_mod_panic_negative_p() {
+        let _ = 3i64.add_mod(2, -5);
     }
 
     // ========== 小さい入力での全探索 ==========
