@@ -39,7 +39,7 @@ impl<const P: u64> RollingHash<P> {
     pub fn get(&self, range: impl RangeBounds<usize>) -> u64 {
         let Range { start: l, end: r } = normalize_index(range, self.hash.len() - 1);
         assert!(l <= r);
-        (self.hash[r] - self.hash[l] * self.pow[r - l]).value()
+        (self.hash[r] - self.hash[l] * self.pow[r - l]).inner()
     }
 }
 
