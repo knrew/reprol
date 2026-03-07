@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use crate::{
     math::modint::ModInt,
-    ops::{action::Action, monoid::Monoid, op_add_with_len::OpAddWithLenElement},
+    ops::{action::Action, monoid::Monoid, op_range_sum::OpRangeSumElement},
 };
 
 /// アフィン変換パラメータ: f(x) = a*x + b
@@ -42,16 +42,13 @@ impl<T: Copy + ActAffineUtils> Monoid for ActAffine<T> {
 
 impl<T, O> Action<O> for ActAffine<T>
 where
-    O: Monoid<Element = OpAddWithLenElement<T>>,
+    O: Monoid<Element = OpRangeSumElement<T>>,
     T: Copy + ActAffineUtils,
 {
     #[inline]
     fn act(&self, f: &Self::Element, x: &O::Element) -> O::Element {
         // 区間和に対するアフィン変換: sum' = a*sum + b*len
-        OpAddWithLenElement {
-            value: f.a.mul_(x.value).add_(f.b.mul_(x.len)),
-            len: x.len,
-        }
+        OpRangeSumElement::with_count(f.a.mul_(x.value()).add_(f.b.mul_(x.len())), x.len())
     }
 }
 
@@ -160,34 +157,34 @@ mod tests {
         let act = ActAffine::<i64>::default();
 
         // 作用の適用
-        let node = OpAddWithLenElement { value: 10, len: 3 };
+        let node = OpRangeSumElement::with_count(10, 3);
         let affine = ActAffineElement { a: 2, b: 3 };
         let _op = OpDummy::<i64>::default();
 
         let result = Action::<OpDummy<i64>>::act(&act, &affine, &node);
 
         // sum' = 2*10 + 3*3 = 20 + 9 = 29
-        assert_eq!(result.value, 29);
-        assert_eq!(result.len, 3);
+        assert_eq!(result.value(), 29);
+        assert_eq!(result.len(), 3);
 
         // 単位元での作用は何もしない
         let result_id = Action::<OpDummy<i64>>::act(&act, &act.id(), &node);
-        assert_eq!(result_id.value, 10);
-        assert_eq!(result_id.len, 3);
+        assert_eq!(result_id.value(), 10);
+        assert_eq!(result_id.len(), 3);
     }
 
     #[test]
     fn test_actaffine_unsigned() {
         let act = ActAffine::<u64>::default();
 
-        let node = OpAddWithLenElement { value: 10, len: 3 };
+        let node = OpRangeSumElement::with_count(10, 3);
         let affine = ActAffineElement { a: 2, b: 3 };
         let _op = OpDummy::<u64>::default();
 
         let result = Action::<OpDummy<u64>>::act(&act, &affine, &node);
 
-        assert_eq!(result.value, 29);
-        assert_eq!(result.len, 3);
+        assert_eq!(result.value(), 29);
+        assert_eq!(result.len(), 3);
     }
 
     #[test]
@@ -219,20 +216,14 @@ mod tests {
     struct OpDummy<T>(std::marker::PhantomData<T>);
 
     impl<T: Copy + ActAffineUtils> Monoid for OpDummy<T> {
-        type Element = OpAddWithLenElement<T>;
+        type Element = OpRangeSumElement<T>;
 
         fn id(&self) -> Self::Element {
-            OpAddWithLenElement {
-                value: T::ZERO,
-                len: T::ZERO,
-            }
+            OpRangeSumElement::with_count(T::ZERO, T::ZERO)
         }
 
         fn op(&self, lhs: &Self::Element, rhs: &Self::Element) -> Self::Element {
-            OpAddWithLenElement {
-                value: lhs.value.add_(rhs.value),
-                len: lhs.len.add_(rhs.len),
-            }
+            OpRangeSumElement::with_count(lhs.value().add_(rhs.value()), lhs.len().add_(rhs.len()))
         }
     }
 }

@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use crate::{
     math::modint::ModInt,
-    ops::{action::Action, monoid::Monoid, op_add_with_len::OpAddWithLenElement},
+    ops::{action::Action, monoid::Monoid, op_range_sum::OpRangeSumElement},
 };
 
 /// LazySegmentTreeにおける区間代入作用
@@ -27,16 +27,13 @@ impl<T: Copy + Clone> Monoid for ActSetWithLen<T> {
 
 impl<T, O> Action<O> for ActSetWithLen<T>
 where
-    O: Monoid<Element = OpAddWithLenElement<T>>,
+    O: Monoid<Element = OpRangeSumElement<T>>,
     T: Copy + ActSetWithLenUtils,
 {
     #[inline]
     fn act(&self, f: &Self::Element, x: &O::Element) -> O::Element {
         if let Some(f) = f {
-            OpAddWithLenElement {
-                value: f.mul_(x.len), // value = f * len
-                len: x.len,
-            }
+            OpRangeSumElement::with_count(f.mul_(x.len()), x.len()) // value = f * len
         } else {
             x.clone()
         }
@@ -116,32 +113,32 @@ mod tests {
         let act = ActSetWithLen::<i64>::default();
 
         // Someでの作用の適用
-        let node = OpAddWithLenElement { value: 10, len: 3 };
+        let node = OpRangeSumElement::with_count(10, 3);
         let _op = OpDummy::<i64>::default();
 
         let result = Action::<OpDummy<i64>>::act(&act, &Some(5), &node);
 
         // value' = 5 * 3 = 15
-        assert_eq!(result.value, 15);
-        assert_eq!(result.len, 3);
+        assert_eq!(result.value(), 15);
+        assert_eq!(result.len(), 3);
 
         // Noneでの作用は何もしない
         let result_none = Action::<OpDummy<i64>>::act(&act, &None, &node);
-        assert_eq!(result_none.value, 10);
-        assert_eq!(result_none.len, 3);
+        assert_eq!(result_none.value(), 10);
+        assert_eq!(result_none.len(), 3);
     }
 
     #[test]
     fn test_actrangeset_unsigned() {
         let act = ActSetWithLen::<u64>::default();
 
-        let node = OpAddWithLenElement { value: 10, len: 3 };
+        let node = OpRangeSumElement::with_count(10, 3);
         let _op = OpDummy::<u64>::default();
 
         let result = Action::<OpDummy<u64>>::act(&act, &Some(5), &node);
 
-        assert_eq!(result.value, 15);
-        assert_eq!(result.len, 3);
+        assert_eq!(result.value(), 15);
+        assert_eq!(result.len(), 3);
     }
 
     // テスト用のダミーOp
@@ -168,20 +165,14 @@ mod tests {
     }
 
     impl<T: Copy + ActSetWithLenUtilsExt> Monoid for OpDummy<T> {
-        type Element = OpAddWithLenElement<T>;
+        type Element = OpRangeSumElement<T>;
 
         fn id(&self) -> Self::Element {
-            OpAddWithLenElement {
-                value: T::ZERO,
-                len: T::ZERO,
-            }
+            OpRangeSumElement::with_count(T::ZERO, T::ZERO)
         }
 
         fn op(&self, lhs: &Self::Element, rhs: &Self::Element) -> Self::Element {
-            OpAddWithLenElement {
-                value: lhs.value.add_(rhs.value),
-                len: lhs.len.add_(rhs.len),
-            }
+            OpRangeSumElement::with_count(lhs.value().add_(rhs.value()), lhs.len().add_(rhs.len()))
         }
     }
 }
