@@ -2,9 +2,9 @@
 //!
 //! 結合的な二項演算と単位元を持つ代数的構造を表すトレイト．
 //!
-//! - [`Monoid`]: モノイド
-//! - [`IdempotentMonoid`]: 冪等性を持つモノイド
-//! - [`CommutativeMonoid`]: 可換性を持つモノイド
+//! - [`Monoid`][]: モノイド
+//! - [`IdempotentMonoid`][]: 冪等性を持つモノイド
+//! - [`CommutativeMonoid`][]: 可換性を持つモノイド
 //!
 //! # Examples
 //!
