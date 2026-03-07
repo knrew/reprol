@@ -509,10 +509,10 @@
 <a href=#509 id=509 data-nosnippet>509</a>        math::gcd::Gcd,
 <a href=#510 id=510 data-nosnippet>510</a>        ops::{
 <a href=#511 id=511 data-nosnippet>511</a>            act_add::ActAdd,
-<a href=#512 id=512 data-nosnippet>512</a>            act_add_with_len::ActAddWithLen,
-<a href=#513 id=513 data-nosnippet>513</a>            act_affine::{ActAffine, ActAffineElement},
-<a href=#514 id=514 data-nosnippet>514</a>            act_set::ActSet,
-<a href=#515 id=515 data-nosnippet>515</a>            act_set_with_len::ActSetWithLen,
+<a href=#512 id=512 data-nosnippet>512</a>            act_affine::{ActAffine, ActAffineElement},
+<a href=#513 id=513 data-nosnippet>513</a>            act_range_add::ActRangeAdd,
+<a href=#514 id=514 data-nosnippet>514</a>            act_range_set::ActRangeSet,
+<a href=#515 id=515 data-nosnippet>515</a>            act_set::ActSet,
 <a href=#516 id=516 data-nosnippet>516</a>            op_add::OpAdd,
 <a href=#517 id=517 data-nosnippet>517</a>            op_gcd::OpGcd,
 <a href=#518 id=518 data-nosnippet>518</a>            op_max::OpMax,
@@ -598,7 +598,7 @@
 <a href=#598 id=598 data-nosnippet>598</a>    <span class="attr">#[test]
 <a href=#599 id=599 data-nosnippet>599</a>    </span><span class="kw">fn </span>test_act_add_range_sum() {
 <a href=#600 id=600 data-nosnippet>600</a>        <span class="kw">type </span>Op = OpRangeSum&lt;i64&gt;;
-<a href=#601 id=601 data-nosnippet>601</a>        <span class="kw">type </span>Act = ActAddWithLen&lt;i64&gt;;
+<a href=#601 id=601 data-nosnippet>601</a>        <span class="kw">type </span>Act = ActRangeAdd&lt;i64&gt;;
 <a href=#602 id=602 data-nosnippet>602</a>
 <a href=#603 id=603 data-nosnippet>603</a>        <span class="kw">let </span>v = <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>];
 <a href=#604 id=604 data-nosnippet>604</a>        <span class="kw">let </span><span class="kw-2">mut </span>seg =
@@ -620,7 +620,7 @@
 <a href=#620 id=620 data-nosnippet>620</a>    <span class="attr">#[test]
 <a href=#621 id=621 data-nosnippet>621</a>    </span><span class="kw">fn </span>test_act_set_range_sum() {
 <a href=#622 id=622 data-nosnippet>622</a>        <span class="kw">type </span>Op = OpRangeSum&lt;i64&gt;;
-<a href=#623 id=623 data-nosnippet>623</a>        <span class="kw">type </span>Act = ActSetWithLen&lt;i64&gt;;
+<a href=#623 id=623 data-nosnippet>623</a>        <span class="kw">type </span>Act = ActRangeSet&lt;i64&gt;;
 <a href=#624 id=624 data-nosnippet>624</a>
 <a href=#625 id=625 data-nosnippet>625</a>        <span class="kw">let </span>v = <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>];
 <a href=#626 id=626 data-nosnippet>626</a>        <span class="kw">let </span><span class="kw-2">mut </span>seg =
@@ -705,7 +705,7 @@
 <a href=#705 id=705 data-nosnippet>705</a>    </span><span class="kw">fn </span>test_bisect_add_with_len_sum() {
 <a href=#706 id=706 data-nosnippet>706</a>        <span class="comment">// OpAddWithLen + ActAddでの累積和bisectテスト
 <a href=#707 id=707 data-nosnippet>707</a>        </span><span class="kw">type </span>Op = OpRangeSum&lt;i64&gt;;
-<a href=#708 id=708 data-nosnippet>708</a>        <span class="kw">type </span>Act = ActAddWithLen&lt;i64&gt;;
+<a href=#708 id=708 data-nosnippet>708</a>        <span class="kw">type </span>Act = ActRangeAdd&lt;i64&gt;;
 <a href=#709 id=709 data-nosnippet>709</a>
 <a href=#710 id=710 data-nosnippet>710</a>        <span class="kw">let </span><span class="kw-2">mut </span>seg = LazySegmentTree::&lt;Op, Act&gt;::from_iter(
 <a href=#711 id=711 data-nosnippet>711</a>            <span class="macro">vec!</span>[<span class="number">1i64</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>]
@@ -1384,7 +1384,7 @@
 <a href=#1384 id=1384 data-nosnippet>1384</a>    <span class="attr">#[test]
 <a href=#1385 id=1385 data-nosnippet>1385</a>    </span><span class="kw">fn </span>test_random_range_add_range_sum_i64() {
 <a href=#1386 id=1386 data-nosnippet>1386</a>        <span class="kw">type </span>Op = OpRangeSum&lt;i64&gt;;
-<a href=#1387 id=1387 data-nosnippet>1387</a>        <span class="kw">type </span>Act = ActAddWithLen&lt;i64&gt;;
+<a href=#1387 id=1387 data-nosnippet>1387</a>        <span class="kw">type </span>Act = ActRangeAdd&lt;i64&gt;;
 <a href=#1388 id=1388 data-nosnippet>1388</a>
 <a href=#1389 id=1389 data-nosnippet>1389</a>        <span class="kw">const </span>NUM_TESTCASES: usize = <span class="number">20</span>;
 <a href=#1390 id=1390 data-nosnippet>1390</a>        <span class="kw">const </span>NUM_QUERIES: usize = <span class="number">100000</span>;
@@ -1427,7 +1427,7 @@
 <a href=#1427 id=1427 data-nosnippet>1427</a>    <span class="attr">#[test]
 <a href=#1428 id=1428 data-nosnippet>1428</a>    </span><span class="kw">fn </span>test_random_range_set_range_sum_i64() {
 <a href=#1429 id=1429 data-nosnippet>1429</a>        <span class="kw">type </span>Op = OpRangeSum&lt;i64&gt;;
-<a href=#1430 id=1430 data-nosnippet>1430</a>        <span class="kw">type </span>Act = ActSetWithLen&lt;i64&gt;;
+<a href=#1430 id=1430 data-nosnippet>1430</a>        <span class="kw">type </span>Act = ActRangeSet&lt;i64&gt;;
 <a href=#1431 id=1431 data-nosnippet>1431</a>
 <a href=#1432 id=1432 data-nosnippet>1432</a>        <span class="kw">const </span>NUM_TESTCASES: usize = <span class="number">20</span>;
 <a href=#1433 id=1433 data-nosnippet>1433</a>        <span class="kw">const </span>NUM_QUERIES: usize = <span class="number">100000</span>;
