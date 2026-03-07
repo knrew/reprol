@@ -66,7 +66,10 @@ impl<O: IdempotentMonoid> SparseTable<O> {
     /// 区間`[l, r)`の区間積を返す．
     pub fn fold(&self, range: impl RangeBounds<usize>) -> O::Element {
         let Range { start: l, end: r } = normalize_index(range, self.len);
-        assert!(l < r);
+        assert!(l <= r && r <= self.len);
+        if l == r {
+            return self.op.id();
+        }
         let k = (r - l + 1).next_power_of_two().trailing_zeros() as usize - 1;
         self.op.op(&self.nodes[k][l], &self.nodes[k][r - (1 << k)])
     }
