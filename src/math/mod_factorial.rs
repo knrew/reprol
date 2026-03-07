@@ -57,33 +57,33 @@ mod tests {
     #[test]
     fn test_factorial() {
         let f = ModFactorial998244353::new(20);
-        assert_eq!(f.factorial(0).value(), 1);
-        assert_eq!(f.factorial(1).value(), 1);
-        assert_eq!(f.factorial(2).value(), 2);
-        assert_eq!(f.factorial(3).value(), 6);
-        assert_eq!(f.factorial(4).value(), 24);
-        assert_eq!(f.factorial(10).value(), 3628800);
-        assert_eq!(f.factorial(20).value(), 401576539);
+        assert_eq!(f.factorial(0).inner(), 1);
+        assert_eq!(f.factorial(1).inner(), 1);
+        assert_eq!(f.factorial(2).inner(), 2);
+        assert_eq!(f.factorial(3).inner(), 6);
+        assert_eq!(f.factorial(4).inner(), 24);
+        assert_eq!(f.factorial(10).inner(), 3628800);
+        assert_eq!(f.factorial(20).inner(), 401576539);
     }
 
     #[test]
     fn test_factorial_inv() {
         let f = ModFactorial998244353::new(20);
-        assert_eq!(f.factorial_inv(0).value(), 1);
-        assert_eq!(f.factorial_inv(1).value(), 1);
-        assert_eq!(f.factorial_inv(2).value(), 499122177);
-        assert_eq!(f.factorial_inv(3).value(), 166374059);
-        assert_eq!(f.factorial_inv(20).value(), 400962745);
+        assert_eq!(f.factorial_inv(0).inner(), 1);
+        assert_eq!(f.factorial_inv(1).inner(), 1);
+        assert_eq!(f.factorial_inv(2).inner(), 499122177);
+        assert_eq!(f.factorial_inv(3).inner(), 166374059);
+        assert_eq!(f.factorial_inv(20).inner(), 400962745);
     }
 
     #[test]
     fn test_binomial() {
         let f = ModFactorial998244353::new(10);
-        assert_eq!(f.binomial(0, 0).value(), 1);
-        assert_eq!(f.binomial(6, 0).value(), 1);
-        assert_eq!(f.binomial(7, 7).value(), 1);
-        assert_eq!(f.binomial(5, 2).value(), 10);
-        assert_eq!(f.binomial(10, 3).value(), 120);
-        assert_eq!(f.binomial(2, 6).value(), 0);
+        assert_eq!(f.binomial(0, 0).inner(), 1);
+        assert_eq!(f.binomial(6, 0).inner(), 1);
+        assert_eq!(f.binomial(7, 7).inner(), 1);
+        assert_eq!(f.binomial(5, 2).inner(), 10);
+        assert_eq!(f.binomial(10, 3).inner(), 120);
+        assert_eq!(f.binomial(2, 6).inner(), 0);
     }
 }
