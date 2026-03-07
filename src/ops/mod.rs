@@ -1,10 +1,10 @@
 //! 二項演算(binary operations)など
 
 pub mod act_add;
-pub mod act_add_with_len;
 pub mod act_affine;
+pub mod act_range_add;
+pub mod act_range_set;
 pub mod act_set;
-pub mod act_set_with_len;
 pub mod action;
 pub mod group;
 pub mod monoid;
