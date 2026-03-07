@@ -509,10 +509,10 @@ mod tests {
         math::gcd::Gcd,
         ops::{
             act_add::ActAdd,
-            act_add_with_len::ActAddWithLen,
             act_affine::{ActAffine, ActAffineElement},
+            act_range_add::ActRangeAdd,
+            act_range_set::ActRangeSet,
             act_set::ActSet,
-            act_set_with_len::ActSetWithLen,
             op_add::OpAdd,
             op_gcd::OpGcd,
             op_max::OpMax,
@@ -598,7 +598,7 @@ mod tests {
     #[test]
     fn test_act_add_range_sum() {
         type Op = OpRangeSum<i64>;
-        type Act = ActAddWithLen<i64>;
+        type Act = ActRangeAdd<i64>;
 
         let v = vec![1, 2, 3, 4, 5];
         let mut seg =
@@ -620,7 +620,7 @@ mod tests {
     #[test]
     fn test_act_set_range_sum() {
         type Op = OpRangeSum<i64>;
-        type Act = ActSetWithLen<i64>;
+        type Act = ActRangeSet<i64>;
 
         let v = vec![1, 2, 3, 4, 5];
         let mut seg =
@@ -705,7 +705,7 @@ mod tests {
     fn test_bisect_add_with_len_sum() {
         // OpAddWithLen + ActAddでの累積和bisectテスト
         type Op = OpRangeSum<i64>;
-        type Act = ActAddWithLen<i64>;
+        type Act = ActRangeAdd<i64>;
 
         let mut seg = LazySegmentTree::<Op, Act>::from_iter(
             vec![1i64, 2, 3, 4, 5]
@@ -1384,7 +1384,7 @@ mod tests {
     #[test]
     fn test_random_range_add_range_sum_i64() {
         type Op = OpRangeSum<i64>;
-        type Act = ActAddWithLen<i64>;
+        type Act = ActRangeAdd<i64>;
 
         const NUM_TESTCASES: usize = 20;
         const NUM_QUERIES: usize = 100000;
@@ -1427,7 +1427,7 @@ mod tests {
     #[test]
     fn test_random_range_set_range_sum_i64() {
         type Op = OpRangeSum<i64>;
-        type Act = ActSetWithLen<i64>;
+        type Act = ActRangeSet<i64>;
 
         const NUM_TESTCASES: usize = 20;
         const NUM_QUERIES: usize = 100000;
