@@ -2,6 +2,10 @@
 //!
 //! 結合的な二項演算と単位元を持つ代数的構造を表すトレイト．
 //!
+//! - [`Monoid`]: モノイド
+//! - [`IdempotentMonoid`]: 冪等性を持つモノイド
+//! - [`CommutativeMonoid`]: 可換性を持つモノイド
+//!
 //! # Examples
 //!
 //! ```
@@ -41,9 +45,17 @@ pub trait Monoid {
 /// 集合の任意の要素 `x` に対して `x * x = x` を満たすモノイド．
 pub trait IdempotentMonoid: Monoid {}
 
+/// 可換モノイド(Commutative Monoid)
+///
+/// 集合の任意の要素 `x`, `y` に対して `x * y = y * x` を満たすモノイド．
+pub trait CommutativeMonoid: Monoid {}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn assert_commutative_monoid<T: CommutativeMonoid>() {}
+    fn assert_idempotent_monoid<T: IdempotentMonoid>() {}
 
     struct OpAdd;
 
@@ -56,6 +68,8 @@ mod tests {
             0
         }
     }
+
+    impl CommutativeMonoid for OpAdd {}
 
     struct OpMax;
 
@@ -70,6 +84,19 @@ mod tests {
     }
 
     impl IdempotentMonoid for OpMax {}
+
+    impl CommutativeMonoid for OpMax {}
+
+    #[test]
+    fn test_idempotent_trait_impls() {
+        assert_idempotent_monoid::<OpMax>();
+    }
+
+    #[test]
+    fn test_commutative_trait_impls() {
+        assert_commutative_monoid::<OpAdd>();
+        assert_commutative_monoid::<OpMax>();
+    }
 
     #[test]
     fn test_op_identity() {
@@ -98,6 +125,20 @@ mod tests {
             let lhs = max.op(&max.op(&a, &b), &c);
             let rhs = max.op(&a, &max.op(&b, &c));
             assert_eq!(lhs, rhs, "OpMax: ({a} * {b}) * {c} = {a} * ({b} * {c})");
+        }
+    }
+
+    #[test]
+    fn test_commutative_commutativity() {
+        let add = OpAdd;
+
+        let cases = [(1, 2), (-5, 3), (0, 42), (100, -100), (i64::MAX, 0)];
+        for (a, b) in cases {
+            assert_eq!(
+                add.op(&a, &b),
+                add.op(&b, &a),
+                "OpAdd: {a} * {b} = {b} * {a}"
+            );
         }
     }
 

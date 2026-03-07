@@ -2,6 +2,9 @@
 //!
 //! 逆元を持つモノイドを表すトレイト．
 //!
+//! - [`Group`]: 群
+//! - [`AbelianGroup`]: 可換性を持つ群
+//!
 //! # Examples
 //!
 //! ```
@@ -26,7 +29,7 @@
 //! assert_eq!(m.op(&m.inv(&x), &x), m.id());
 //! ```
 
-use crate::ops::monoid::Monoid;
+use crate::ops::monoid::{CommutativeMonoid, Monoid};
 
 /// 群(Group)
 ///
@@ -37,6 +40,11 @@ pub trait Group: Monoid {
     /// `x` の逆元を返す．
     fn inv(&self, x: &<Self as Monoid>::Element) -> Self::Element;
 }
+
+/// アーベル群(Abelian Group)
+///
+/// 集合の任意の要素 `x`, `y` に対して `x * y = y * x` を満たす群．
+pub trait AbelianGroup: Group + CommutativeMonoid {}
 
 #[cfg(test)]
 mod tests {
@@ -58,6 +66,23 @@ mod tests {
         fn inv(&self, x: &i64) -> i64 {
             -x
         }
+    }
+
+    impl CommutativeMonoid for OpAdd {}
+
+    impl AbelianGroup for OpAdd {}
+
+    fn assert_abelian_group<T: AbelianGroup>() {}
+
+    fn assert_group<T: Group>() {}
+
+    fn assert_commutative_monoid<T: CommutativeMonoid>() {}
+
+    #[test]
+    fn test_abelian_group_supertraits() {
+        assert_abelian_group::<OpAdd>();
+        assert_group::<OpAdd>();
+        assert_commutative_monoid::<OpAdd>();
     }
 
     #[test]

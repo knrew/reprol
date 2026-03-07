@@ -1,6 +1,6 @@
 //! 最大値演算
 //!
-//! 最大値を演算とする冪等モノイド．
+//! 最大値を演算とする冪等かつ可換なモノイド．
 //! 単位元は各型の最小値(`T::MIN`)．
 //!
 //! # Examples
@@ -16,11 +16,11 @@
 
 use std::marker::PhantomData;
 
-use crate::ops::monoid::{IdempotentMonoid, Monoid};
+use crate::ops::monoid::{CommutativeMonoid, IdempotentMonoid, Monoid};
 
 /// 最大値演算
 ///
-/// 二項演算として `max` を，単位元として型の最小値を持つ冪等モノイド．
+/// 二項演算として `max` を，単位元として型の最小値を持つ冪等かつ可換なモノイド．
 /// 標準のプリミティブ整数型に対応する．
 #[derive(Default, Clone, Copy)]
 pub struct OpMax<T>(PhantomData<T>);
@@ -43,6 +43,8 @@ where
 }
 
 impl<T> IdempotentMonoid for OpMax<T> where T: Copy + Ord + HasMinValue {}
+
+impl<T> CommutativeMonoid for OpMax<T> where T: Copy + Ord + HasMinValue {}
 
 /// 型固有の最小値を提供するトレイト．
 trait HasMinValue {
@@ -71,7 +73,11 @@ impl_has_min_value! {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ops::monoid::Monoid;
+    use crate::ops::monoid::{CommutativeMonoid, IdempotentMonoid, Monoid};
+
+    fn assert_commutative_monoid<T: CommutativeMonoid>() {}
+
+    fn assert_idempotent_monoid<T: IdempotentMonoid>() {}
 
     #[test]
     fn test_op_basic() {
@@ -124,6 +130,8 @@ mod tests {
     fn test_op_smoke_all_types() {
         macro_rules! test {
             ($ty: ty) => {
+                assert_commutative_monoid::<OpMax<$ty>>();
+                assert_idempotent_monoid::<OpMax<$ty>>();
                 let m = OpMax::<$ty>::default();
                 assert_eq!(m.op(&3, &7), 7);
                 assert_eq!(m.id(), <$ty>::MIN);
