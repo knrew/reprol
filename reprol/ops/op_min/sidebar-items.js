@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["OpMin"],"trait":["OpMinUtils"]};
+window.SIDEBAR_ITEMS = {"struct":["OpMin"]};

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"trait":["IdempotentMonoid","Monoid"]};
+window.SIDEBAR_ITEMS = {"trait":["CommutativeMonoid","IdempotentMonoid","Monoid"]};

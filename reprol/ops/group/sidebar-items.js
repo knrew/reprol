@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"trait":["Group"]};
+window.SIDEBAR_ITEMS = {"trait":["AbelianGroup","Group"]};
