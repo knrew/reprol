@@ -107,8 +107,11 @@ impl<O: IdempotentMonoid> SparseTable2d<O> {
     ) -> O::Element {
         let Range { start: il, end: ir } = normalize_index(row_range, self.len_rows);
         let Range { start: jl, end: jr } = normalize_index(col_range, self.len_cols);
-        assert!(il < ir && ir <= self.len_rows);
-        assert!(jl < jr && jr <= self.len_cols);
+        assert!(il <= ir && ir <= self.len_rows);
+        assert!(jl <= jr && jr <= self.len_cols);
+        if il == ir || jl == jr {
+            return self.op.id();
+        }
 
         let k = (ir - il + 1).next_power_of_two().trailing_zeros() as usize - 1;
         self.op.op(
