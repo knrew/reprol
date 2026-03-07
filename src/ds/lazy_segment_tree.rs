@@ -514,10 +514,10 @@ mod tests {
             act_set::ActSet,
             act_set_with_len::ActSetWithLen,
             op_add::OpAdd,
-            op_add_with_len::{OpAddWithLen, OpAddWithLenElement},
             op_gcd::OpGcd,
             op_max::OpMax,
             op_min::OpMin,
+            op_range_sum::{OpRangeSum, OpRangeSumElement},
             op_xor::OpXor,
         },
         utils::test_utils::{dynamic_range_query::*, random::get_test_rng, static_range_query::*},
@@ -597,69 +597,69 @@ mod tests {
 
     #[test]
     fn test_act_add_range_sum() {
-        type Op = OpAddWithLen<i64>;
+        type Op = OpRangeSum<i64>;
         type Act = ActAddWithLen<i64>;
 
         let v = vec![1, 2, 3, 4, 5];
         let mut seg =
-            LazySegmentTree::<Op, Act>::from_iter(v.iter().cloned().map(OpAddWithLenElement::leaf));
+            LazySegmentTree::<Op, Act>::from_iter(v.iter().cloned().map(OpRangeSumElement::leaf));
 
         // 区間 [1..4) に 10 を加算: [1, 12, 13, 14, 5]
         seg.act(1..4, &10);
         assert_eq!(
-            (0..5).map(|i| seg.get(i).value).collect::<Vec<_>>(),
+            (0..5).map(|i| seg.get(i).value()).collect::<Vec<_>>(),
             vec![1, 12, 13, 14, 5]
         );
-        assert_eq!(seg.fold(0..=2).value, 26); // 1 + 12 + 13
+        assert_eq!(seg.fold(0..=2).value(), 26); // 1 + 12 + 13
 
         // 全区間に加算
         seg.act(.., &(-1));
-        assert_eq!(seg.fold(..).value, 40); // (1-1) + (12-1) + (13-1) + (14-1) + (5-1) = 40
+        assert_eq!(seg.fold(..).value(), 40); // (1-1) + (12-1) + (13-1) + (14-1) + (5-1) = 40
     }
 
     #[test]
     fn test_act_set_range_sum() {
-        type Op = OpAddWithLen<i64>;
+        type Op = OpRangeSum<i64>;
         type Act = ActSetWithLen<i64>;
 
         let v = vec![1, 2, 3, 4, 5];
         let mut seg =
-            LazySegmentTree::<Op, Act>::from_iter(v.iter().cloned().map(OpAddWithLenElement::leaf));
+            LazySegmentTree::<Op, Act>::from_iter(v.iter().cloned().map(OpRangeSumElement::leaf));
 
         // 区間 [1..4) を 10 にセット: [1, 10, 10, 10, 5]
         seg.act(1..4, &Some(10));
         assert_eq!(
-            (0..5).map(|i| seg.get(i).value).collect::<Vec<_>>(),
+            (0..5).map(|i| seg.get(i).value()).collect::<Vec<_>>(),
             vec![1, 10, 10, 10, 5]
         );
-        assert_eq!(seg.fold(0..=2).value, 21); // 1 + 10 + 10
+        assert_eq!(seg.fold(0..=2).value(), 21); // 1 + 10 + 10
 
         // 全区間をセット
         seg.act(.., &Some(3));
-        assert_eq!(seg.fold(..).value, 15); // 3 * 5
+        assert_eq!(seg.fold(..).value(), 15); // 3 * 5
     }
 
     #[test]
     fn test_act_affine_range_sum() {
-        type Op = OpAddWithLen<i64>;
+        type Op = OpRangeSum<i64>;
         type Act = ActAffine<i64>;
 
         let v = vec![1, 2, 3, 4, 5];
         let mut seg =
-            LazySegmentTree::<Op, Act>::from_iter(v.iter().cloned().map(OpAddWithLenElement::leaf));
+            LazySegmentTree::<Op, Act>::from_iter(v.iter().cloned().map(OpRangeSumElement::leaf));
 
         // f(x) = 2*x + 3 を区間 [1..4) に適用
         // [1, 2, 3, 4, 5] -> [1, 2*2+3, 2*3+3, 2*4+3, 5] = [1, 7, 9, 11, 5]
         seg.act(1..4, &ActAffineElement { a: 2, b: 3 });
-        assert_eq!(seg.fold(..).value, 33); // 1 + 7 + 9 + 11 + 5
+        assert_eq!(seg.fold(..).value(), 33); // 1 + 7 + 9 + 11 + 5
 
         // g(x) = 3*x (乗算のみ)
         seg.act(.., &ActAffineElement { a: 3, b: 0 });
-        assert_eq!(seg.fold(..).value, 99); // 33 * 3
+        assert_eq!(seg.fold(..).value(), 99); // 33 * 3
 
         // h(x) = x + 10 (加算のみ)
         seg.act(.., &ActAffineElement { a: 1, b: 10 });
-        assert_eq!(seg.fold(..).value, 149); // 99 + 10*5
+        assert_eq!(seg.fold(..).value(), 149); // 99 + 10*5
     }
 
     // ============================================================
@@ -704,29 +704,29 @@ mod tests {
     #[test]
     fn test_bisect_add_with_len_sum() {
         // OpAddWithLen + ActAddでの累積和bisectテスト
-        type Op = OpAddWithLen<i64>;
+        type Op = OpRangeSum<i64>;
         type Act = ActAddWithLen<i64>;
 
         let mut seg = LazySegmentTree::<Op, Act>::from_iter(
             vec![1i64, 2, 3, 4, 5]
                 .into_iter()
-                .map(OpAddWithLenElement::leaf),
+                .map(OpRangeSumElement::leaf),
         );
 
         // 累積和でのbisect（常に単調）
         // [1], [1+2]=3, [1+2+3]=6, [1+2+3+4]=10, [1+2+3+4+5]=15
-        assert_eq!(seg.bisect_right(0, |s| s.value <= 3), 2);
-        assert_eq!(seg.bisect_right(0, |s| s.value <= 6), 3);
-        assert_eq!(seg.bisect_right(0, |s| s.value <= 10), 4);
-        assert_eq!(seg.bisect_right(0, |s| s.value <= 15), 5);
+        assert_eq!(seg.bisect_right(0, |s| s.value() <= 3), 2);
+        assert_eq!(seg.bisect_right(0, |s| s.value() <= 6), 3);
+        assert_eq!(seg.bisect_right(0, |s| s.value() <= 10), 4);
+        assert_eq!(seg.bisect_right(0, |s| s.value() <= 15), 5);
 
         // 範囲加算後の累積和bisect
         seg.act(1..4, &5);
         // 配列: [1, 7, 8, 9, 5]
         // 累積和: [1], [1+7]=8, [1+7+8]=16, [1+7+8+9]=25, [1+7+8+9+5]=30
-        assert_eq!(seg.bisect_right(0, |s| s.value <= 8), 2);
-        assert_eq!(seg.bisect_right(0, |s| s.value <= 16), 3);
-        assert_eq!(seg.bisect_right(0, |s| s.value <= 25), 4);
+        assert_eq!(seg.bisect_right(0, |s| s.value() <= 8), 2);
+        assert_eq!(seg.bisect_right(0, |s| s.value() <= 16), 3);
+        assert_eq!(seg.bisect_right(0, |s| s.value() <= 25), 4);
     }
 
     #[test]
@@ -832,29 +832,29 @@ mod tests {
     #[test]
     fn test_bisect_with_act_affine() {
         // ActAffine（アフィン変換）でのbisectテスト
-        type Op = OpAddWithLen<i64>;
+        type Op = OpRangeSum<i64>;
         type Act = ActAffine<i64>;
 
         let mut seg = LazySegmentTree::<Op, Act>::from_iter(
             vec![1i64, 2, 3, 4, 5]
                 .into_iter()
-                .map(OpAddWithLenElement::leaf),
+                .map(OpRangeSumElement::leaf),
         );
 
         // f(x) = 2*x + 1（a > 0で単調性維持）
         seg.act(1..4, &ActAffineElement { a: 2, b: 1 });
         // [1, 5, 7, 9, 5]
         // 累積和: [1], [1+5]=6, [1+5+7]=13, [1+5+7+9]=22, [1+5+7+9+5]=27
-        assert_eq!(seg.bisect_right(0, |s| s.value <= 6), 2);
-        assert_eq!(seg.bisect_right(0, |s| s.value <= 13), 3);
-        assert_eq!(seg.bisect_right(0, |s| s.value <= 22), 4);
+        assert_eq!(seg.bisect_right(0, |s| s.value() <= 6), 2);
+        assert_eq!(seg.bisect_right(0, |s| s.value() <= 13), 3);
+        assert_eq!(seg.bisect_right(0, |s| s.value() <= 22), 4);
 
         // さらにアフィン変換（乗算のみ、単調性維持）
         seg.act(.., &ActAffineElement { a: 3, b: 0 });
         // [3, 15, 21, 27, 15]
         // 累積和: [3], [3+15]=18, [3+15+21]=39, [3+15+21+27]=66, [3+15+21+27+15]=81
-        assert_eq!(seg.bisect_right(0, |s| s.value <= 18), 2);
-        assert_eq!(seg.bisect_right(0, |s| s.value <= 39), 3);
+        assert_eq!(seg.bisect_right(0, |s| s.value() <= 18), 2);
+        assert_eq!(seg.bisect_right(0, |s| s.value() <= 39), 3);
     }
 
     // ============================================================
@@ -1383,7 +1383,7 @@ mod tests {
 
     #[test]
     fn test_random_range_add_range_sum_i64() {
-        type Op = OpAddWithLen<i64>;
+        type Op = OpRangeSum<i64>;
         type Act = ActAddWithLen<i64>;
 
         const NUM_TESTCASES: usize = 20;
@@ -1398,7 +1398,7 @@ mod tests {
 
             let mut v_naive = (0..n).map(|_| rng.random_range(RANGE)).collect::<Vec<_>>();
             let mut seg = LazySegmentTree::<Op, Act>::from_iter(
-                v_naive.iter().cloned().map(OpAddWithLenElement::leaf),
+                v_naive.iter().cloned().map(OpRangeSumElement::leaf),
             );
 
             for _ in 0..NUM_QUERIES {
@@ -1416,7 +1416,7 @@ mod tests {
                         let l = rng.random_range(0..n);
                         let r = rng.random_range(l + 1..=n);
                         let naive = v_naive[l..r].iter().sum::<i64>();
-                        assert_eq!(seg.fold(l..r).value, naive);
+                        assert_eq!(seg.fold(l..r).value(), naive);
                     }
                     _ => unreachable!(),
                 }
@@ -1426,7 +1426,7 @@ mod tests {
 
     #[test]
     fn test_random_range_set_range_sum_i64() {
-        type Op = OpAddWithLen<i64>;
+        type Op = OpRangeSum<i64>;
         type Act = ActSetWithLen<i64>;
 
         const NUM_TESTCASES: usize = 20;
@@ -1441,7 +1441,7 @@ mod tests {
 
             let mut v_naive = (0..n).map(|_| rng.random_range(RANGE)).collect::<Vec<_>>();
             let mut seg = LazySegmentTree::<Op, Act>::from_iter(
-                v_naive.iter().cloned().map(OpAddWithLenElement::leaf),
+                v_naive.iter().cloned().map(OpRangeSumElement::leaf),
             );
 
             for _ in 0..NUM_QUERIES {
@@ -1459,7 +1459,7 @@ mod tests {
                         let l = rng.random_range(0..n);
                         let r = rng.random_range(l + 1..=n);
                         let naive = v_naive[l..r].iter().sum::<i64>();
-                        assert_eq!(seg.fold(l..r).value, naive);
+                        assert_eq!(seg.fold(l..r).value(), naive);
                     }
                     _ => unreachable!(),
                 }

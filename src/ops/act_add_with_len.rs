@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use crate::{
     math::modint::ModInt,
-    ops::{action::Action, monoid::Monoid, op_add_with_len::OpAddWithLenElement},
+    ops::{action::Action, monoid::Monoid, op_range_sum::OpRangeSumElement},
 };
 
 /// LazySegmentTreeにおける区間加算作用
@@ -30,15 +30,12 @@ where
 
 impl<T, O> Action<O> for ActAddWithLen<T>
 where
-    O: Monoid<Element = OpAddWithLenElement<T>>,
+    O: Monoid<Element = OpRangeSumElement<T>>,
     T: Copy + ActAddWithLenUtils,
 {
     #[inline]
     fn act(&self, &f: &Self::Element, x: &O::Element) -> O::Element {
-        OpAddWithLenElement {
-            value: x.value.add_(f.mul_(x.len)), // value += f * len
-            len: x.len,
-        }
+        OpRangeSumElement::with_count(x.value().add_(f.mul_(x.len())), x.len()) // value += f * len
     }
 }
 
@@ -136,33 +133,33 @@ mod tests {
         let act = ActAddWithLen::<i64>::default();
 
         // 作用の適用
-        let node = OpAddWithLenElement { value: 10, len: 3 };
+        let node = OpRangeSumElement::with_count(10, 3);
         let _op = OpDummy::<i64>::default();
 
         // Actionトレイトを通じて呼び出し
         let result = Action::<OpDummy<i64>>::act(&act, &5, &node);
 
         // sum' = 10 + 5 * 3 = 25
-        assert_eq!(result.value, 25);
-        assert_eq!(result.len, 3);
+        assert_eq!(result.value(), 25);
+        assert_eq!(result.len(), 3);
 
         // 単位元での作用は何もしない
         let result_id = Action::<OpDummy<i64>>::act(&act, &0, &node);
-        assert_eq!(result_id.value, 10);
-        assert_eq!(result_id.len, 3);
+        assert_eq!(result_id.value(), 10);
+        assert_eq!(result_id.len(), 3);
     }
 
     #[test]
     fn test_actrangeadd_unsigned() {
         let act = ActAddWithLen::<u64>::default();
 
-        let node = OpAddWithLenElement { value: 10, len: 3 };
+        let node = OpRangeSumElement::with_count(10, 3);
         let _op = OpDummy::<u64>::default();
 
         let result = Action::<OpDummy<u64>>::act(&act, &5, &node);
 
-        assert_eq!(result.value, 25);
-        assert_eq!(result.len, 3);
+        assert_eq!(result.value(), 25);
+        assert_eq!(result.len(), 3);
     }
 
     // テスト用のダミーOp
@@ -170,20 +167,14 @@ mod tests {
     struct OpDummy<T>(std::marker::PhantomData<T>);
 
     impl<T: Copy + ActAddWithLenUtils> Monoid for OpDummy<T> {
-        type Element = OpAddWithLenElement<T>;
+        type Element = OpRangeSumElement<T>;
 
         fn id(&self) -> Self::Element {
-            OpAddWithLenElement {
-                value: T::ZERO,
-                len: T::ZERO,
-            }
+            OpRangeSumElement::with_count(T::ZERO, T::ZERO)
         }
 
         fn op(&self, lhs: &Self::Element, rhs: &Self::Element) -> Self::Element {
-            OpAddWithLenElement {
-                value: lhs.value.add_(rhs.value),
-                len: lhs.len.add_(rhs.len),
-            }
+            OpRangeSumElement::with_count(lhs.value().add_(rhs.value()), lhs.len().add_(rhs.len()))
         }
     }
 }

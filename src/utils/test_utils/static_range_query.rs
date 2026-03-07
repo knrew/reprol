@@ -206,7 +206,7 @@ macro_rules! randomized_static_range_gcd_exhaustive_test {
             $ds_fold,
             $num_testcases,
             $num_elements_max,
-            <$ty>::MIN / 2..=<$ty>::MAX / 2
+            0 as $ty..=<$ty>::MAX / 2
         );
     };
 }

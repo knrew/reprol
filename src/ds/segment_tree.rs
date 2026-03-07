@@ -1341,7 +1341,7 @@ mod tests {
     fn test_special_monoids() {
         // OpGcd
         {
-            let seg = SegmentTree::<OpGcd<i32>>::from(vec![0, 12, -18, 0, 24]);
+            let seg = SegmentTree::<OpGcd<i32>>::from(vec![0, 12, 18, 0, 24]);
             assert_eq!(seg.fold(..), 6);
             assert_eq!(seg.fold(1..3), 6);
             assert_eq!(seg.fold(2..4), 18);

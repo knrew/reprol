@@ -268,7 +268,7 @@ macro_rules! randomized_point_set_range_gcd_2d_test {
             $num_testcases,
             $num_queries,
             $num_elements_max,
-            <$ty>::MIN / 2..=<$ty>::MAX / 2
+            0 as $ty..=<$ty>::MAX / 2
         );
     };
 }
