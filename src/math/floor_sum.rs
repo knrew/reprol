@@ -23,7 +23,7 @@
 use std::mem::swap;
 
 fn checked_floor_sum_i128(mut n: i128, mut m: i128, mut a: i128, mut b: i128) -> Option<i128> {
-    // n*(n-1)/2
+    // `n * (n - 1) / 2`
     fn checked_n_choose_2(n: i128) -> Option<i128> {
         if n <= 1 {
             return Some(0);
@@ -34,6 +34,67 @@ fn checked_floor_sum_i128(mut n: i128, mut m: i128, mut a: i128, mut b: i128) ->
         } else {
             n.checked_mul(n_minus_one.checked_div(2)?)
         }
+    }
+
+    // `0 <= a, b < m`, `0 <= n`, `0 < m` のとき，`a*n + b` を `m` で割った商と余りを返す．
+    //
+    // `a*n + b` は`i128`でオーバーフローし得るため，繰り返し二乗法で分解計算する．
+    fn checked_mul_add_div_rem_nonneg_i128(
+        a: i128,
+        n: i128,
+        b: i128,
+        m: i128,
+    ) -> Option<(i128, i128)> {
+        debug_assert!(0 <= a && a < m);
+        debug_assert!(0 <= b && b < m);
+        debug_assert!(0 <= n);
+        debug_assert!(0 < m);
+
+        let a = u128::try_from(a).ok()?;
+        let mut n = u128::try_from(n).ok()?;
+        let b = u128::try_from(b).ok()?;
+        let m = u128::try_from(m).ok()?;
+
+        // 累積値: q*m + r = a*n + b
+        let mut q = 0u128;
+        let mut r = b;
+
+        // 現在項: term_q*m + term_r = a*2^k
+        let mut term_q = 0;
+        let mut term_r = a;
+
+        while n > 0 {
+            if n & 1 == 1 {
+                q = q.checked_add(term_q)?;
+                let sum_r = r.checked_add(term_r)?;
+                if sum_r >= m {
+                    r = sum_r.checked_sub(m)?;
+                    q = q.checked_add(1)?;
+                } else {
+                    r = sum_r;
+                }
+            }
+
+            n >>= 1;
+
+            if n == 0 {
+                break;
+            }
+
+            term_q = term_q.checked_mul(2)?;
+            let doubled_r = term_r.checked_mul(2)?;
+            if doubled_r >= m {
+                term_r = doubled_r.checked_sub(m)?;
+                term_q = term_q.checked_add(1)?;
+            } else {
+                term_r = doubled_r;
+            }
+        }
+
+        let q = i128::try_from(q).ok()?;
+        let r = i128::try_from(r).ok()?;
+
+        Some((q, r))
     }
 
     if n < 0 || m == 0 {
@@ -71,13 +132,13 @@ fn checked_floor_sum_i128(mut n: i128, mut m: i128, mut a: i128, mut b: i128) ->
         }
         b = b.rem_euclid(m);
 
-        let y_max = a.checked_mul(n)?.checked_add(b)?;
-        if y_max < m {
+        let (next_n, next_b) = checked_mul_add_div_rem_nonneg_i128(a, n, b, m)?;
+        if next_n == 0 {
             return Some(res);
         }
 
-        n = y_max.checked_div(m)?;
-        b = y_max.rem_euclid(m);
+        n = next_n;
+        b = next_b;
         swap(&mut m, &mut a);
     }
 }
@@ -269,6 +330,20 @@ mod tests {
 
         // m=1: closed-form | a*n*(n-1)/2 + b*n = 3*5*4/2 + 2*5 = 40
         assert_eq!(i64::floor_sum(5, 1, 3, 2), 40, "m=1");
+    }
+
+    #[test]
+    fn test_checked_floor_sum_i128_prevent_false_overflow_in_y_max() {
+        assert_eq!(
+            i128::floor_sum(2, i128::MAX, -1, 0),
+            -1,
+            "i128 boundary: floor_sum(2, i128::MAX, -1, 0) should be -1"
+        );
+        assert_eq!(
+            i128::checked_floor_sum(2, i128::MAX, -1, 0),
+            Some(-1),
+            "i128 boundary: checked_floor_sum(2, i128::MAX, -1, 0) should be Some(-1)"
+        );
     }
 
     // ========== 負のm ==========
