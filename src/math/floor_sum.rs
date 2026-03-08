@@ -19,6 +19,7 @@
 //! 内部計算は`i128`で行い，結果を元の型に変換する．
 //! 入力は`[i64::MIN, i64::MAX]`の範囲を前提とする．
 //! `floor_sum`は不正入力(制約外，`m == 0`，符号付き整数型で`n < 0`)やオーバーフローでpanicし，`checked_floor_sum`は`None`を返す．
+//! また，`i128`実装では中間項を`i128`で逐次加算しているため，入力が`[i64::MIN, i64::MAX]`内でも，中間計算でオーバーフロー検知されて`None`/panicとなる場合がある(最終的な厳密値は`i128`に収まる場合を含む)．
 
 use std::{mem::swap, ops::RangeInclusive};
 
@@ -110,6 +111,7 @@ pub trait FloorSum: Sized {
     ///
     /// オーバーフローまたは不正な引数の場合は`None`を返す．
     /// 入力制約`[i64::MIN, i64::MAX]`の範囲外も`None`となる．
+    /// `i128`実装では，中間計算でのオーバーフロー検知により，最終結果が`i128`範囲内でも`None`となる場合がある．
     fn checked_floor_sum(n: Self, m: Self, a: Self, b: Self) -> Option<Self>;
 }
 
