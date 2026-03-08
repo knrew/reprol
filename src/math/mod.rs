@@ -12,6 +12,5 @@ pub mod linear_sieve;
 pub mod mod_factorial;
 pub mod mod_ops;
 pub mod modint;
-pub mod pow;
 pub mod radix;
 pub mod ratio;
