@@ -112,7 +112,7 @@ mod tests {
     use rand::Rng;
 
     use super::*;
-    use crate::{math::div_floor::DivFloor, utils::test_utils::random::get_test_rng};
+    use crate::{math::div_floor::DivFloorCompat, utils::test_utils::random::get_test_rng};
 
     fn floor_sum_naive_u64(n: u64, m: u64, a: u64, b: u64) -> u64 {
         let mut res: u64 = 0;
@@ -120,7 +120,7 @@ mod tests {
             res = res.wrapping_add(
                 a.wrapping_mul(i)
                     .wrapping_add(b)
-                    .checked_div_floor(m)
+                    .checked_div_floor_compat(m)
                     .expect("overflow"),
             );
         }
@@ -133,7 +133,7 @@ mod tests {
             res = res.wrapping_add(
                 a.wrapping_mul(i)
                     .wrapping_add(b)
-                    .checked_div_floor(m)
+                    .checked_div_floor_compat(m)
                     .expect("overflow"),
             );
         }
