@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"trait":["DivFloor"]};
+window.SIDEBAR_ITEMS = {"trait":["DivFloorCompat"]};

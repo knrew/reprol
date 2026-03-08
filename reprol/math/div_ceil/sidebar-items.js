@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"trait":["DivCeil"]};
+window.SIDEBAR_ITEMS = {"trait":["DivCeilCompat"]};

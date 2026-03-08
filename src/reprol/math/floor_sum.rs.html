@@ -112,7 +112,7 @@
 <a href=#112 id=112 data-nosnippet>112</a>    <span class="kw">use </span>rand::Rng;
 <a href=#113 id=113 data-nosnippet>113</a>
 <a href=#114 id=114 data-nosnippet>114</a>    <span class="kw">use super</span>::<span class="kw-2">*</span>;
-<a href=#115 id=115 data-nosnippet>115</a>    <span class="kw">use crate</span>::{math::div_floor::DivFloor, utils::test_utils::random::get_test_rng};
+<a href=#115 id=115 data-nosnippet>115</a>    <span class="kw">use crate</span>::{math::div_floor::DivFloorCompat, utils::test_utils::random::get_test_rng};
 <a href=#116 id=116 data-nosnippet>116</a>
 <a href=#117 id=117 data-nosnippet>117</a>    <span class="kw">fn </span>floor_sum_naive_u64(n: u64, m: u64, a: u64, b: u64) -&gt; u64 {
 <a href=#118 id=118 data-nosnippet>118</a>        <span class="kw">let </span><span class="kw-2">mut </span>res: u64 = <span class="number">0</span>;
@@ -120,7 +120,7 @@
 <a href=#120 id=120 data-nosnippet>120</a>            res = res.wrapping_add(
 <a href=#121 id=121 data-nosnippet>121</a>                a.wrapping_mul(i)
 <a href=#122 id=122 data-nosnippet>122</a>                    .wrapping_add(b)
-<a href=#123 id=123 data-nosnippet>123</a>                    .checked_div_floor(m)
+<a href=#123 id=123 data-nosnippet>123</a>                    .checked_div_floor_compat(m)
 <a href=#124 id=124 data-nosnippet>124</a>                    .expect(<span class="string">"overflow"</span>),
 <a href=#125 id=125 data-nosnippet>125</a>            );
 <a href=#126 id=126 data-nosnippet>126</a>        }
@@ -133,7 +133,7 @@
 <a href=#133 id=133 data-nosnippet>133</a>            res = res.wrapping_add(
 <a href=#134 id=134 data-nosnippet>134</a>                a.wrapping_mul(i)
 <a href=#135 id=135 data-nosnippet>135</a>                    .wrapping_add(b)
-<a href=#136 id=136 data-nosnippet>136</a>                    .checked_div_floor(m)
+<a href=#136 id=136 data-nosnippet>136</a>                    .checked_div_floor_compat(m)
 <a href=#137 id=137 data-nosnippet>137</a>                    .expect(<span class="string">"overflow"</span>),
 <a href=#138 id=138 data-nosnippet>138</a>            );
 <a href=#139 id=139 data-nosnippet>139</a>        }
