@@ -1,35 +1,66 @@
 //! 素数判定
 //!
-//! 整数が素数かどうか判定する．
+//! 整数が素数であるかを判定する．
 //!
-//! ## 使用例
+//! 計算量: O(sqrt n)
+//!
+//! # Examples
+//!
 //! ```
 //! use reprol::math::is_prime::IsPrime;
-//! assert!(7u32.is_prime());
-//! assert!(!12u32.is_prime());
+//!
+//! assert!(7u64.is_prime());
+//! assert!(!1u64.is_prime());
 //! ```
+//!
+//! # Notes
+//!
+//! - 符号付き整数型では，負の値に対して常に`false`を返す．
 
+/// 素数判定トレイト．
 pub trait IsPrime {
+    /// 素数であれば`true`を返す．
     fn is_prime(&self) -> bool;
 }
 
-macro_rules! impl_is_prime {
+macro_rules! impl_is_prime_inner {
     ($ty: ty) => {
         impl IsPrime for $ty {
             fn is_prime(&self) -> bool {
-                self >= &2 && (2..).take_while(|i| i * i <= *self).all(|i| self % i != 0)
+                let n = *self;
+
+                if n < 2 {
+                    return false;
+                }
+                if n <= 3 {
+                    return true;
+                }
+                if n % 2 == 0 || n % 3 == 0 {
+                    return false;
+                }
+
+                let mut i = 5;
+                while i <= n / i {
+                    if n % i == 0 || n % (i + 2) == 0 {
+                        return false;
+                    }
+
+                    i += 6;
+                }
+
+                true
             }
         }
     };
 }
 
-macro_rules! impl_is_prime_for {
-    ($($ty: ty),* $(,)?) => {
-        $( impl_is_prime!($ty); )*
+macro_rules! impl_is_prime {
+    ($($ty:ty),* $(,)?) => {
+        $( impl_is_prime_inner!($ty); )*
     };
 }
 
-impl_is_prime_for! {
+impl_is_prime! {
     i8, i16, i32, i64, i128, isize,
     u8, u16, u32, u64, u128, usize,
 }
@@ -38,130 +69,107 @@ impl_is_prime_for! {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_is_prime() {
-        let test_cases: &[(u64, bool)] = &[
-            (0, false),
-            (1, false),
-            (2, true),
-            (3, true),
-            (4, false),
-            (5, true),
-            (6, false),
-            (7, true),
-            (8, false),
-            (9, false),
-            (10, false),
-            (11, true),
-            (12, false),
-            (13, true),
-            (14, false),
-            (15, false),
-            (16, false),
-            (17, true),
-            (18, false),
-            (19, true),
-            (20, false),
-            (21, false),
-            (22, false),
-            (23, true),
-            (24, false),
-            (25, false),
-            (26, false),
-            (27, false),
-            (28, false),
-            (29, true),
-            (30, false),
-            (31, true),
-            (32, false),
-            (33, false),
-            (34, false),
-            (35, false),
-            (36, false),
-            (37, true),
-            (38, false),
-            (39, false),
-            (40, false),
-            (41, true),
-            (42, false),
-            (43, true),
-            (44, false),
-            (45, false),
-            (46, false),
-            (47, true),
-            (48, false),
-            (49, false),
-            (50, false),
-            (51, false),
-            (52, false),
-            (53, true),
-            (54, false),
-            (55, false),
-            (56, false),
-            (57, false),
-            (58, false),
-            (59, true),
-            (60, false),
-            (61, true),
-            (62, false),
-            (63, false),
-            (64, false),
-            (65, false),
-            (66, false),
-            (67, true),
-            (68, false),
-            (69, false),
-            (70, false),
-            (71, true),
-            (72, false),
-            (73, true),
-            (74, false),
-            (75, false),
-            (76, false),
-            (77, false),
-            (78, false),
-            (79, true),
-            (80, false),
-            (81, false),
-            (82, false),
-            (83, true),
-            (84, false),
-            (85, false),
-            (86, false),
-            (87, false),
-            (88, false),
-            (89, true),
-            (90, false),
-            (91, false),
-            (92, false),
-            (93, false),
-            (94, false),
-            (95, false),
-            (96, false),
-            (97, true),
-            (98, false),
-            (99, false),
-            (100, false),
-        ];
-
-        for &(n, expected) in test_cases {
-            assert_eq!(n.is_prime(), expected, "failed to case: {}", n);
+    fn naive_is_prime_u128(n: u128) -> bool {
+        if n < 2 {
+            return false;
         }
+        let mut i = 2u128;
+        while i * i <= n {
+            if n % i == 0 {
+                return false;
+            }
+            i += 1;
+        }
+        true
     }
 
     #[test]
     fn test_smoke_all_types() {
-        assert!(13i8.is_prime());
-        assert!(13i16.is_prime());
-        assert!(13i32.is_prime());
-        assert!(13i64.is_prime());
-        assert!(13i128.is_prime());
-        assert!(13isize.is_prime());
-        assert!(13u8.is_prime());
-        assert!(13u16.is_prime());
-        assert!(13u32.is_prime());
-        assert!(13u64.is_prime());
-        assert!(13u128.is_prime());
-        assert!(13usize.is_prime());
+        macro_rules! test {
+            ($ty: ty) => {
+                assert!((13 as $ty).is_prime(), stringify!($ty));
+                assert!(!(30 as $ty).is_prime(), stringify!($ty));
+            };
+        }
+
+        test!(i8);
+        test!(i16);
+        test!(i32);
+        test!(i64);
+        test!(i128);
+        test!(isize);
+        test!(u8);
+        test!(u16);
+        test!(u32);
+        test!(u64);
+        test!(u128);
+        test!(usize);
+    }
+
+    #[test]
+    fn test_is_prime_signed_boundary_and_small_values() {
+        // 負値
+        assert!(!(-1_i32).is_prime(), "n=-1");
+        assert!(!i8::MIN.is_prime(), "n={}", i8::MIN);
+        assert!(!isize::MIN.is_prime(), "n={}", isize::MIN);
+
+        assert!(!0_i32.is_prime(), "n=0");
+        assert!(!1_i32.is_prime(), "n=1");
+        assert!(2_i32.is_prime(), "n=2");
+        assert!(3_i32.is_prime(), "n=3");
+    }
+
+    #[test]
+    fn test_is_prime_unsigned_boundary_and_small_values() {
+        assert!(!0_u32.is_prime(), "n=0");
+        assert!(!1_u32.is_prime(), "n=1");
+        assert!(2_u32.is_prime(), "n=2");
+        assert!(3_u32.is_prime(), "n=3");
+
+        assert!(!u8::MAX.is_prime(), "n=u8::MAX({})", u8::MAX);
+        assert!(!u128::MAX.is_prime(), "n=u128::MAX({})", u128::MAX);
+        assert!(!usize::MAX.is_prime(), "n=usize::MAX({})", usize::MAX);
+    }
+
+    #[test]
+    fn test_is_prime_branch_divisible_by_2_or_3() {
+        // 偶数
+        for n in [4_u32, 6, 8, 100] {
+            assert!(!n.is_prime(), "n={n}");
+        }
+
+        // 3の倍数
+        for n in [9_u32, 15, 21, 27] {
+            assert!(!n.is_prime(), "n={n}");
+        }
+    }
+
+    #[test]
+    fn test_is_prime_branch_6k_minus_1_and_6k_plus_1_composites() {
+        // 6k±1形式の合成数
+        assert!(!25_u32.is_prime(), "n=25");
+        assert!(!49_u32.is_prime(), "n=49");
+        assert!(!35_u32.is_prime(), "n=35");
+
+        // n%(i+2)==0 補足
+        assert!(!77_u32.is_prime(), "n=77");
+
+        // 素数
+        assert!(29_u32.is_prime(), "n=29");
+        assert!(31_u32.is_prime(), "n=31");
+        assert!(37_u32.is_prime(), "n=37");
+    }
+
+    #[test]
+    fn test_is_prime_exhaustive_small_range_against_naive() {
+        for n in 0..=10_000_u32 {
+            let expected = naive_is_prime_u128(n as u128);
+            assert_eq!(n.is_prime(), expected, "n={n}");
+        }
+
+        for n in -1000..=10_000_i32 {
+            let expected = n >= 0 && naive_is_prime_u128(n as u128);
+            assert_eq!(n.is_prime(), expected, "n={n}");
+        }
     }
 }
