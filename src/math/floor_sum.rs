@@ -22,17 +22,115 @@
 
 use std::mem::swap;
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct I256 {
+    hi: i128,
+    lo: u128,
+}
+
+impl I256 {
+    const ZERO: Self = Self { hi: 0, lo: 0 };
+    const I128_MIN_U128: u128 = 1u128 << 127;
+
+    fn from_i128(v: i128) -> Self {
+        if v >= 0 {
+            Self {
+                hi: 0,
+                lo: v as u128,
+            }
+        } else {
+            Self {
+                hi: -1,
+                lo: v as u128,
+            }
+        }
+    }
+
+    fn is_zero(self) -> bool {
+        self.hi == 0 && self.lo == 0
+    }
+
+    fn checked_add(self, rhs: Self) -> Option<Self> {
+        let (lo, carry) = self.lo.overflowing_add(rhs.lo);
+        let mut hi = self.hi.checked_add(rhs.hi)?;
+        if carry {
+            hi = hi.checked_add(1)?;
+        }
+        Some(Self { hi, lo })
+    }
+
+    fn checked_neg(self) -> Option<Self> {
+        if self.hi == i128::MIN && self.lo == 0 {
+            return None;
+        }
+        let lo = (!self.lo).wrapping_add(1);
+        let carry = if lo == 0 { 1 } else { 0 };
+        let hi = (!self.hi).checked_add(carry)?;
+        Some(Self { hi, lo })
+    }
+
+    fn checked_sub(self, rhs: Self) -> Option<Self> {
+        self.checked_add(rhs.checked_neg()?)
+    }
+
+    fn checked_mul_i128(self, rhs: i128) -> Option<Self> {
+        if self.is_zero() || rhs == 0 {
+            return Some(Self::ZERO);
+        }
+
+        let mut mul = rhs.unsigned_abs();
+        let mut addend = self;
+        let mut acc = Self::ZERO;
+
+        while mul > 0 {
+            if mul & 1 == 1 {
+                acc = acc.checked_add(addend)?;
+            }
+
+            mul >>= 1;
+            if mul == 0 {
+                break;
+            }
+            addend = addend.checked_add(addend)?;
+        }
+
+        if rhs < 0 {
+            acc.checked_neg()
+        } else {
+            Some(acc)
+        }
+    }
+
+    fn try_to_i128(self) -> Option<i128> {
+        if self.hi == 0 {
+            if self.lo <= i128::MAX as u128 {
+                Some(self.lo as i128)
+            } else {
+                None
+            }
+        } else if self.hi == -1 {
+            if self.lo >= Self::I128_MIN_U128 {
+                Some(self.lo as i128)
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }
+}
+
 fn checked_floor_sum_i128(mut n: i128, mut m: i128, mut a: i128, mut b: i128) -> Option<i128> {
     // `n * (n - 1) / 2`
-    fn checked_n_choose_2(n: i128) -> Option<i128> {
+    fn checked_n_choose_2_i256(n: i128) -> Option<I256> {
         if n <= 1 {
-            return Some(0);
+            return Some(I256::ZERO);
         }
         let n_minus_one = n.checked_sub(1)?;
         if n % 2 == 0 {
-            n.checked_div(2)?.checked_mul(n_minus_one)
+            I256::from_i128(n.checked_div(2)?).checked_mul_i128(n_minus_one)
         } else {
-            n.checked_mul(n_minus_one.checked_div(2)?)
+            I256::from_i128(n).checked_mul_i128(n_minus_one.checked_div(2)?)
         }
     }
 
@@ -107,34 +205,39 @@ fn checked_floor_sum_i128(mut n: i128, mut m: i128, mut a: i128, mut b: i128) ->
         // floor(x / -p) = -floor((x - 1) / p) - 1
         if let Some(b_minus_one) = b.checked_sub(1) {
             let s = checked_floor_sum_i128(n, p, a, b_minus_one)?;
-            return s.checked_neg()?.checked_sub(n);
+            let shifted = I256::from_i128(s)
+                .checked_neg()?
+                .checked_sub(I256::from_i128(n))?;
+            return shifted.try_to_i128();
         }
 
         // b == i128::MIN のとき:
         // floor(x / -p) = -floor((x + p - 1) / p)
         let b_plus_p_minus_one = b.checked_add(p.checked_sub(1)?)?;
         let s = checked_floor_sum_i128(n, p, a, b_plus_p_minus_one)?;
-        return s.checked_neg();
+        return I256::from_i128(s).checked_neg()?.try_to_i128();
     }
 
-    let mut res = 0i128;
+    let mut res = I256::ZERO;
 
     loop {
         let a_quot = a.div_euclid(m);
         if a_quot != 0 {
-            res = res.checked_add(a_quot.checked_mul(checked_n_choose_2(n)?)?)?;
+            let term = checked_n_choose_2_i256(n)?.checked_mul_i128(a_quot)?;
+            res = res.checked_add(term)?;
         }
         a = a.rem_euclid(m);
 
         let b_quot = b.div_euclid(m);
         if b_quot != 0 {
-            res = res.checked_add(b_quot.checked_mul(n)?)?;
+            let term = I256::from_i128(b_quot).checked_mul_i128(n)?;
+            res = res.checked_add(term)?;
         }
         b = b.rem_euclid(m);
 
         let (next_n, next_b) = checked_mul_add_div_rem_nonneg_i128(a, n, b, m)?;
         if next_n == 0 {
-            return Some(res);
+            return res.try_to_i128();
         }
 
         n = next_n;
@@ -343,6 +446,24 @@ mod tests {
             i128::checked_floor_sum(2, i128::MAX, -1, 0),
             Some(-1),
             "i128 boundary: checked_floor_sum(2, i128::MAX, -1, 0) should be Some(-1)"
+        );
+    }
+
+    #[test]
+    fn test_checked_floor_sum_i128_negative_m_reorder_needed() {
+        assert_eq!(
+            i128::checked_floor_sum(1, -1, 0, i128::MIN + 1),
+            Some(i128::MAX),
+            "i128 boundary: checked_floor_sum(1, -1, 0, i128::MIN + 1) should be Some(i128::MAX)"
+        );
+    }
+
+    #[test]
+    fn test_checked_floor_sum_i128_prevent_false_overflow_in_decomposition_term() {
+        assert_eq!(
+            i128::checked_floor_sum(i128::MAX, i128::MAX, -1, 0),
+            Some(1 - i128::MAX),
+            "i128 boundary: checked_floor_sum(i128::MAX, i128::MAX, -1, 0) should be Some(1 - i128::MAX)"
         );
     }
 
