@@ -17,182 +17,65 @@
 //! # Notes
 //!
 //! 内部計算は`i128`で行い，結果を元の型に変換する．
-//! `floor_sum`はオーバーフローや不正な引数でpanicし，`checked_floor_sum`は`None`を返す．
-//! `u128`/`usize`/`isize`では，`i128`に変換できない入力(例: `u128`で`i128::MAX`超)は`None`となる．
+//! 入力は`[i64::MIN, i64::MAX]`の範囲を前提とする．
+//! `floor_sum`は不正入力(制約外，`m == 0`，符号付き整数型で`n < 0`)やオーバーフローでpanicし，`checked_floor_sum`は`None`を返す．
 
-use std::mem::swap;
+use std::{mem::swap, ops::RangeInclusive};
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct I256 {
-    hi: i128,
-    lo: u128,
-}
-
-impl I256 {
-    const ZERO: Self = Self { hi: 0, lo: 0 };
-    const I128_MIN_U128: u128 = 1u128 << 127;
-
-    fn from_i128(v: i128) -> Self {
-        if v >= 0 {
-            Self {
-                hi: 0,
-                lo: v as u128,
-            }
-        } else {
-            Self {
-                hi: -1,
-                lo: v as u128,
-            }
-        }
-    }
-
-    fn is_zero(self) -> bool {
-        self.hi == 0 && self.lo == 0
-    }
-
-    fn checked_add(self, rhs: Self) -> Option<Self> {
-        let (lo, carry) = self.lo.overflowing_add(rhs.lo);
-        let mut hi = self.hi.checked_add(rhs.hi)?;
-        if carry {
-            hi = hi.checked_add(1)?;
-        }
-        Some(Self { hi, lo })
-    }
-
-    fn checked_neg(self) -> Option<Self> {
-        if self.hi == i128::MIN && self.lo == 0 {
-            return None;
-        }
-        let lo = (!self.lo).wrapping_add(1);
-        let carry = if lo == 0 { 1 } else { 0 };
-        let hi = (!self.hi).checked_add(carry)?;
-        Some(Self { hi, lo })
-    }
-
-    fn checked_sub(self, rhs: Self) -> Option<Self> {
-        self.checked_add(rhs.checked_neg()?)
-    }
-
-    fn checked_mul_i128(self, rhs: i128) -> Option<Self> {
-        if self.is_zero() || rhs == 0 {
-            return Some(Self::ZERO);
-        }
-
-        let mut mul = rhs.unsigned_abs();
-        let mut addend = self;
-        let mut acc = Self::ZERO;
-
-        while mul > 0 {
-            if mul & 1 == 1 {
-                acc = acc.checked_add(addend)?;
-            }
-
-            mul >>= 1;
-            if mul == 0 {
-                break;
-            }
-            addend = addend.checked_add(addend)?;
-        }
-
-        if rhs < 0 {
-            acc.checked_neg()
-        } else {
-            Some(acc)
-        }
-    }
-
-    fn try_to_i128(self) -> Option<i128> {
-        if self.hi == 0 {
-            if self.lo <= i128::MAX as u128 {
-                Some(self.lo as i128)
-            } else {
-                None
-            }
-        } else if self.hi == -1 {
-            if self.lo >= Self::I128_MIN_U128 {
-                Some(self.lo as i128)
-            } else {
-                None
-            }
-        } else {
-            None
-        }
-    }
-}
-
-fn checked_floor_sum_i128(mut n: i128, mut m: i128, mut a: i128, mut b: i128) -> Option<i128> {
+fn checked_floor_sum_i128_inner(
+    mut n: i128,
+    mut m: i128,
+    mut a: i128,
+    mut b: i128,
+) -> Option<i128> {
     // `n * (n - 1) / 2`
-    fn checked_n_choose_2_i256(n: i128) -> Option<I256> {
+    fn checked_n_choose_2_i128(n: i128) -> Option<i128> {
         if n <= 1 {
-            return Some(I256::ZERO);
+            return Some(0);
         }
         let n_minus_one = n.checked_sub(1)?;
         if n % 2 == 0 {
-            I256::from_i128(n.checked_div(2)?).checked_mul_i128(n_minus_one)
+            n.checked_div(2)?.checked_mul(n_minus_one)
         } else {
-            I256::from_i128(n).checked_mul_i128(n_minus_one.checked_div(2)?)
+            n.checked_mul(n_minus_one.checked_div(2)?)
         }
     }
 
-    // `0 <= a, b < m`, `0 <= n`, `0 < m` のとき，`a*n + b` を `m` で割った商と余りを返す．
-    //
-    // `a*n + b` は`i128`でオーバーフローし得るため，繰り返し二乗法で分解計算する．
-    fn checked_mul_add_div_rem_nonneg_i128(
-        a: i128,
-        n: i128,
-        b: i128,
-        m: i128,
-    ) -> Option<(i128, i128)> {
-        debug_assert!(0 <= a && a < m);
-        debug_assert!(0 <= b && b < m);
-        debug_assert!(0 <= n);
-        debug_assert!(0 < m);
+    debug_assert!(n >= 0, "precondition violation: n must be non-negative");
+    debug_assert!(m > 0, "precondition violation: m must be positive");
 
-        let a = u128::try_from(a).ok()?;
-        let mut n = u128::try_from(n).ok()?;
-        let b = u128::try_from(b).ok()?;
-        let m = u128::try_from(m).ok()?;
+    let mut res = 0i128;
 
-        // 累積値: q*m + r = a*n + b
-        let mut q = 0u128;
-        let mut r = b;
+    loop {
+        let a_quot = a.div_euclid(m);
+        if a_quot != 0 {
+            let term = checked_n_choose_2_i128(n)?.checked_mul(a_quot)?;
+            res = res.checked_add(term)?;
+        }
+        a = a.rem_euclid(m);
 
-        // 現在項: term_q*m + term_r = a*2^k
-        let mut term_q = 0;
-        let mut term_r = a;
+        let b_quot = b.div_euclid(m);
+        if b_quot != 0 {
+            let term = b_quot.checked_mul(n)?;
+            res = res.checked_add(term)?;
+        }
+        b = b.rem_euclid(m);
 
-        while n > 0 {
-            if n & 1 == 1 {
-                q = q.checked_add(term_q)?;
-                let sum_r = r.checked_add(term_r)?;
-                if sum_r >= m {
-                    r = sum_r.checked_sub(m)?;
-                    q = q.checked_add(1)?;
-                } else {
-                    r = sum_r;
-                }
-            }
-
-            n >>= 1;
-
-            if n == 0 {
-                break;
-            }
-
-            term_q = term_q.checked_mul(2)?;
-            let doubled_r = term_r.checked_mul(2)?;
-            if doubled_r >= m {
-                term_r = doubled_r.checked_sub(m)?;
-                term_q = term_q.checked_add(1)?;
-            } else {
-                term_r = doubled_r;
-            }
+        let y_max = a.checked_mul(n)?.checked_add(b)?;
+        if y_max < m {
+            return Some(res);
         }
 
-        let q = i128::try_from(q).ok()?;
-        let r = i128::try_from(r).ok()?;
+        n = y_max.div_euclid(m);
+        b = y_max.rem_euclid(m);
+        swap(&mut m, &mut a);
+    }
+}
 
-        Some((q, r))
+fn checked_floor_sum_i128(n: i128, mut m: i128, mut a: i128, mut b: i128) -> Option<i128> {
+    const RANGE: RangeInclusive<i128> = i64::MIN as i128..=i64::MAX as i128;
+    if !(RANGE.contains(&n) && RANGE.contains(&m) && RANGE.contains(&a) && RANGE.contains(&b)) {
+        return None;
     }
 
     if n < 0 || m == 0 {
@@ -200,50 +83,12 @@ fn checked_floor_sum_i128(mut n: i128, mut m: i128, mut a: i128, mut b: i128) ->
     }
 
     if m < 0 {
-        let p = m.checked_neg()?;
-
-        // floor(x / -p) = -floor((x - 1) / p) - 1
-        if let Some(b_minus_one) = b.checked_sub(1) {
-            let s = checked_floor_sum_i128(n, p, a, b_minus_one)?;
-            let shifted = I256::from_i128(s)
-                .checked_neg()?
-                .checked_sub(I256::from_i128(n))?;
-            return shifted.try_to_i128();
-        }
-
-        // b == i128::MIN のとき:
-        // floor(x / -p) = -floor((x + p - 1) / p)
-        let b_plus_p_minus_one = b.checked_add(p.checked_sub(1)?)?;
-        let s = checked_floor_sum_i128(n, p, a, b_plus_p_minus_one)?;
-        return I256::from_i128(s).checked_neg()?.try_to_i128();
+        m = m.checked_neg()?;
+        a = a.checked_neg()?;
+        b = b.checked_neg()?;
     }
 
-    let mut res = I256::ZERO;
-
-    loop {
-        let a_quot = a.div_euclid(m);
-        if a_quot != 0 {
-            let term = checked_n_choose_2_i256(n)?.checked_mul_i128(a_quot)?;
-            res = res.checked_add(term)?;
-        }
-        a = a.rem_euclid(m);
-
-        let b_quot = b.div_euclid(m);
-        if b_quot != 0 {
-            let term = I256::from_i128(b_quot).checked_mul_i128(n)?;
-            res = res.checked_add(term)?;
-        }
-        b = b.rem_euclid(m);
-
-        let (next_n, next_b) = checked_mul_add_div_rem_nonneg_i128(a, n, b, m)?;
-        if next_n == 0 {
-            return res.try_to_i128();
-        }
-
-        n = next_n;
-        b = next_b;
-        swap(&mut m, &mut a);
-    }
+    checked_floor_sum_i128_inner(n, m, a, b)
 }
 
 /// floor sumを計算するトレイト．
@@ -252,20 +97,19 @@ pub trait FloorSum: Sized {
     ///
     /// # Panics
     ///
+    /// - 入力が`[i64::MIN, i64::MAX]`の範囲外の場合
     /// - `m == 0` の場合
     /// - 符号付き整数型で `n < 0` の場合
     /// - 結果がオーバーフローする場合
-    /// - `u128`/`usize`/`isize`で入力が`i128`に変換できない場合
     fn floor_sum(n: Self, m: Self, a: Self, b: Self) -> Self {
-        FloorSum::checked_floor_sum(n, m, a, b).expect(
-            "floor_sum failed: invalid input (m == 0 or n < 0) or overflow/conversion error",
-        )
+        FloorSum::checked_floor_sum(n, m, a, b)
+            .expect("floor_sum failed: invalid input or overflow")
     }
 
     /// `sum_{i=0}^{n-1} floor((a*i + b) / m)` を返す．
     ///
     /// オーバーフローまたは不正な引数の場合は`None`を返す．
-    /// `u128`/`usize`/`isize`では，`i128`に変換できない入力も`None`となる．
+    /// 入力制約`[i64::MIN, i64::MAX]`の範囲外も`None`となる．
     fn checked_floor_sum(n: Self, m: Self, a: Self, b: Self) -> Option<Self>;
 }
 
@@ -435,38 +279,6 @@ mod tests {
         assert_eq!(i64::floor_sum(5, 1, 3, 2), 40, "m=1");
     }
 
-    #[test]
-    fn test_checked_floor_sum_i128_prevent_false_overflow_in_y_max() {
-        assert_eq!(
-            i128::floor_sum(2, i128::MAX, -1, 0),
-            -1,
-            "i128 boundary: floor_sum(2, i128::MAX, -1, 0) should be -1"
-        );
-        assert_eq!(
-            i128::checked_floor_sum(2, i128::MAX, -1, 0),
-            Some(-1),
-            "i128 boundary: checked_floor_sum(2, i128::MAX, -1, 0) should be Some(-1)"
-        );
-    }
-
-    #[test]
-    fn test_checked_floor_sum_i128_negative_m_reorder_needed() {
-        assert_eq!(
-            i128::checked_floor_sum(1, -1, 0, i128::MIN + 1),
-            Some(i128::MAX),
-            "i128 boundary: checked_floor_sum(1, -1, 0, i128::MIN + 1) should be Some(i128::MAX)"
-        );
-    }
-
-    #[test]
-    fn test_checked_floor_sum_i128_prevent_false_overflow_in_decomposition_term() {
-        assert_eq!(
-            i128::checked_floor_sum(i128::MAX, i128::MAX, -1, 0),
-            Some(1 - i128::MAX),
-            "i128 boundary: checked_floor_sum(i128::MAX, i128::MAX, -1, 0) should be Some(1 - i128::MAX)"
-        );
-    }
-
     // ========== 負のm ==========
 
     #[test]
@@ -490,31 +302,41 @@ mod tests {
         }
     }
 
-    // ========== 負のm + b == i128::MIN ==========
+    // ========== 負のm + b == i64::MIN ==========
 
     #[test]
-    fn test_floor_sum_negative_m_b_i128_min() {
-        // b = i128::MIN, m = -2, a = 0, n = 1
-        let expected = naive_floor_sum(1, -2, 0, i128::MIN);
+    fn test_floor_sum_negative_m_b_i64_min() {
+        let b = i64::MIN as i128;
+
+        // b = i64::MIN, m = -2, a = 0, n = 1
+        let expected = naive_floor_sum(1, -2, 0, b);
         assert_eq!(
-            i128::checked_floor_sum(1, -2, 0, i128::MIN),
+            i128::checked_floor_sum(1, -2, 0, b),
             Some(expected),
-            "n=1, m=-2, a=0, b=i128::MIN"
+            "n=1, m=-2, a=0, b=i64::MIN"
         );
 
-        // b = i128::MIN, m = -3, a = 1, n = 2
-        let expected = naive_floor_sum(2, -3, 1, i128::MIN);
+        // b = i64::MIN, m = -3, a = 1, n = 2
+        let expected = naive_floor_sum(2, -3, 1, b);
         assert_eq!(
-            i128::checked_floor_sum(2, -3, 1, i128::MIN),
+            i128::checked_floor_sum(2, -3, 1, b),
             Some(expected),
-            "n=2, m=-3, a=1, b=i128::MIN"
+            "n=2, m=-3, a=1, b=i64::MIN"
         );
+    }
 
-        // b = i128::MIN, m = -1
+    #[test]
+    fn test_floor_sum_negative_m_i64_min_checked() {
+        let n = 2i128;
+        let m = i64::MIN as i128;
+        let a = i64::MIN as i128;
+        let b = i64::MIN as i128;
+        let expected = naive_floor_sum(n, m, a, b);
+
         assert_eq!(
-            i128::checked_floor_sum(1, -1, 0, i128::MIN),
-            None,
-            "neg overflow: n=1, m=-1, a=0, b=i128::MIN"
+            i128::checked_floor_sum(n, m, a, b),
+            Some(expected),
+            "negative m extreme: checked_floor_sum({n}, {m}, {a}, {b})"
         );
     }
 
@@ -535,12 +357,54 @@ mod tests {
             None,
             "n < 0 should return None"
         );
+    }
 
-        // m == i128::MIN
+    // ========== None返却(入力制約外) ==========
+
+    #[test]
+    fn test_checked_floor_sum_returns_none_out_of_i64_range() {
+        let over = (i64::MAX as i128) + 1;
+        let under = (i64::MIN as i128) - 1;
+
         assert_eq!(
-            i128::checked_floor_sum(1, i128::MIN, 0, 0),
+            i128::checked_floor_sum(over, 1, 0, 0),
             None,
-            "m == i128::MIN should return None"
+            "n > i64::MAX should return None"
+        );
+        assert_eq!(
+            i128::checked_floor_sum(1, over, 0, 0),
+            None,
+            "m > i64::MAX should return None"
+        );
+        assert_eq!(
+            i128::checked_floor_sum(1, 1, over, 0),
+            None,
+            "a > i64::MAX should return None"
+        );
+        assert_eq!(
+            i128::checked_floor_sum(1, 1, 0, over),
+            None,
+            "b > i64::MAX should return None"
+        );
+        assert_eq!(
+            i128::checked_floor_sum(under, 1, 0, 0),
+            None,
+            "n < i64::MIN should return None"
+        );
+        assert_eq!(
+            i128::checked_floor_sum(1, under, 0, 0),
+            None,
+            "m < i64::MIN should return None"
+        );
+        assert_eq!(
+            i128::checked_floor_sum(1, 1, under, 0),
+            None,
+            "a < i64::MIN should return None"
+        );
+        assert_eq!(
+            i128::checked_floor_sum(1, 1, 0, under),
+            None,
+            "b < i64::MIN should return None"
         );
     }
 
@@ -557,48 +421,50 @@ mod tests {
 
         // i128オーバーフロー: 非常に大きい結果
         assert_eq!(
-            i128::checked_floor_sum(i128::MAX, 1, i128::MAX, 0),
+            i128::checked_floor_sum(i64::MAX as i128, 1, i64::MAX as i128, 0),
             None,
             "i128 overflow should return None"
         );
     }
 
-    // ========== None返却(型変換失敗) ==========
+    // ========== None返却(制約外入力: 型変換失敗を含む) ==========
 
     #[test]
-    fn test_checked_floor_sum_returns_none_type_conversion() {
-        // u128: 入力がi128に収まらない(try_from変換失敗)
+    fn test_checked_floor_sum_returns_none_out_of_i64_range_in_wide_types() {
+        // u128: 入力がi64に収まらない(入力制約違反)
         assert_eq!(
-            u128::checked_floor_sum((i128::MAX as u128) + 1, 1, 0, 0),
+            u128::checked_floor_sum((i64::MAX as u128) + 1, 1, 0, 0),
             None,
-            "u128 n exceeds i128::MAX should return None"
+            "u128 n exceeds i64::MAX should return None"
         );
         assert_eq!(
-            u128::checked_floor_sum(1, (i128::MAX as u128) + 1, 0, 0),
+            u128::checked_floor_sum(1, (i64::MAX as u128) + 1, 0, 0),
             None,
-            "u128 m exceeds i128::MAX should return None"
+            "u128 m exceeds i64::MAX should return None"
         );
         assert_eq!(
-            u128::checked_floor_sum(1, 1, (i128::MAX as u128) + 1, 0),
+            u128::checked_floor_sum(1, 1, (i64::MAX as u128) + 1, 0),
             None,
-            "u128 a exceeds i128::MAX should return None"
+            "u128 a exceeds i64::MAX should return None"
         );
         assert_eq!(
-            u128::checked_floor_sum(1, 1, 0, (i128::MAX as u128) + 1),
+            u128::checked_floor_sum(1, 1, 0, (i64::MAX as u128) + 1),
             None,
-            "u128 b exceeds i128::MAX should return None"
+            "u128 b exceeds i64::MAX should return None"
         );
 
-        // isize/usize: 結果が型範囲外(try_from結果変換失敗)
+        // isize: 結果が型範囲外(try_from結果変換失敗)
         assert_eq!(
             isize::checked_floor_sum(isize::MAX, 1, 1, 0),
             None,
             "isize result overflow should return None"
         );
+
+        // usize: 入力がi64に収まらない(入力制約違反)
         assert_eq!(
             usize::checked_floor_sum(usize::MAX, 1, 1, 0),
             None,
-            "usize result overflow should return None"
+            "usize input exceeds i64::MAX should return None"
         );
     }
 
@@ -793,13 +659,25 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_floor_sum_panic_overflow_i128() {
-        i128::floor_sum(i128::MAX, 1, i128::MAX, 0);
+        i128::floor_sum(i64::MAX as i128, 1, i64::MAX as i128, 0);
     }
 
     #[test]
     #[should_panic]
-    fn test_floor_sum_panic_u128_exceeds_i128_max() {
-        u128::floor_sum((i128::MAX as u128) + 1, 1, 0, 0);
+    fn test_floor_sum_panic_overflow_with_m_i64_min() {
+        i64::floor_sum(i64::MAX, i64::MIN, i64::MIN, i64::MIN);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_floor_sum_panic_out_of_i64_range_i128() {
+        i128::floor_sum((i64::MAX as i128) + 1, 1, 0, 0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_floor_sum_panic_u128_exceeds_i64_max() {
+        u128::floor_sum((i64::MAX as u128) + 1, 1, 0, 0);
     }
 
     // ========== 代数的性質: 負のm変換 ==========
