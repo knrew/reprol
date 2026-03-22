@@ -21,12 +21,14 @@
 //! let factors = sieve.factors(100).collect::<Vec<_>>();
 //! assert_eq!(factors, vec![(2, 2), (5, 2)]);
 //!
-//! // 約数列挙(ソート済み)
-//! let divisors = sieve.divisors(36).collect::<Vec<_>>();
+//! // 約数列挙
+//! let mut divisors = sieve.divisors(36).collect::<Vec<_>>();
+//! divisors.sort_unstable();
 //! assert_eq!(divisors, vec![1, 2, 3, 4, 6, 9, 12, 18, 36]);
 //! ```
 
-#[derive(Debug)]
+use std::iter::FusedIterator;
+
 pub struct LinearSieve {
     lpf: Vec<usize>,
     primes: Vec<usize>,
@@ -65,7 +67,7 @@ impl LinearSieve {
 
     /// 素数のイテレータを返す．
     #[inline]
-    pub fn primes(&self) -> impl DoubleEndedIterator<Item = &usize> + '_ {
+    pub fn primes(&self) -> impl DoubleEndedIterator<Item = &usize> + FusedIterator {
         self.primes.iter()
     }
 
@@ -78,11 +80,12 @@ impl LinearSieve {
     /// `x`を素因数分解する．
     /// (素数, 指数)の形で列挙するイテレータを返す．
     #[inline]
-    pub fn factors(&self, x: usize) -> FactorIter<'_> {
-        FactorIter { sieve: self, x }
+    pub fn factors(&self, x: usize) -> FactorsIter<'_> {
+        FactorsIter { sieve: self, x }
     }
 
-    fn divisors_vec(&self, x: usize) -> Vec<usize> {
+    /// `x`の約数を列挙するイテレータを返す(未ソート)．
+    pub fn divisors(&self, x: usize) -> impl Iterator<Item = usize> {
         let mut divisors = vec![1];
         for (p, exp) in self.factors(x) {
             for i in 0..divisors.len() {
@@ -93,34 +96,19 @@ impl LinearSieve {
                 }
             }
         }
-        divisors
-    }
-
-    /// `x`の約数を列挙するイテレータを返す(未ソート)．
-    #[inline]
-    pub fn divisors_unsorted(&self, x: usize) -> impl Iterator<Item = usize> + '_ {
-        self.divisors_vec(x).into_iter()
-    }
-
-    /// `x`の約数を昇順にソートして列挙するイテレータを返す．
-    #[inline]
-    pub fn divisors(&self, x: usize) -> impl DoubleEndedIterator<Item = usize> + '_ {
-        let mut d = self.divisors_vec(x);
-        d.sort_unstable();
-        d.into_iter()
+        divisors.into_iter()
     }
 }
 
 /// 素因数分解の結果を列挙するためのイテレータ．
-pub struct FactorIter<'a> {
+pub struct FactorsIter<'a> {
     sieve: &'a LinearSieve,
     x: usize,
 }
 
-impl<'a> Iterator for FactorIter<'a> {
+impl<'a> Iterator for FactorsIter<'a> {
     type Item = (usize, u32);
 
-    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         let Self { sieve, x } = self;
 
@@ -140,13 +128,15 @@ impl<'a> Iterator for FactorIter<'a> {
     }
 }
 
+impl<'a> FusedIterator for FactorsIter<'a> {}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_is_prime() {
-        let sieve = LinearSieve::new(300000);
+        let sieve = LinearSieve::new(100);
 
         let test_cases = vec![
             (0, false),
@@ -276,7 +266,7 @@ mod tests {
         ];
 
         for (n, expected) in test_cases {
-            let mut result = sieve.divisors_unsorted(n).collect::<Vec<_>>();
+            let mut result = sieve.divisors(n).collect::<Vec<_>>();
             result.sort_unstable();
             assert_eq!(result, expected);
         }
