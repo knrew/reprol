@@ -27,7 +27,7 @@ jobs:
           - stable
     steps:
       - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@1.89.0
+      - uses: dtolnay/rust-toolchain@1.100.0
         if: matrix.rust_toolchain == '1.89.0'
         with:
           components: rustfmt, clippy
