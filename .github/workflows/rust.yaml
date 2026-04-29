@@ -1,61 +1,49 @@
 name: Rust
 
 on:
-  workflow_call:
-    inputs:
-      rust_toolchain:
-        type: string
-        required: true
+  push:
+  pull_request:
+  schedule:
+    - cron: 0 0 1 * *
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 
 env:
   CARGO_TERM_COLOR: always
   CARGO_INCREMENTAL: 0
 
 jobs:
-  fmt:
+  rust:
+    name: Rust (${{ matrix.rust_toolchain }})
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
+      matrix:
+        rust_toolchain:
+          - 1.89.0
+          - stable
     steps:
       - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@v1
+      - uses: dtolnay/rust-toolchain@1.89.0
+        if: matrix.rust_toolchain == '1.89.0'
         with:
-          toolchain: ${{ inputs.rust_toolchain }}
-          components: rustfmt
-      - run: cargo +${{ inputs.rust_toolchain }} fmt --all --check --verbose
-
-  clippy:
-    runs-on: ubuntu-24.04
-    strategy:
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@v1
+          components: rustfmt, clippy
+      - uses: dtolnay/rust-toolchain@stable
+        if: matrix.rust_toolchain == 'stable'
         with:
-          toolchain: ${{ inputs.rust_toolchain }}
-          components: clippy
-      - run: cargo +${{ inputs.rust_toolchain }} clippy --workspace --all-features -- -D warnings
-
-  check:
-    runs-on: ubuntu-24.04
-    strategy:
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@v1
-        with:
-          toolchain: ${{ inputs.rust_toolchain }}
-      - run: cargo +${{ inputs.rust_toolchain }} check --workspace --all-targets --all-features --verbose
-      - run: cargo +${{ inputs.rust_toolchain }} check --release --workspace --all-targets --all-features --verbose
-
-  test:
-    runs-on: ubuntu-24.04
-    strategy:
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@v1
-        with:
-          toolchain: ${{ inputs.rust_toolchain }}
-      - run: cargo +${{ inputs.rust_toolchain }} test --workspace --all-features --no-fail-fast --verbose
-      - run: cargo +${{ inputs.rust_toolchain }} test --release --workspace --all-features --no-fail-fast --verbose
+          components: rustfmt, clippy
+      - name: Cargo fmt
+        run: cargo +${{ matrix.rust_toolchain }} fmt --all --check --verbose
+      - name: Cargo clippy
+        run: cargo +${{ matrix.rust_toolchain }} clippy --workspace --all-features -- -D warnings
+      - name: Cargo check
+        run: cargo +${{ matrix.rust_toolchain }} check --workspace --all-targets --all-features --verbose
+      - name: Cargo check release
+        run: cargo +${{ matrix.rust_toolchain }} check --release --workspace --all-targets --all-features --verbose
+      - name: Cargo test
+        run: cargo +${{ matrix.rust_toolchain }} test --workspace --all-features --no-fail-fast --verbose
+      - name: Cargo test release
+        run: cargo +${{ matrix.rust_toolchain }} test --release --workspace --all-features --no-fail-fast --verbose
