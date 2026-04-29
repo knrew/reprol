@@ -4,14 +4,14 @@ on:
   push:
   pull_request:
   schedule:
-    - cron: "0 0 1 * *"
+    - cron: 0 0 1 * *
   workflow_dispatch:
 
 jobs:
   toml:
     runs-on: ubuntu-24.04
     env:
-      TAPLO_VERSION: "0.10.0"
+      TAPLO_VERSION: 0.10.0
     steps:
       - uses: actions/checkout@v6
       - name: Install taplo
@@ -27,7 +27,7 @@ jobs:
   yaml:
     runs-on: ubuntu-24.04
     env:
-      YAMLLINT_VERSION: "1.38.0"
+      YAMLLINT_VERSION: 1.38.0
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
