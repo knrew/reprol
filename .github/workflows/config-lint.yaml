@@ -14,10 +14,14 @@ concurrency:
 jobs:
   toml:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     env:
       TAPLO_VERSION: 0.10.0
     steps:
       - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
       - name: Install taplo
         run: |
           mkdir -p "${RUNNER_TEMP}/bin"
@@ -30,13 +34,17 @@ jobs:
 
   yaml:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     env:
       YAMLLINT_VERSION: 1.38.0
     steps:
       - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v6
         with:
-          python-version: "3.14"
+          python-version: 3.14
       - name: Install yamllint
         run: pip install "yamllint==${YAMLLINT_VERSION}"
       - name: Check YAML formatting
